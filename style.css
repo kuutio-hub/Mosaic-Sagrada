@@ -1,10 +1,10 @@
 /* Sagrada Designer Styles */
 :root {
-    --card-width: 750px;
-    --card-height: 1050px;
-    --cell-size: 110px;
-    --gap-h: 12px;
-    --gap-v: 12px;
+    --card-width: 1050px;
+    --card-height: 750px;
+    --cell-size: 150px;
+    --gap-h: 10px;
+    --gap-v: 10px;
     --accent-gold: #d4af37;
     
     /* Default (Dark) Theme - More Sagrada-like */
@@ -416,7 +416,7 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 85px;
+    top: 40px;
     left: 50%;
     transform: translateX(-50%);
     display: grid;
@@ -455,12 +455,12 @@ button {
 }
 
 /* Erős színek, ha nincs szám */
-.cell.c-r { background-color: #DC3232; border-color: #b71c1c; }
-.cell.c-g { background-color: #32A050; border-color: #1b5e20; }
-.cell.c-b { background-color: #3264C8; border-color: #0d47a1; }
-.cell.c-y { background-color: #F0C828; border-color: #f57f17; }
-.cell.c-p { background-color: #8C3CA0; border-color: #4a148c; }
-.cell.c-w { background-color: #F0F0F0; border-color: #bdbdbd; }
+.cell.c-r { background-color: #DC3232; border: 2px solid #000; }
+.cell.c-g { background-color: #32A050; border: 2px solid #000; }
+.cell.c-b { background-color: #3264C8; border: 2px solid #000; }
+.cell.c-y { background-color: #F0C828; border: 2px solid #000; }
+.cell.c-p { background-color: #8C3CA0; border: 2px solid #000; }
+.cell.c-w { background-color: #F0F0F0; border: 2px solid #000; }
 
 /* Ha van szám is rajta, a szín legyen áttetszőbb */
 .cell.has-color.has-value {
@@ -480,11 +480,36 @@ button {
     grid-template-rows: repeat(3, 1fr);
     width: 100%;
     height: 100%;
-    padding: 12%;
-    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(240,240,240,0.9) 100%);
+    padding: 15%;
+    background: #fff;
     position: relative;
-    border-radius: 8px;
-    box-shadow: inset 0 0 15px rgba(0,0,0,0.1), 0 4px 8px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+/* Ólomüveg fazettás hatás */
+.dice-face::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: 
+        linear-gradient(45deg, transparent 48%, #444 49%, #444 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, #444 49%, #444 51%, transparent 52%),
+        linear-gradient(90deg, transparent 48%, #444 49%, #444 51%, transparent 52%),
+        linear-gradient(0deg, transparent 48%, #444 49%, #444 51%, transparent 52%);
+    background-size: 100% 100%;
+    opacity: 0.3;
+    z-index: 1;
+}
+
+.dice-face::after {
+    content: '';
+    position: absolute;
+    top: 15%; left: 15%; right: 15%; bottom: 15%;
+    border: 1px solid rgba(68, 68, 68, 0.3);
+    transform: rotate(45deg);
+    z-index: 1;
 }
 
 /* Ha szín felett van, legyen áttetsző a kocka alapja */
@@ -492,34 +517,33 @@ button {
     background: transparent;
     box-shadow: none;
 }
-
-/* Ólomüveg fazettás hatás */
-.dice-face::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: 
-        linear-gradient(45deg, rgba(255,255,255,0.4) 0%, transparent 40%),
-        linear-gradient(-45deg, rgba(0,0,0,0.1) 0%, transparent 40%);
-    pointer-events: none;
-    border-radius: 8px;
+.dice-face.overlay::before, .dice-face.overlay::after {
+    opacity: 0.6;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+.dice-face.overlay::before {
+    background-image: 
+        linear-gradient(45deg, transparent 48%, #fff 49%, #fff 51%, transparent 52%),
+        linear-gradient(-45deg, transparent 48%, #fff 49%, #fff 51%, transparent 52%),
+        linear-gradient(90deg, transparent 48%, #fff 49%, #fff 51%, transparent 52%),
+        linear-gradient(0deg, transparent 48%, #fff 49%, #fff 51%, transparent 52%);
 }
 
 .dice-dot {
-    background-color: #222;
+    background-color: #111;
     border-radius: 50%;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     justify-self: center;
     align-self: center;
-    z-index: 2;
+    z-index: 5;
     position: relative;
-    box-shadow: inset -2px -2px 4px rgba(0,0,0,0.5), 1px 1px 2px rgba(255,255,255,0.8);
+    box-shadow: 1px 1px 2px rgba(255,255,255,0.2);
 }
 
 .dice-face.overlay .dice-dot {
-    background-color: #fff;
-    box-shadow: 0 0 5px rgba(255,255,255,0.8), inset 0 0 2px rgba(0,0,0,0.5);
+    background-color: #eee;
+    box-shadow: 0 0 3px rgba(255,255,255,0.5);
 }
 
 /* Ha szín felett van, a pöttyök színe is változhat, de az user azt kérte, hogy mindkettő látszódjon */
@@ -555,28 +579,31 @@ button {
 
 .footer-layer {
     position: absolute;
-    bottom: 50px;
+    bottom: 0;
+    left: 0;
     width: 100%;
+    height: 80px;
+    background-color: #1a1a1a;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 20;
-    padding: 0 65px;
+    padding: 0 40px;
+    border-bottom-left-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 
 .card-title-input {
     background: transparent;
     border: none;
-    border-bottom: 2px solid rgba(212, 175, 55, 0.3);
     color: #fff;
     font-family: 'Uncial Antiqua', serif;
-    font-size: 32px;
+    font-size: 36px;
     text-align: left;
-    width: 60%;
+    width: 70%;
     outline: none;
     padding: 5px;
-    transition: border-bottom-color 0.3s;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
 .card-title-input:focus {

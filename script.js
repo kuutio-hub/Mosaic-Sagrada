@@ -12,22 +12,19 @@ let promoCards = [];
 
 // SVG Sablonok
 const frameSVG = `
-<svg width="750" height="1050" viewBox="0 0 750 1050" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="1050" height="750" viewBox="0 0 1050 750" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Külső keret -->
-    <rect x="15" y="15" width="720" height="1020" rx="25" stroke="#d4af37" stroke-width="12" class="frame-outer"/>
-    <rect x="35" y="35" width="680" height="980" rx="15" stroke="#d4af37" stroke-width="4" stroke-dasharray="20 10" class="frame-inner"/>
+    <rect x="15" y="15" width="1020" height="720" rx="25" stroke="#d4af37" stroke-width="12" class="frame-outer"/>
+    <rect x="35" y="35" width="980" height="680" rx="15" stroke="#d4af37" stroke-width="4" stroke-dasharray="20 10" class="frame-inner"/>
     
     <!-- Rács keret -->
-    <rect x="76" y="85" width="598" height="476" rx="10" stroke="#555" stroke-width="4" class="grid-frame"/>
+    <rect x="130" y="40" width="790" height="630" rx="10" stroke="#555" stroke-width="4" class="grid-frame"/>
     
     <!-- Díszítő elemek a sarkokban -->
     <circle cx="50" cy="50" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="700" cy="50" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="700" cy="1000" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="50" cy="1000" r="15" fill="#d4af37" class="corner-dot"/>
-    
-    <!-- Alsó díszítés -->
-    <path d="M200 980 Q 375 1020 550 980" stroke="#d4af37" stroke-width="3" fill="none" class="bottom-decoration"/>
+    <circle cx="1000" cy="50" r="15" fill="#d4af37" class="corner-dot"/>
+    <circle cx="1000" cy="700" r="15" fill="#d4af37" class="corner-dot"/>
+    <circle cx="50" cy="700" r="15" fill="#d4af37" class="corner-dot"/>
 </svg>
 `;
 

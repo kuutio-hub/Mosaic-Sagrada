@@ -8,8 +8,8 @@ export async function renderToCanvas(id) {
     tempContainer.style.position = 'fixed';
     tempContainer.style.left = '-5000px';
     tempContainer.style.top = '-5000px';
-    tempContainer.style.width = '1063px';
-    tempContainer.style.height = '945px';
+    tempContainer.style.width = '1050px';
+    tempContainer.style.height = '750px';
     tempContainer.style.backgroundColor = 'white';
     document.body.appendChild(tempContainer);
 
@@ -52,8 +52,8 @@ export async function renderToCanvas(id) {
             useCORS: true,
             backgroundColor: null,
             logging: false,
-            width: 1063,
-            height: 945
+            width: 1050,
+            height: 750
         });
         document.body.removeChild(tempContainer);
         return canvas.toDataURL('image/png');
@@ -88,8 +88,8 @@ export async function exportPDF(patternQueue) {
         const margin = 8;
         
         // Card parameters
-        const cardWidth = 63;
-        const cardHeight = 88;
+        const cardWidth = 88;
+        const cardHeight = 63;
         const gap = 2;
         
         // 3x3 grid
