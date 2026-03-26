@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sagrada Window Pattern Designer</title>
+    <!-- Google Fonts: Uncial Antiqua -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Külső könyvtárak CDN-ről (PDF generáláshoz) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+    <header class="no-print">
+        <div class="header-content">
+            <h1>Sagrada Pattern Designer</h1>
+            <div class="controls">
+                <div class="control-item">
+                    <label for="printer-friendly">Nyomtatóbarát:</label>
+                    <input type="checkbox" id="printer-friendly">
+                </div>
+                <div class="control-item">
+                    <label for="double-sided">Kétoldalas:</label>
+                    <input type="checkbox" id="double-sided" checked>
+                </div>
+                <button id="add-to-queue" class="btn-secondary">Hozzáadás a listához</button>
+                <button id="export-pdf" class="btn-primary">PDF Export (Lista)</button>
+                <button id="print-btn" class="btn-secondary">Nyomtatás</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="editor-area">
+        <div class="main-layout">
+            <aside class="tools-sidebar no-print">
+                <div class="tool-section">
+                    <h3>Promo kártyák</h3>
+                    <select id="promo-select">
+                        <option value="">Válassz promo kártyát...</option>
+                    </select>
+                </div>
+                <div class="tool-section">
+                    <h3>Saját kártyák</h3>
+                    <select id="saved-select">
+                        <option value="">Válassz mentett kártyát...</option>
+                    </select>
+                    <button id="save-card" class="btn-secondary" style="width: 100%; margin-top: 10px;">Mentés a tárba</button>
+                </div>
+            </aside>
+
+            <div class="editor-container">
+                <div class="card-wrapper">
+                    <h3>Előlap</h3>
+                    <div id="card-front" class="sagrada-card">
+                        <div class="svg-layer" id="frame-front-svg"></div>
+                        <div class="grid-layer" id="grid-front"></div>
+                        <div class="footer-layer">
+                            <input type="text" class="card-title-input" value="MINTA NÉV" data-side="front">
+                            <div class="difficulty-display" data-side="front"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-wrapper">
+                    <h3>Hátlap</h3>
+                    <div id="card-back" class="sagrada-card">
+                        <div class="svg-layer" id="frame-back-svg"></div>
+                        <div class="grid-layer" id="grid-back"></div>
+                        <div class="footer-layer">
+                            <input type="text" class="card-title-input" value="MINTA NÉV (HÁT)" data-side="back">
+                            <div class="difficulty-display" data-side="back"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="queue-sidebar no-print">
+                <h3>Nyomtatási lista</h3>
+                <div id="pattern-queue" class="queue-list">
+                    <p class="empty-msg">A lista üres. Adj hozzá mintákat!</p>
+                </div>
+                <div class="queue-actions">
+                    <button id="clear-queue" class="btn-danger">Lista törlése</button>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- Cellaválasztó menü -->
+    <div id="cell-picker" class="picker-hidden">
+        <div class="picker-section">
+            <p>Színek</p>
+            <div class="picker-grid colors">
+                <div class="picker-item color-r" data-val="R"></div>
+                <div class="picker-item color-g" data-val="G"></div>
+                <div class="picker-item color-b" data-val="B"></div>
+                <div class="picker-item color-y" data-val="Y"></div>
+                <div class="picker-item color-p" data-val="P"></div>
+                <div class="picker-item color-w" data-val="W"></div>
+            </div>
+        </div>
+        <div class="picker-section">
+            <p>Számok</p>
+            <div class="picker-grid numbers">
+                <div class="picker-item" data-val="1">1</div>
+                <div class="picker-item" data-val="2">2</div>
+                <div class="picker-item" data-val="3">3</div>
+                <div class="picker-item" data-val="4">4</div>
+                <div class="picker-item" data-val="5">5</div>
+                <div class="picker-item" data-val="6">6</div>
+            </div>
+        </div>
+        <div class="picker-section">
+            <div class="picker-grid special">
+                <div class="picker-item" data-val="X">X</div>
+                <div class="picker-item" data-val=".">Üres</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

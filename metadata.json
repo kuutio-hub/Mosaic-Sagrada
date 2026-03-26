@@ -1,0 +1,5 @@
+{
+  "name": "Sagrada Pattern Designer",
+  "description": "Statikus webalkalmazás Sagrada társasjáték ablakminták tervezéséhez és PDF exportálásához.",
+  "requestFramePermissions": []
+}
