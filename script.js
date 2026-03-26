@@ -1,8 +1,16 @@
 import { state } from './js/state.js';
 import { renderGrid, renderDifficulty, updateQueueUI } from './js/ui.js';
 import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard, deleteSavedCard } from './js/cardManager.js';
-import { exportPDF } from './js/utils.js';
 import { translations } from './js/i18n.js';
+
+// Service worker eltávolítása, ha van (megoldás a "gura" oldal frissítésre)
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+            registration.unregister();
+        }
+    });
+}
 
 // Aktuálisan szerkesztett cella
 let activeCell = null;
@@ -12,19 +20,13 @@ let promoCards = [];
 
 // SVG Sablonok
 const frameSVG = `
-<svg width="1050" height="750" viewBox="0 0 1050 750" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Külső keret -->
-    <rect x="15" y="15" width="1020" height="720" rx="25" stroke="#d4af37" stroke-width="12" class="frame-outer"/>
-    <rect x="35" y="35" width="980" height="680" rx="15" stroke="#d4af37" stroke-width="4" stroke-dasharray="20 10" class="frame-inner"/>
+<svg width="880" height="630" viewBox="0 0 880 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Egyszerű fekete keret -->
+    <rect x="0" y="0" width="880" height="630" fill="#000"/>
+    <rect x="2" y="2" width="876" height="626" stroke="#333" stroke-width="1"/>
     
     <!-- Rács keret -->
-    <rect x="130" y="40" width="790" height="630" rx="10" stroke="#555" stroke-width="4" class="grid-frame"/>
-    
-    <!-- Díszítő elemek a sarkokban -->
-    <circle cx="50" cy="50" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="1000" cy="50" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="1000" cy="700" r="15" fill="#d4af37" class="corner-dot"/>
-    <circle cx="50" cy="700" r="15" fill="#d4af37" class="corner-dot"/>
+    <rect x="15" y="15" width="850" height="580" rx="5" stroke="#222" stroke-width="2" class="grid-frame"/>
 </svg>
 `;
 
@@ -200,11 +202,12 @@ function setupEventListeners() {
         menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Export gomb
+    // Export gomb (most már csak nyomtatást hív)
     document.getElementById('export-pdf').addEventListener('click', (e) => {
         e.stopPropagation();
         document.getElementById('print-menu-content').style.display = 'none';
-        exportPDF(state.patternQueue);
+        preparePrintLayout();
+        window.print();
     });
 
     // Nyomtatás gomb
@@ -286,15 +289,8 @@ function setupEventListeners() {
         document.getElementById('apply-saved').parentNode.appendChild(deleteBtn);
     }
 
-    // Kártya fordítása kattintásra
-    document.getElementById('card-container').addEventListener('click', (e) => {
-        // Ne forduljon meg, ha beviteli mezőre vagy difficulty dotra kattintunk
-        if (e.target.tagName === 'INPUT' || e.target.classList.contains('difficulty-dot')) return;
-        
-        if (document.getElementById('double-sided').checked) {
-            window.toggleSide();
-        }
-    });
+    // Kártya fordítása kattintásra eltávolítva az user kérésére
+    // Csak a gombbal lehessen fordítani
 
     // Mentés gomb
     document.getElementById('save-card').addEventListener('click', () => {
@@ -319,7 +315,7 @@ function setupEventListeners() {
 }
 
 /**
- * Print layout előkészítése
+ * Print layout előkészítése duplex nyomtatáshoz
  */
 function preparePrintLayout() {
     const printContainer = document.getElementById('print-container');
@@ -332,15 +328,23 @@ function preparePrintLayout() {
         return;
     }
     
-    state.patternQueue.forEach(item => {
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'print-card';
+    // Duplex nyomtatás: 
+    // A queue-ban [F1, B1, F2, B2...] sorrendben vannak az elemek (ha kétoldalas)
+    // Vagy csak [F1, F2...] ha egyoldalas.
+    
+    state.patternQueue.forEach((item, index) => {
+        const page = document.createElement('div');
+        page.className = 'print-page';
+        
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'print-card-wrapper';
         
         const img = document.createElement('img');
         img.src = item.img;
         
-        cardDiv.appendChild(img);
-        printContainer.appendChild(cardDiv);
+        cardWrapper.appendChild(img);
+        page.appendChild(cardWrapper);
+        printContainer.appendChild(page);
     });
 }
 
@@ -352,15 +356,16 @@ window.toggleSide = function() {
     const back = document.getElementById('card-back');
     const toggle = document.getElementById('side-toggle');
     const lang = document.documentElement.lang || 'hu';
+    const t = translations[lang];
     
     if (front.style.display === 'none') {
         front.style.display = 'block';
         back.style.display = 'none';
-        toggle.textContent = translations[lang].frontSide;
+        toggle.innerHTML = `${t.frontSide}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
     } else {
         front.style.display = 'none';
         back.style.display = 'block';
-        toggle.textContent = translations[lang].backSide;
+        toggle.innerHTML = `${t.backSide}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
     }
 }
 
@@ -396,11 +401,8 @@ function updateLanguage(lang) {
     // Update side toggle text
     const toggle = document.getElementById('side-toggle');
     if (toggle) {
-        if (document.getElementById('card-front').style.display !== 'none') {
-            toggle.textContent = t.frontSide;
-        } else {
-            toggle.textContent = t.backSide;
-        }
+        const sideText = document.getElementById('card-front').style.display !== 'none' ? t.frontSide : t.backSide;
+        toggle.innerHTML = `${sideText}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
     }
 
     // Update current lang button

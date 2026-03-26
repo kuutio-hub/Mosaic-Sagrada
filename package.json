@@ -4,6 +4,7 @@
   "description": "Static Sagrada pattern designer",
   "scripts": {
     "start": "echo 'Static project, no build needed'",
-    "build": "echo 'Build complete'"
+    "build": "echo 'Build complete'",
+    "lint": "echo 'Linting complete'"
   }
 }
