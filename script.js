@@ -229,3 +229,22 @@ function updateLanguage(lang) {
 // Expose functions to window for onclick handlers
 window.loadFromQueue = loadFromQueue;
 window.removeFromQueue = removeFromQueue;
+
+// Start
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+        await init();
+    } catch (err) {
+        console.error("Initialization error:", err);
+        document.body.innerHTML = `<div style="color:red; padding:20px;">Hiba történt az alkalmazás betöltésekor: ${err.message}</div>`;
+    }
+
+    // Add version to footer
+    const footer = document.createElement('footer');
+    footer.style.textAlign = 'center';
+    footer.style.padding = '10px';
+    footer.style.fontSize = '12px';
+    footer.style.color = '#666';
+    footer.textContent = 'Verzió: 1.0.1';
+    document.body.appendChild(footer);
+});

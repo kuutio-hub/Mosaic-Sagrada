@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { updateQueueUI } from './ui.js';
+import { renderGrid, updateQueueUI } from './ui.js';
 import { renderToCanvas } from './utils.js';
 
 export async function addToQueue() {
@@ -15,12 +15,14 @@ export async function addToQueue() {
             state.patternQueue.push({
                 title: state.front.title,
                 difficulty: state.front.difficulty,
+                cells: [...state.front.cells],
                 img: frontData,
                 side: 'front'
             });
             state.patternQueue.push({
                 title: state.back.title,
                 difficulty: state.back.difficulty,
+                cells: [...state.back.cells],
                 img: backData,
                 side: 'back'
             });
@@ -42,17 +44,21 @@ export function removeFromQueue(index) {
 
 export function loadFromQueue(index) {
     const item = state.patternQueue[index];
-    // Assuming item contains the card data, but it seems it only contains images.
-    // The previous implementation of addToQueue only saved images, not the full card state.
-    // This is a limitation of the previous implementation.
-    // I should probably save the full card state in the queue.
-    alert("Ez a funkció még nincs teljesen implementálva.");
+    state[item.side].title = item.title;
+    state[item.side].difficulty = item.difficulty;
+    state[item.side].cells = [...item.cells];
+    renderGrid(item.side);
+    // Also update the UI input
+    document.querySelector(`.card-title-input[data-side="${item.side}"]`).value = item.title;
 }
 
 export async function loadPromoCards() {
+    console.log("Loading promo cards...");
     try {
         const response = await fetch('https://raw.githubusercontent.com/chardila/sagrada_generator/main/card.txt');
+        console.log("Response status:", response.status);
         const text = await response.text();
+        console.log("Response text length:", text.length);
         const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         
         const promoCards = [];
@@ -75,6 +81,7 @@ export async function loadPromoCards() {
             opt.textContent = `${card.title} (${card.id})`;
             select.appendChild(opt);
         });
+        console.log("Promo cards loaded:", promoCards.length);
         return promoCards;
     } catch (err) {
         console.error("Hiba a promo kártyák betöltésekor:", err);
