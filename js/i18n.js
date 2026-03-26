@@ -22,10 +22,16 @@ export const translations = {
         colors: "Színek",
         numbers: "Számok",
         empty: "Üres",
+        selectPromo: "Válassz promo kártyát...",
+        selectSaved: "Válassz mentett kártyát...",
+        delete: "Törlés",
+        confirmDelete: "Biztosan törlöd a kártyát?",
+        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva.",
         alertSaveError: "Hiba történt a kártya mentésekor.",
         alertSaved: "Kártya elmentve a böngésző tárjába!",
         alertQueueEmpty: "A nyomtatási lista üres!",
         confirmClear: "Biztosan törlöd a teljes listát?",
+        reset: "Kártya törlése (Alaphelyzet)",
         alertPdfError: "Hiba történt a PDF generálása közben."
     },
     en: {
@@ -51,10 +57,16 @@ export const translations = {
         colors: "Colors",
         numbers: "Numbers",
         empty: "Empty",
+        selectPromo: "Select promo card...",
+        selectSaved: "Select saved card...",
+        delete: "Delete",
+        confirmDelete: "Are you sure you want to delete this card?",
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved.",
         alertSaveError: "Error saving card.",
         alertSaved: "Card saved to browser storage!",
         alertQueueEmpty: "The print list is empty!",
         confirmClear: "Are you sure you want to clear the entire list?",
+        reset: "Clear Card (Reset)",
         alertPdfError: "Error generating PDF."
     },
     de: {
@@ -80,10 +92,16 @@ export const translations = {
         colors: "Farben",
         numbers: "Zahlen",
         empty: "Leer",
+        selectPromo: "Promo-Karte auswählen...",
+        selectSaved: "Gespeicherte Karte auswählen...",
+        delete: "Löschen",
+        confirmDelete: "Möchten Sie diese Karte wirklich löschen?",
+        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten.",
         alertSaveError: "Fehler beim Speichern der Karte.",
         alertSaved: "Karte im Browser-Speicher gespeichert!",
         alertQueueEmpty: "Die Druckliste ist leer!",
         confirmClear: "Möchten Sie die gesamte Liste wirklich löschen?",
+        reset: "Karte löschen (Zurücksetzen)",
         alertPdfError: "Fehler beim Generieren der PDF."
     }
 };

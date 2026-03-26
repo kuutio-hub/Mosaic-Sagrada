@@ -25,8 +25,6 @@
         <div class="header-content">
             <h1 data-i18n="title">Sagrada Pattern Designer</h1>
             <div class="controls">
-                <button id="theme-toggle" class="theme-toggle" title="Váltás sötét/világos mód között">🌓</button>
-                
                 <div class="lang-dropdown">
                     <button class="lang-dropbtn" id="current-lang">🇭🇺</button>
                     <div class="lang-content">
@@ -62,17 +60,20 @@
                 <div class="tool-section">
                     <h3 id="title-promo" data-i18n="promoCards">Promo kártyák</h3>
                     <select id="promo-select">
-                        <option value="">Válassz promo kártyát...</option>
+                        <option value="" data-i18n="selectPromo">Válassz promo kártyát...</option>
                     </select>
                     <button id="apply-promo" class="btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="apply">Alkalmaz</button>
                 </div>
                 <div class="tool-section">
                     <h3 id="title-saved" data-i18n="savedCards">Saját kártyák</h3>
                     <select id="saved-select">
-                        <option value="">Válassz mentett kártyát...</option>
+                        <option value="" data-i18n="selectSaved">Válassz mentett kártyát...</option>
                     </select>
                     <button id="apply-saved" class="btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="apply">Alkalmaz</button>
                     <button id="save-card" class="btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="saveCard">Mentés a tárba</button>
+                </div>
+                <div class="tool-section">
+                    <button id="reset-card" class="btn-danger" style="width: 100%;" data-i18n="reset">Visszaállítás alaphelyzetbe</button>
                 </div>
             </aside>
 
@@ -146,6 +147,13 @@
 
     <!-- Nyomtatási konténer -->
     <div id="print-container"></div>
+
+    <footer class="no-print">
+        <div class="footer-content">
+            <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva.</p>
+            <p>Verzió: 0.1.2</p>
+        </div>
+    </footer>
 
     <script type="module" src="script.js"></script>
     <script>
