@@ -90,36 +90,53 @@ export function renderDifficulty(side) {
 }
 
 export function updateQueueUI() {
-    const container = document.getElementById('pattern-queue');
-    container.innerHTML = '';
+    const frontSchematic = document.getElementById('schematic-front');
+    const backSchematic = document.getElementById('schematic-back');
     
+    if (!frontSchematic || !backSchematic) return;
+
+    // Reset schematics
+    [frontSchematic, backSchematic].forEach(schematic => {
+        const slots = schematic.querySelectorAll('.schematic-card');
+        slots.forEach((slot, i) => {
+            slot.innerHTML = i + 1;
+            slot.classList.remove('filled');
+            slot.onclick = null;
+        });
+    });
+
     const lang = document.documentElement.lang || 'hu';
     const t = translations[lang] || translations['hu'];
 
     if (state.patternQueue.length === 0) {
-        container.innerHTML = `<p class="empty-msg">${t.emptyQueue}</p>`;
         return;
     }
 
+    // Fill slots
     state.patternQueue.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'queue-item';
-        div.style.border = "1px solid var(--panel-border)";
-        div.style.padding = "5px";
-        div.style.marginBottom = "10px";
-        
-        const sideText = item.side === 'front' ? t.front : t.back;
-        
-        div.innerHTML = `
-            <img src="${item.img}" style="width:50px; height:50px; margin-right:10px; border-radius: 4px; object-fit: cover;" />
-            <div style="flex:1; font-size:12px">
-                <div style="font-weight: 600;">${item.title} (${sideText})</div>
-                <div style="color:#86868b">${t.difficulty}: ${item.difficulty}</div>
-            </div>
-            <button onclick="window.loadFromQueue(${idx})" class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-right:5px; border-radius: 10px;">${t.edit}</button>
-            <button onclick="window.removeFromQueue(${idx})" style="color:#ff3b30; background:none; border:none; cursor:pointer; font-size: 18px; padding: 0 5px;">×</button>
-        `;
-        container.appendChild(div);
+        if (idx >= 9) return; // Only 9 slots on A4
+
+        const frontSlot = frontSchematic.querySelector(`.schematic-card[data-index="${idx}"]`);
+        // Back slots are mirrored horizontally for duplex
+        // The mapping is already in HTML data-index
+        const backSlot = backSchematic.querySelector(`.schematic-card[data-index="${idx}"]`);
+
+        if (frontSlot) {
+            frontSlot.classList.add('filled');
+            frontSlot.innerHTML = `
+                <img src="${item.frontImg}" />
+                <div class="remove-mini" onclick="event.stopPropagation(); window.removeFromQueue(${idx})">×</div>
+            `;
+            frontSlot.onclick = () => window.loadFromQueue(idx);
+        }
+
+        if (backSlot && item.backImg) {
+            backSlot.classList.add('filled');
+            backSlot.innerHTML = `
+                <img src="${item.backImg}" />
+            `;
+            backSlot.onclick = () => window.loadFromQueue(idx);
+        }
     });
 }
 

@@ -2,7 +2,7 @@
 :root {
     --card-width: 880px;
     --card-height: 630px;
-    --cell-size: 140px;
+    --cell-size: 130px;
     --gap-h: 8px;
     --gap-v: 8px;
     --accent-gold: #d4af37;
@@ -416,7 +416,7 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 30px;
+    top: 20px;
     left: 50%;
     transform: translateX(-50%);
     display: grid;
@@ -559,13 +559,13 @@ button {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 50px;
     background-color: #000;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 20;
-    padding: 0 20px;
+    padding: 0 30px;
 }
 
 .card-title-input {
@@ -573,11 +573,11 @@ button {
     border: none;
     color: #fff;
     font-family: 'Uncial Antiqua', serif;
-    font-size: 24px;
+    font-size: 20px;
     text-align: left;
-    width: 70%;
+    width: 60%;
     outline: none;
-    padding: 5px;
+    padding: 0;
 }
 
 .card-title-input:focus {
@@ -586,14 +586,14 @@ button {
 
 .difficulty-display {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     z-index: 30;
 }
 
 .difficulty-dot {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     background-color: #333;
     border-radius: 50%;
     border: 1px solid #555;
@@ -744,7 +744,176 @@ button {
     background-color: #000 !important;
 }
 
-/* Print styles */
+/* Preview Panel Styles */
+.preview-panel {
+    position: fixed;
+    right: -100%;
+    top: 0;
+    width: 500px;
+    height: 100vh;
+    background-color: var(--panel-bg);
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    border-left: 1px solid var(--panel-border);
+    z-index: 2000;
+    transition: right 0.4s cubic-bezier(0.19, 1, 0.22, 1);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+}
+
+.preview-panel.open {
+    right: 0;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.preview-header h3 {
+    margin: 0;
+    font-family: 'Uncial Antiqua', serif;
+    color: var(--accent-gold);
+}
+
+.close-preview {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.preview-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.schematic-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.a4-schematic {
+    width: 380px; /* Scaled A4 */
+    height: 537px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    position: relative;
+    padding: 14px; /* Scaled margin (8mm -> ~14px) */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 4px; /* Scaled gap (2mm -> ~4px) */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.a4-schematic::after {
+    content: attr(data-label);
+    position: absolute;
+    top: -20px;
+    left: 0;
+    font-size: 12px;
+    color: #86868b;
+    text-transform: uppercase;
+}
+
+.schematic-card {
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #999;
+    position: relative;
+    cursor: pointer;
+}
+
+.schematic-card.filled {
+    border: 1px solid #000;
+    background-color: #000;
+}
+
+.schematic-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.schematic-card .remove-mini {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 16px;
+    height: 16px;
+    background: #ff3b30;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.schematic-card:hover .remove-mini {
+    opacity: 1;
+}
+
+.preview-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    border-top: 1px solid var(--panel-border);
+    padding-top: 20px;
+}
+
+#open-preview-btn {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--accent-gold);
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    z-index: 1500;
+    border: none;
+}
+
+#open-preview-btn:hover {
+    transform: scale(1.1);
+}
+
+.double-sided-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: var(--text-main);
+}
 @media print {
     body * {
         visibility: hidden;

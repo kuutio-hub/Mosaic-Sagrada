@@ -153,6 +153,15 @@ function setupEventListeners() {
         }
     });
 
+    // Preview Panel toggle
+    document.getElementById('open-preview-btn').addEventListener('click', () => {
+        document.getElementById('preview-panel').classList.add('open');
+    });
+
+    document.getElementById('close-preview').addEventListener('click', () => {
+        document.getElementById('preview-panel').classList.remove('open');
+    });
+
     // Kattintás bárhova máshova -> picker/dropdown bezárása
     document.addEventListener('click', (e) => {
         if (!document.getElementById('cell-picker').contains(e.target)) {
@@ -162,15 +171,23 @@ function setupEventListeners() {
         // Print menu bezárása
         const printMenu = document.getElementById('print-menu-content');
         const printBtn = document.getElementById('print-menu-btn');
-        if (printMenu.style.display === 'block' && e.target !== printBtn && !printMenu.contains(e.target)) {
+        if (printMenu && printMenu.style.display === 'block' && e.target !== printBtn && !printMenu.contains(e.target)) {
             printMenu.style.display = 'none';
         }
 
         // Lang menu bezárása
         const langContent = document.querySelector('.lang-content');
         const langBtn = document.getElementById('current-lang');
-        if (langContent.classList.contains('show') && e.target !== langBtn && !langContent.contains(e.target)) {
+        if (langContent && langContent.classList.contains('show') && e.target !== langBtn && !langContent.contains(e.target)) {
             langContent.classList.remove('show');
+        }
+
+        // Preview panel bezárása ha kívülre kattintunk
+        const previewPanel = document.getElementById('preview-panel');
+        const openPreviewBtn = document.getElementById('open-preview-btn');
+        if (previewPanel && previewPanel.classList.contains('open') && 
+            !previewPanel.contains(e.target) && e.target !== openPreviewBtn) {
+            previewPanel.classList.remove('open');
         }
     });
 
@@ -328,24 +345,52 @@ function preparePrintLayout() {
         return;
     }
     
-    // Duplex nyomtatás: 
-    // A queue-ban [F1, B1, F2, B2...] sorrendben vannak az elemek (ha kétoldalas)
-    // Vagy csak [F1, F2...] ha egyoldalas.
+    const isDoubleSided = document.getElementById('double-sided').checked;
+    
+    // Front page
+    const frontPage = document.createElement('div');
+    frontPage.className = 'print-page';
     
     state.patternQueue.forEach((item, index) => {
-        const page = document.createElement('div');
-        page.className = 'print-page';
-        
+        if (index >= 9) return;
         const cardWrapper = document.createElement('div');
         cardWrapper.className = 'print-card-wrapper';
-        
         const img = document.createElement('img');
-        img.src = item.img;
-        
+        img.src = item.frontImg;
         cardWrapper.appendChild(img);
-        page.appendChild(cardWrapper);
-        printContainer.appendChild(page);
+        frontPage.appendChild(cardWrapper);
     });
+    printContainer.appendChild(frontPage);
+
+    // Back page if double sided
+    if (isDoubleSided) {
+        const backPage = document.createElement('div');
+        backPage.className = 'print-page';
+        
+        // For back page, we need to mirror the order horizontally
+        // Front: 1 2 3 -> Back: 3 2 1
+        // Front: 4 5 6 -> Back: 6 5 4
+        // Front: 7 8 9 -> Back: 9 8 7
+        
+        const rows = [
+            state.patternQueue.slice(0, 3),
+            state.patternQueue.slice(3, 6),
+            state.patternQueue.slice(6, 9)
+        ];
+
+        rows.forEach(row => {
+            const reversedRow = [...row].reverse();
+            reversedRow.forEach(item => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'print-card-wrapper';
+                const img = document.createElement('img');
+                img.src = item.backImg || item.frontImg; // Fallback to front if no back
+                cardWrapper.appendChild(img);
+                backPage.appendChild(cardWrapper);
+            });
+        });
+        printContainer.appendChild(backPage);
+    }
 }
 
 /**
@@ -421,11 +466,23 @@ function updateLanguage(lang) {
 // Expose functions to window for onclick handlers
 window.loadFromQueue = loadFromQueue;
 window.removeFromQueue = removeFromQueue;
+window.clearQueue = () => {
+    const lang = document.documentElement.lang || 'hu';
+    const t = translations[lang] || translations['hu'];
+    if (confirm(t.confirmClearQueue || 'Biztosan üríted a nyomtatási listát?')) {
+        state.patternQueue = [];
+        updateQueueUI();
+    }
+};
 
 // Start
 window.addEventListener('DOMContentLoaded', async () => {
     try {
         await init();
+        const clearBtn = document.getElementById('clear-queue');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', window.clearQueue);
+        }
     } catch (err) {
         console.error("Initialization error:", err);
         document.body.innerHTML = `<div style="color:red; padding:20px;">Hiba történt az alkalmazás betöltésekor: ${err.message}</div>`;

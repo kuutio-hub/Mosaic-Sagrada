@@ -29,30 +29,27 @@ export async function addToQueue() {
         let backData = null;
 
         if (isDoubleSided) {
-            const originalDisplay = backCard.style.display;
+            const originalDisplayFront = frontCard.style.display;
+            const originalDisplayBack = backCard.style.display;
+            
+            frontCard.style.display = 'none';
             backCard.style.display = 'block';
             backData = await renderToCanvas('card-back');
-            backCard.style.display = originalDisplay;
+            
+            frontCard.style.display = originalDisplayFront;
+            backCard.style.display = originalDisplayBack;
         }
 
         if (frontData) {
             state.patternQueue.push({
                 title: state.front.title,
                 difficulty: state.front.difficulty,
-                cells: state.front.cells.map(c => ({ ...c })),
-                img: frontData,
-                side: 'front'
+                frontImg: frontData,
+                backImg: backData,
+                isDoubleSided: isDoubleSided,
+                frontState: JSON.parse(JSON.stringify(state.front)),
+                backState: isDoubleSided ? JSON.parse(JSON.stringify(state.back)) : null
             });
-            
-            if (isDoubleSided && backData) {
-                state.patternQueue.push({
-                    title: state.back.title,
-                    difficulty: state.back.difficulty,
-                    cells: state.back.cells.map(c => ({ ...c })),
-                    img: backData,
-                    side: 'back'
-                });
-            }
             updateQueueUI();
         }
     } catch (err) {
@@ -73,13 +70,27 @@ export function removeFromQueue(index) {
 
 export function loadFromQueue(index) {
     const item = state.patternQueue[index];
-    const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
     
-    state[side].title = item.title;
-    state[side].difficulty = item.difficulty;
-    state[side].cells = item.cells.map(c => ({ ...c }));
-    renderGrid(side);
-    document.querySelector(`.card-title-input[data-side="${side}"]`).value = item.title;
+    // Load front
+    state.front.title = item.frontState.title;
+    state.front.difficulty = item.frontState.difficulty;
+    state.front.cells = item.frontState.cells.map(c => ({ ...c }));
+    
+    // Load back if exists
+    if (item.backState) {
+        state.back.title = item.backState.title;
+        state.back.difficulty = item.backState.difficulty;
+        state.back.cells = item.backState.cells.map(c => ({ ...c }));
+        document.getElementById('double-sided').checked = true;
+    } else {
+        document.getElementById('double-sided').checked = false;
+    }
+
+    renderGrid('front');
+    renderGrid('back');
+    
+    document.querySelector(`.card-title-input[data-side="front"]`).value = state.front.title;
+    document.querySelector(`.card-title-input[data-side="back"]`).value = state.back.title;
 }
 
 export async function loadPromoCards() {

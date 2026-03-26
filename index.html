@@ -34,11 +34,7 @@
                     </div>
                 </div>
 
-                <div class="control-item">
-                    <label for="double-sided" id="label-double-sided" data-i18n="doubleSided">Kétoldalas:</label>
-                    <input type="checkbox" id="double-sided" checked>
-                </div>
-                <button id="add-to-queue" class="btn-secondary" data-i18n="addToQueue">Hozzáadás a listához</button>
+                <button id="add-to-queue" class="btn-primary" data-i18n="addToQueue">Hozzáadás a listához</button>
                 
                 <div class="print-dropdown" style="position: relative; display: inline-block;">
                     <button id="print-menu-btn" class="btn-primary" data-i18n="print">Nyomtatás ▼</button>
@@ -100,18 +96,56 @@
                     </div>
                 </div>
             </div>
-
-            <aside class="queue-sidebar no-print">
-                <h3 id="title-queue" data-i18n="queue">Nyomtatási lista</h3>
-                <div id="pattern-queue" class="queue-list">
-                    <p class="empty-msg" data-i18n="emptyQueue">A lista üres. Adj hozzá mintákat!</p>
-                </div>
-                <div class="queue-actions">
-                    <button id="clear-queue" class="btn-danger" data-i18n="clearQueue">Lista törlése</button>
-                </div>
-            </aside>
         </div>
     </main>
+
+    <!-- Nyomtatási Előnézet Panel -->
+    <button id="open-preview-btn" title="Nyomtatási lista">🖨️</button>
+    <div id="preview-panel" class="preview-panel">
+        <div class="preview-header">
+            <h3 data-i18n="queue">Nyomtatási lista</h3>
+            <button class="close-preview" id="close-preview">&times;</button>
+        </div>
+        
+        <div class="preview-scroll">
+            <div class="double-sided-control">
+                <input type="checkbox" id="double-sided" checked>
+                <label for="double-sided" data-i18n="doubleSided">Kétoldalas nyomtatás</label>
+            </div>
+
+            <div class="schematic-container">
+                <div class="a4-schematic" id="schematic-front" data-label="ELŐLAP (A4)">
+                    <!-- 9 slots -->
+                    <div class="schematic-card" data-index="0">1</div>
+                    <div class="schematic-card" data-index="1">2</div>
+                    <div class="schematic-card" data-index="2">3</div>
+                    <div class="schematic-card" data-index="3">4</div>
+                    <div class="schematic-card" data-index="4">5</div>
+                    <div class="schematic-card" data-index="5">6</div>
+                    <div class="schematic-card" data-index="6">7</div>
+                    <div class="schematic-card" data-index="7">8</div>
+                    <div class="schematic-card" data-index="8">9</div>
+                </div>
+                <div class="a4-schematic" id="schematic-back" data-label="HÁTLAP (A4)">
+                    <!-- 9 slots (mirrored order for duplex) -->
+                    <div class="schematic-card" data-index="2">3</div>
+                    <div class="schematic-card" data-index="1">2</div>
+                    <div class="schematic-card" data-index="0">1</div>
+                    <div class="schematic-card" data-index="5">6</div>
+                    <div class="schematic-card" data-index="4">5</div>
+                    <div class="schematic-card" data-index="3">4</div>
+                    <div class="schematic-card" data-index="8">9</div>
+                    <div class="schematic-card" data-index="7">8</div>
+                    <div class="schematic-card" data-index="6">7</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="preview-actions">
+            <button id="print-btn" class="btn-primary" data-i18n="print">Nyomtatás indítása</button>
+            <button id="clear-queue" class="btn-danger" data-i18n="clearQueue">Lista ürítése</button>
+        </div>
+    </div>
 
     <!-- Cellaválasztó menü -->
     <div id="cell-picker" class="picker-hidden">

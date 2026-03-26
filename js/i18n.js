@@ -32,7 +32,12 @@ export const translations = {
         alertQueueEmpty: "A nyomtatási lista üres!",
         confirmClear: "Biztosan törlöd a teljes listát?",
         reset: "Kártya törlése (Alaphelyzet)",
-        alertPdfError: "Hiba történt a PDF generálása közben."
+        alertPdfError: "Hiba történt a PDF generálása közben.",
+        previewTitle: "Nyomtatási előnézet",
+        frontPage: "Előlap (A4)",
+        backPage: "Hátlap (A4)",
+        doubleSidedPrint: "Kétoldalas nyomtatás",
+        confirmClearQueue: "Biztosan üríted a nyomtatási listát?"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -67,7 +72,12 @@ export const translations = {
         alertQueueEmpty: "The print list is empty!",
         confirmClear: "Are you sure you want to clear the entire list?",
         reset: "Clear Card (Reset)",
-        alertPdfError: "Error generating PDF."
+        alertPdfError: "Error generating PDF.",
+        previewTitle: "Print Preview",
+        frontPage: "Front Page (A4)",
+        backPage: "Back Page (A4)",
+        doubleSidedPrint: "Double-sided Printing",
+        confirmClearQueue: "Are you sure you want to clear the print list?"
     },
     de: {
         title: "Sagrada Muster-Designer",
