@@ -41,12 +41,20 @@
             <aside class="tools-sidebar no-print">
                 <div class="tool-section">
                     <h3>Promo kártyák</h3>
+                    <div class="side-selector">
+                        <label><input type="radio" name="promo-side" value="front" checked> Előlap</label>
+                        <label><input type="radio" name="promo-side" value="back"> Hátlap</label>
+                    </div>
                     <select id="promo-select">
                         <option value="">Válassz promo kártyát...</option>
                     </select>
                 </div>
                 <div class="tool-section">
                     <h3>Saját kártyák</h3>
+                    <div class="side-selector">
+                        <label><input type="radio" name="saved-side" value="front" checked> Előlap</label>
+                        <label><input type="radio" name="saved-side" value="back"> Hátlap</label>
+                    </div>
                     <select id="saved-select">
                         <option value="">Válassz mentett kártyát...</option>
                     </select>
@@ -62,8 +70,8 @@
                         <div class="grid-layer" id="grid-front"></div>
                         <div class="footer-layer">
                             <input type="text" class="card-title-input" value="MINTA NÉV" data-side="front">
-                            <div class="difficulty-display" data-side="front"></div>
                         </div>
+                        <div class="difficulty-display" data-side="front"></div>
                     </div>
                 </div>
 
@@ -74,8 +82,8 @@
                         <div class="grid-layer" id="grid-back"></div>
                         <div class="footer-layer">
                             <input type="text" class="card-title-input" value="MINTA NÉV (HÁT)" data-side="back">
-                            <div class="difficulty-display" data-side="back"></div>
                         </div>
+                        <div class="difficulty-display" data-side="back"></div>
                     </div>
                 </div>
             </div>

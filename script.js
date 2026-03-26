@@ -105,6 +105,11 @@ function updateCellAppearance(cell, val) {
 
     if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(val)) {
         cell.classList.add(`c-${val.toLowerCase()}`);
+        if (val === 'W') {
+            cell.style.backgroundColor = '#ffffff';
+        } else {
+            cell.style.backgroundColor = ''; // Reset if not W
+        }
     } else if (val === 'X') {
         cell.classList.add('v-x');
         cell.textContent = 'X';
@@ -117,6 +122,8 @@ function updateCellAppearance(cell, val) {
         diceFace.dataset.val = val;
         
         const numDots = parseInt(val);
+        // Always create 6 dots, CSS will hide/show them based on data-val if we use a better approach, 
+        // OR just create the exact number. The current CSS uses nth-child, so we must create the exact number.
         for (let i = 0; i < numDots; i++) {
             const dot = document.createElement('div');
             dot.className = 'dice-dot';
@@ -133,19 +140,21 @@ function renderDifficulty(side) {
     const container = document.querySelector(`.difficulty-display[data-side="${side}"]`);
     container.innerHTML = '';
 
-    const diff = state[side].difficulty;
+    const diff = state[side].difficulty || 3;
     
-    for (let i = 0; i < diff; i++) {
+    // Sagrada usually has 3-6 dots, but user asked for 1-6
+    for (let i = 1; i <= 6; i++) {
         const dot = document.createElement('div');
-        dot.className = 'difficulty-dot';
+        dot.className = 'difficulty-dot' + (i <= diff ? ' active' : '');
+        
+        dot.addEventListener('click', (e) => {
+            e.stopPropagation();
+            state[side].difficulty = i;
+            renderDifficulty(side);
+        });
+        
         container.appendChild(dot);
     }
-    
-    container.addEventListener('click', (e) => {
-        e.stopPropagation();
-        state[side].difficulty = (state[side].difficulty % 5) + 1;
-        renderDifficulty(side);
-    });
 }
 
 /**
@@ -223,23 +232,27 @@ function setupEventListeners() {
 
     // Nyomtatóbarát toggle
     document.getElementById('printer-friendly').addEventListener('change', (e) => {
-        if (e.target.checked) {
-            document.body.classList.add('printer-friendly');
-        } else {
-            document.body.classList.remove('printer-friendly');
-        }
+        const cards = document.querySelectorAll('.sagrada-card');
+        cards.forEach(card => {
+            if (e.target.checked) {
+                card.classList.add('printer-friendly');
+            } else {
+                card.classList.remove('printer-friendly');
+            }
+        });
     });
 
     // Promo kártya választás
     document.getElementById('promo-select').addEventListener('change', (e) => {
         const cardId = e.target.value;
+        const side = document.querySelector('input[name="promo-side"]:checked').value;
         if (cardId) {
             const card = promoCards.find(c => c.id === cardId);
             if (card) {
-                applyCardToState(card, 'front');
-                renderGrid('front');
+                applyCardToState(card, side);
+                renderGrid(side);
                 // Frissítsük az inputot is
-                document.querySelector('.card-title-input[data-side="front"]').value = card.title;
+                document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
             }
         }
     });
@@ -247,21 +260,23 @@ function setupEventListeners() {
     // Saját kártya választás
     document.getElementById('saved-select').addEventListener('change', (e) => {
         const cardTitle = e.target.value;
+        const side = document.querySelector('input[name="saved-side"]:checked').value;
         if (cardTitle) {
             const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
             const card = savedCards.find(c => c.title === cardTitle);
             if (card) {
-                state.front = JSON.parse(JSON.stringify(card));
-                renderGrid('front');
-                document.querySelector('.card-title-input[data-side="front"]').value = card.title;
+                state[side] = JSON.parse(JSON.stringify(card));
+                renderGrid(side);
+                document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
             }
         }
     });
 
     // Mentés gomb
     document.getElementById('save-card').addEventListener('click', () => {
+        const side = document.querySelector('input[name="saved-side"]:checked').value;
         const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
-        const currentCard = JSON.parse(JSON.stringify(state.front));
+        const currentCard = JSON.parse(JSON.stringify(state[side]));
         
         // Ha már létezik ilyen nevű, frissítjük, különben hozzáadjuk
         const existingIdx = savedCards.findIndex(c => c.title === currentCard.title);
@@ -341,7 +356,8 @@ function applyCardToState(card, side) {
     card.grid.forEach(row => {
         for (let char of row) {
             let val = char.toUpperCase();
-            if (val === 'W') val = '.'; // A 'w' a txt-ben valószínűleg üres/fehér
+            // 'w' is white in the txt, but we want to map it to 'W' for our CSS
+            if (val === 'W') val = 'W'; 
             cells.push(val);
         }
     });
@@ -358,16 +374,17 @@ async function addToQueue() {
 
     try {
         // Rendereljük a kártyákat canvas-ra, hogy elmentsük a pillanatnyi állapotot
-        const frontCanvas = await renderToCanvas('card-front');
-        const backCanvas = await renderToCanvas('card-back');
+        const frontData = await renderToCanvas('card-front');
+        const backData = await renderToCanvas('card-back');
 
-        patternQueue.push({
-            title: state.front.title,
-            frontImg: frontCanvas.toDataURL('image/png'),
-            backImg: backCanvas.toDataURL('image/png')
-        });
-
-        updateQueueUI();
+        if (frontData && backData) {
+            patternQueue.push({
+                title: state.front.title,
+                frontImg: frontData,
+                backImg: backData
+            });
+            updateQueueUI();
+        }
     } catch (err) {
         console.error("Hiba a hozzáadáskor:", err);
         alert("Hiba történt a kártya mentésekor.");
@@ -393,6 +410,7 @@ function updateQueueUI() {
         const div = document.createElement('div');
         div.className = 'queue-item';
         div.innerHTML = `
+            <input type="checkbox" class="queue-select" data-index="${index}" checked>
             <span>${index + 1}. ${item.title}</span>
             <button class="remove-btn" onclick="removeFromQueue(${index})">&times;</button>
         `;
@@ -412,10 +430,15 @@ window.removeFromQueue = function(index) {
  * PDF Exportálás (Lista alapján)
  */
 async function exportPDF() {
-    if (patternQueue.length === 0) {
-        alert("A lista üres! Adj hozzá legalább egy mintát.");
+    const selectedIndices = Array.from(document.querySelectorAll('.queue-select:checked'))
+        .map(cb => parseInt(cb.dataset.index));
+
+    if (selectedIndices.length === 0) {
+        alert("Nincs kiválasztott kártya!");
         return;
     }
+
+    const selectedQueue = selectedIndices.map(idx => patternQueue[idx]);
 
     const btn = document.getElementById('export-pdf');
     const originalText = btn.textContent;
@@ -423,6 +446,7 @@ async function exportPDF() {
     btn.disabled = true;
 
     try {
+        const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
@@ -431,41 +455,32 @@ async function exportPDF() {
 
         const doubleSided = document.getElementById('double-sided').checked;
         
-        // Kártya méretei mm-ben (eredeti méret)
         const cardW = 106.3;
         const cardH = 94.5;
         
-        // Elrendezés: 2 oszlop, 2 sor (elforgatva 90 fokkal)
-        // Vagy 1 oszlop, 3 sor (nem elforgatva)
-        // A 2x2 elforgatott layout több helyet ad (4 kártya / oldal)
-        
         const cardsPerPage = 4;
-        const totalPages = Math.ceil(patternQueue.length / cardsPerPage);
+        const totalPages = Math.ceil(selectedQueue.length / cardsPerPage);
 
         for (let p = 0; p < totalPages; p++) {
             const startIdx = p * cardsPerPage;
-            const endIdx = Math.min(startIdx + cardsPerPage, patternQueue.length);
-            const pageItems = patternQueue.slice(startIdx, endIdx);
+            const endIdx = Math.min(startIdx + cardsPerPage, selectedQueue.length);
+            const pageItems = selectedQueue.slice(startIdx, endIdx);
 
             // FRONT OLDAL
             if (p > 0) pdf.addPage();
             
             pageItems.forEach((item, i) => {
-                // i: 0, 1, 2, 3
                 const col = i % 2;
                 const row = Math.floor(i / 2);
                 
-                // Elforgatott pozíciók
-                // A4: 210 x 297
-                // Card rotated: 94.5 x 106.3
                 const marginX = (210 - (2 * cardH)) / 3;
                 const marginY = (297 - (2 * cardW)) / 3;
                 
                 const x = marginX + col * (cardH + marginX);
                 const y = marginY + row * (cardW + marginY);
 
-                // Forgatás: a középpont körül
-                pdf.addImage(item.frontImg, 'PNG', x, y + cardW, cardH, cardW, null, null, -90);
+                // Rotate -90 degrees around (x, y + cardW)
+                pdf.addImage(item.frontImg, 'PNG', x, y + cardW, cardH, cardW, null, 'FAST', -90);
             });
 
             // BACK OLDAL (ha kérték)
@@ -484,16 +499,17 @@ async function exportPDF() {
                     const x = marginX + targetCol * (cardH + marginX);
                     const y = marginY + row * (cardW + marginY);
 
-                    pdf.addImage(item.backImg, 'PNG', x, y + cardW, cardH, cardW, null, null, -90);
+                    if (item.backImg) {
+                        pdf.addImage(item.backImg, 'PNG', x, y + cardW, cardH, cardW, null, 'FAST', -90);
+                    }
                 });
             }
         }
 
-        pdf.save(`sagrada_collection_${Date.now()}.pdf`);
-
+        pdf.save('sagrada_patterns.pdf');
     } catch (err) {
-        console.error("PDF hiba:", err);
-        alert("Hiba történt a PDF generálása során.");
+        console.error("PDF export error:", err);
+        alert("Hiba történt a PDF generálása közben.");
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -505,21 +521,66 @@ async function exportPDF() {
  */
 async function renderToCanvas(id) {
     const el = document.getElementById(id);
+    if (!el) return null;
+
+    // Create a temporary container to render the card at 1:1 scale
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '-5000px';
+    tempContainer.style.top = '-5000px';
+    tempContainer.style.width = '1063px';
+    tempContainer.style.height = '945px';
+    tempContainer.style.backgroundColor = 'white';
+    document.body.appendChild(tempContainer);
+
+    const clone = el.cloneNode(true);
+    clone.style.transform = 'none';
+    clone.style.zoom = '1';
+    clone.style.position = 'relative';
+    clone.style.left = '0';
+    clone.style.top = '0';
+    clone.style.margin = '0';
     
-    // Ideiglenesen levesszük a zoom-ot a pontos rendereléshez
-    const originalZoom = el.style.zoom;
-    el.style.zoom = "1";
-    
-    const canvas = await html2canvas(el, {
-        scale: 2, // Jobb minőség
-        backgroundColor: null,
-        logging: false,
-        useCORS: true
-    });
-    
-    el.style.zoom = originalZoom;
-    return canvas;
+    // Ensure inputs are correctly rendered as text in the clone
+    const originalInput = el.querySelector('.card-title-input');
+    const cloneInput = clone.querySelector('.card-title-input');
+    if (originalInput && cloneInput) {
+        const textSpan = document.createElement('span');
+        textSpan.textContent = originalInput.value;
+        // Copy essential styles for the text
+        const style = window.getComputedStyle(originalInput);
+        textSpan.style.fontFamily = style.fontFamily;
+        textSpan.style.fontSize = style.fontSize;
+        textSpan.style.fontWeight = style.fontWeight;
+        textSpan.style.color = style.color;
+        textSpan.style.textAlign = 'center';
+        textSpan.style.display = 'block';
+        textSpan.style.width = '100%';
+        textSpan.style.marginTop = '10px';
+        cloneInput.parentNode.replaceChild(textSpan, cloneInput);
+    }
+
+    tempContainer.appendChild(clone);
+
+    try {
+        const canvas = await html2canvas(clone, {
+            scale: 2, // High DPI for printing
+            useCORS: true,
+            backgroundColor: null,
+            logging: false,
+            width: 1063,
+            height: 945
+        });
+        document.body.removeChild(tempContainer);
+        return canvas.toDataURL('image/png');
+    } catch (err) {
+        console.error("Canvas render error:", err);
+        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+        return null;
+    }
 }
 
 // Start
-init();
+window.addEventListener('DOMContentLoaded', () => {
+    init();
+});
