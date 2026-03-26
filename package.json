@@ -1,15 +1,8 @@
 {
   "name": "sagrada-pattern-designer",
-  "private": true,
   "version": "1.0.0",
-  "type": "module",
+  "description": "Static Sagrada pattern designer",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "lint": "echo 'No linting needed for static project'"
-  },
-  "dependencies": {
-    "vite": "^6.2.0"
+    "start": "echo 'Static project, no build needed'"
   }
 }

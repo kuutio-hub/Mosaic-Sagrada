@@ -242,6 +242,9 @@ function setupEventListeners() {
         });
     });
 
+    // Side toggle
+    document.getElementById('side-toggle').addEventListener('click', toggleSide);
+
     // Promo kártya választás
     document.getElementById('promo-select').addEventListener('change', (e) => {
         const cardId = e.target.value;
@@ -397,6 +400,7 @@ async function addToQueue() {
 /**
  * Lista UI frissítése
  */
+// Updated queue UI to show pairs
 function updateQueueUI() {
     const container = document.getElementById('pattern-queue');
     container.innerHTML = '';
@@ -406,13 +410,28 @@ function updateQueueUI() {
         return;
     }
 
-    patternQueue.forEach((item, index) => {
+function updateQueueUI() {
+    const container = document.getElementById('pattern-queue');
+    container.innerHTML = '';
+
+    if (patternQueue.length === 0) {
+        container.innerHTML = '<p class="empty-msg">A lista üres. Adj hozzá mintákat!</p>';
+        return;
+    }
+
+    patternQueue.forEach((item, idx) => {
         const div = document.createElement('div');
         div.className = 'queue-item';
+        div.style.border = "1px solid var(--accent-gold)";
+        div.style.padding = "5px";
+        div.style.marginBottom = "10px";
         div.innerHTML = `
-            <input type="checkbox" class="queue-select" data-index="${index}" checked>
-            <span>${index + 1}. ${item.title}</span>
-            <button class="remove-btn" onclick="removeFromQueue(${index})">&times;</button>
+            <div style="flex:1; font-size:12px">
+                <div>${item.title} (${item.side === 'front' ? 'Előlap' : 'Hátlap'})</div>
+                <div style="color:var(--gold)">Nehézség: ${item.difficulty}</div>
+            </div>
+            <button onclick="loadFromQueue(${idx})" class="btn-secondary" style="padding:2px 5px; font-size:10px; margin-right:5px">Szerkeszt</button>
+            <button onclick="removeFromQueue(${idx})" style="color:red; background:none; border:none; cursor:pointer">×</button>
         `;
         container.appendChild(div);
     });

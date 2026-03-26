@@ -63,8 +63,8 @@
             </aside>
 
             <div class="editor-container">
-                <div class="card-wrapper">
-                    <h3>Előlap</h3>
+                <div class="card-wrapper active" id="card-container">
+                    <div id="side-toggle" class="side-tag">ELŐLAP (Kattints a fordításhoz)</div>
                     <div id="card-front" class="sagrada-card">
                         <div class="svg-layer" id="frame-front-svg"></div>
                         <div class="grid-layer" id="grid-front"></div>
@@ -73,11 +73,7 @@
                         </div>
                         <div class="difficulty-display" data-side="front"></div>
                     </div>
-                </div>
-
-                <div class="card-wrapper">
-                    <h3>Hátlap</h3>
-                    <div id="card-back" class="sagrada-card">
+                    <div id="card-back" class="sagrada-card" style="display:none;">
                         <div class="svg-layer" id="frame-back-svg"></div>
                         <div class="grid-layer" id="grid-back"></div>
                         <div class="footer-layer">
