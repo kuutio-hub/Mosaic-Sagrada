@@ -1,6 +1,6 @@
 import { state } from './js/state.js';
 import { renderGrid, renderDifficulty, updateQueueUI } from './js/ui.js';
-import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard } from './js/cardManager.js';
+import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard, deleteSavedCard } from './js/cardManager.js';
 import { exportPDF } from './js/utils.js';
 import { translations } from './js/i18n.js';
 
@@ -54,6 +54,11 @@ async function init() {
     
     // Set initial language
     updateLanguage('hu');
+
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        document.body.classList.toggle('light-mode');
+    });
 }
 
 /**
@@ -188,13 +193,15 @@ function setupEventListeners() {
     });
 
     // Export gomb
-    document.getElementById('export-pdf').addEventListener('click', () => {
+    document.getElementById('export-pdf').addEventListener('click', (e) => {
+        e.stopPropagation();
         document.getElementById('print-menu-content').style.display = 'none';
         exportPDF(state.patternQueue);
     });
 
     // Nyomtatás gomb
-    document.getElementById('print-btn').addEventListener('click', () => {
+    document.getElementById('print-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
         document.getElementById('print-menu-content').style.display = 'none';
         preparePrintLayout();
         window.print();
@@ -254,6 +261,25 @@ function setupEventListeners() {
             applySavedCard(title);
         }
     });
+
+    // Saved kártya törlése
+    const deleteBtn = document.createElement('button');
+    deleteBtn.id = 'delete-saved';
+    deleteBtn.className = 'btn-danger';
+    deleteBtn.style.width = '100%';
+    deleteBtn.style.marginTop = '10px';
+    deleteBtn.textContent = 'Törlés';
+    deleteBtn.addEventListener('click', () => {
+        const title = document.getElementById('saved-select').value;
+        if (title) {
+            const lang = document.documentElement.lang || 'hu';
+            const t = translations[lang] || translations['hu'];
+            if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
+                deleteSavedCard(title);
+            }
+        }
+    });
+    document.getElementById('apply-saved').parentNode.appendChild(deleteBtn);
 
     // Kártya fordítása kattintásra
     document.getElementById('card-container').addEventListener('click', (e) => {
@@ -322,20 +348,22 @@ window.toggleSide = function() {
     if (front.style.display === 'none') {
         front.style.display = 'block';
         back.style.display = 'none';
-        toggle.textContent = translations[lang].frontSide;
+        toggle.textContent = translations[lang].frontSide + ' (Kattints a fordításhoz)';
     } else {
         front.style.display = 'none';
         back.style.display = 'block';
-        toggle.textContent = translations[lang].backSide;
+        toggle.textContent = translations[lang].backSide + ' (Kattints a fordításhoz)';
     }
 }
 
 
 // Language switcher
 document.querySelectorAll('.lang-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
         const lang = btn.dataset.lang;
         updateLanguage(lang);
+        document.getElementById('current-lang').textContent = btn.textContent;
     });
 });
 

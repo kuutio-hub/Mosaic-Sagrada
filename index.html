@@ -25,11 +25,17 @@
         <div class="header-content">
             <h1 data-i18n="title">Sagrada Pattern Designer</h1>
             <div class="controls">
-                <div class="control-item">
-                    <button class="lang-btn" data-lang="hu" title="Magyar">🇭🇺</button>
-                    <button class="lang-btn" data-lang="en" title="English">🇬🇧</button>
-                    <button class="lang-btn" data-lang="de" title="Deutsch">🇩🇪</button>
+                <button id="theme-toggle" class="theme-toggle" title="Váltás sötét/világos mód között">🌓</button>
+                
+                <div class="lang-dropdown">
+                    <button class="lang-dropbtn" id="current-lang">🇭🇺</button>
+                    <div class="lang-content">
+                        <button class="lang-btn" data-lang="hu" title="Magyar">🇭🇺</button>
+                        <button class="lang-btn" data-lang="en" title="English">🇬🇧</button>
+                        <button class="lang-btn" data-lang="de" title="Deutsch">🇩🇪</button>
+                    </div>
                 </div>
+
                 <div class="control-item">
                     <label for="double-sided" id="label-double-sided" data-i18n="doubleSided">Kétoldalas:</label>
                     <input type="checkbox" id="double-sided" checked>
@@ -38,10 +44,10 @@
                 
                 <div class="print-dropdown" style="position: relative; display: inline-block;">
                     <button id="print-menu-btn" class="btn-primary" data-i18n="print">Nyomtatás ▼</button>
-                    <div id="print-menu-content" style="display: none; position: absolute; right: 0; background-color: var(--panel-bg); backdrop-filter: blur(20px); min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 12px; padding: 10px; border: 1px solid var(--panel-border); margin-top: 5px;">
+                    <div id="print-menu-content" style="display: none; position: absolute; right: 0; background-color: var(--panel-bg); backdrop-filter: blur(20px); min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1002; border-radius: 12px; padding: 10px; border: 1px solid var(--panel-border); margin-top: 5px;">
                         <button id="export-pdf" class="btn-secondary" style="width: 100%; margin-bottom: 5px; text-align: left;" data-i18n="exportPDF">PDF Export (Lista)</button>
                         <button id="print-btn" class="btn-secondary" style="width: 100%; margin-bottom: 5px; text-align: left;" data-i18n="print">Nyomtatás (Lista)</button>
-                        <label style="display: block; margin-top: 10px; font-size: 12px; color: var(--text-primary); cursor: pointer;">
+                        <label style="display: block; margin-top: 10px; font-size: 12px; color: var(--text-main); cursor: pointer;">
                             <input type="checkbox" id="printer-friendly"> <span data-i18n="printerFriendly">Nyomtatóbarát</span>
                         </label>
                     </div>
@@ -72,22 +78,24 @@
 
             <div class="editor-container">
                 <div class="card-wrapper active" id="card-container">
-                    <div id="side-toggle" class="side-tag">ELŐLAP (Kattints a fordításhoz)</div>
+                    <div class="side-tag">
+                        <button id="side-toggle" class="flip-btn">ELŐLAP (Kattints a fordításhoz)</button>
+                    </div>
                     <div id="card-front" class="sagrada-card">
                         <div class="svg-layer" id="frame-front-svg"></div>
                         <div class="grid-layer" id="grid-front"></div>
                         <div class="footer-layer">
                             <input type="text" class="card-title-input" value="MINTA NÉV" data-side="front">
+                            <div class="difficulty-display" data-side="front"></div>
                         </div>
-                        <div class="difficulty-display" data-side="front"></div>
                     </div>
                     <div id="card-back" class="sagrada-card" style="display:none;">
                         <div class="svg-layer" id="frame-back-svg"></div>
                         <div class="grid-layer" id="grid-back"></div>
                         <div class="footer-layer">
                             <input type="text" class="card-title-input" value="MINTA NÉV (HÁT)" data-side="back">
+                            <div class="difficulty-display" data-side="back"></div>
                         </div>
-                        <div class="difficulty-display" data-side="back"></div>
                     </div>
                 </div>
             </div>

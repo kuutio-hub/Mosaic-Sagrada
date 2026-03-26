@@ -6,10 +6,25 @@
     --gap-h: 25px;
     --gap-v: 20px;
     --accent-gold: #d4af37;
-    --bg-dark: #f5f5f7; /* Apple light gray */
+    
+    /* Default (Dark) Theme */
+    --bg-main: #1a1a1a;
+    --text-main: #f5f5f7;
+    --panel-bg: rgba(30, 30, 30, 0.8);
+    --panel-border: rgba(255, 255, 255, 0.1);
+    --btn-secondary-bg: #333;
+    --btn-secondary-text: #f5f5f7;
+    --card-bg: #000;
+}
+
+body.light-mode {
+    --bg-main: #f5f5f7;
     --text-main: #1d1d1f;
     --panel-bg: rgba(255, 255, 255, 0.8);
     --panel-border: rgba(0, 0, 0, 0.1);
+    --btn-secondary-bg: #e8e8ed;
+    --btn-secondary-text: #1d1d1f;
+    --card-bg: #111;
 }
 
 * {
@@ -19,11 +34,12 @@
 body {
     margin: 0;
     padding: 0;
-    background-color: var(--bg-dark);
+    background-color: var(--bg-main);
     color: var(--text-main);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 header {
@@ -51,36 +67,62 @@ header {
 h1 {
     font-family: 'Uncial Antiqua', serif;
     margin: 0;
-    color: #000;
+    color: var(--accent-gold);
     font-size: 24px;
     letter-spacing: 1px;
 }
 
 .controls {
     display: flex;
-    gap: 20px;
+    gap: 15px;
     align-items: center;
+    margin-left: auto;
 }
 
-.control-item {
+.lang-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.lang-dropbtn {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.lang-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: var(--panel-bg);
+    backdrop-filter: blur(20px);
+    min-width: 60px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1001;
+    border-radius: 12px;
+    border: 1px solid var(--panel-border);
+    margin-top: 5px;
+}
+
+.lang-dropdown:hover .lang-content {
+    display: block;
+}
+
+.theme-toggle {
+    background: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 18px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.lang-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    padding: 0 5px;
-    cursor: pointer;
-    transition: transform 0.2s;
-}
-
-.lang-btn:hover {
-    transform: scale(1.1);
+    justify-content: center;
 }
 
 button {
@@ -105,12 +147,12 @@ button {
 }
 
 .btn-secondary {
-    background-color: #e8e8ed;
-    color: #1d1d1f;
+    background-color: var(--btn-secondary-bg);
+    color: var(--btn-secondary-text);
 }
 
 .btn-secondary:hover {
-    background-color: #d2d2d7;
+    background-color: rgba(128, 128, 128, 0.2);
 }
 
 .btn-danger {
@@ -156,7 +198,7 @@ button {
 
 .tool-section h3, .queue-sidebar h3 {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-    color: #1d1d1f;
+    color: var(--text-main);
     margin-top: 0;
     font-size: 16px;
     font-weight: 600;
@@ -168,14 +210,14 @@ button {
 .tool-section select {
     width: 100%;
     padding: 10px 12px;
-    background-color: #fff;
-    color: #1d1d1f;
-    border: 1px solid #d2d2d7;
+    background-color: var(--btn-secondary-bg);
+    color: var(--text-main);
+    border: 1px solid var(--panel-border);
     border-radius: 10px;
     outline: none;
     font-size: 14px;
     appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='var(--text-main)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 16px;
@@ -213,7 +255,7 @@ button {
 }
 
 .queue-item {
-    background-color: #fff;
+    background-color: var(--btn-secondary-bg);
     border: 1px solid var(--panel-border);
     border-radius: 12px;
     padding: 12px;
@@ -221,7 +263,7 @@ button {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .queue-item span {
@@ -230,6 +272,7 @@ button {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 180px;
+    color: var(--text-main);
 }
 
 .remove-btn {
@@ -254,30 +297,38 @@ button {
     align-items: center;
     gap: 15px;
     width: calc(var(--card-width) * 0.45);
-    height: calc(var(--card-height) * 0.45 + 30px);
+    height: calc(var(--card-height) * 0.45 + 100px);
     transition: width 0.3s, height 0.3s;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .side-tag {
-    font-size: 14px;
-    font-weight: 600;
-    color: #86868b;
+    margin-bottom: 5px;
+}
+
+.flip-btn {
+    background-color: var(--accent-gold);
+    color: #000;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: -10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Kártya stílusa */
 .sagrada-card {
     width: var(--card-width);
     height: var(--card-height);
-    background-color: #111;
+    background-color: var(--card-bg);
     position: relative;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     border-radius: 25px;
-    transform-origin: top left;
+    transform-origin: top center;
     transform: scale(0.45);
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -324,13 +375,16 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 85px;
-    left: 67px; /* Finomhangolt pozíció a középre igazításhoz */
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%);
     display: grid;
     grid-template-columns: repeat(5, var(--cell-size));
     grid-template-rows: repeat(4, var(--cell-size));
     gap: var(--gap-v) var(--gap-h);
     z-index: 5;
+    width: calc(5 * var(--cell-size) + 4 * var(--gap-h));
+    height: calc(4 * var(--cell-size) + 3 * var(--gap-v));
 }
 
 .cell {
@@ -455,14 +509,15 @@ button {
 
 .footer-layer {
     position: absolute;
-    bottom: 45px;
+    bottom: 35px;
     width: 100%;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 20;
-    padding: 0 65px;
+    padding: 0 60px;
+    gap: 10px;
 }
 
 .card-title-input {
@@ -471,9 +526,9 @@ button {
     border-bottom: 2px solid rgba(212, 175, 55, 0.3);
     color: #fff;
     font-family: 'Uncial Antiqua', serif;
-    font-size: 48px;
+    font-size: 42px;
     text-align: center;
-    width: 60%;
+    width: 100%;
     outline: none;
     padding: 5px;
     transition: border-bottom-color 0.3s;
@@ -485,9 +540,6 @@ button {
 }
 
 .difficulty-display {
-    position: absolute;
-    bottom: 45px;
-    right: 65px;
     display: flex;
     gap: 8px;
     cursor: pointer;
@@ -495,12 +547,12 @@ button {
 }
 
 .difficulty-dot {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     background-color: #1a1a1a;
     border-radius: 50%;
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
-    border: 3px solid #444;
+    border: 2px solid #444;
     transition: all 0.2s;
     position: relative;
 }
@@ -554,8 +606,8 @@ button {
     justify-content: center;
     font-weight: 600;
     border-radius: 8px;
-    background-color: #fff;
-    color: #1d1d1f;
+    background-color: var(--btn-secondary-bg);
+    color: var(--text-main);
     transition: transform 0.1s, box-shadow 0.1s;
 }
 
@@ -584,28 +636,54 @@ button {
 
 .printer-friendly .svg-layer {
     filter: grayscale(1) contrast(2) brightness(1.2);
-    opacity: 0.7;
+    opacity: 0.5;
+}
+
+.printer-friendly .grid-frame {
+    stroke: #000 !important;
+}
+
+.printer-friendly .frame-outer, .printer-friendly .frame-inner, .printer-friendly .corner-dot, .printer-friendly .bottom-decoration {
+    stroke: #333 !important;
+    fill: none !important;
 }
 
 .printer-friendly .cell {
-    border-color: #333;
+    border-color: #000;
     background-image: none !important; /* Remove marble in printer friendly */
 }
 
-/* Keep cell colors in printer friendly, but maybe a bit lighter? */
-.printer-friendly .cell.c-r { background-color: #ffcccc; }
-.printer-friendly .cell.c-g { background-color: #ccffcc; }
-.printer-friendly .cell.c-b { background-color: #ccccff; }
-.printer-friendly .cell.c-y { background-color: #ffffcc; }
-.printer-friendly .cell.c-p { background-color: #ffccff; }
+.printer-friendly .card-title-input {
+    color: #000 !important;
+    border-bottom-color: #000 !important;
+    text-shadow: none !important;
+}
+
+.printer-friendly .difficulty-dot {
+    border-color: #000 !important;
+    background-color: #fff !important;
+}
+
+.printer-friendly .difficulty-dot.active {
+    background-color: #000 !important;
+}
+
+/* Keep cell colors in printer friendly, but light for ink saving */
+.printer-friendly .cell.c-r { background-color: #ffcccc !important; }
+.printer-friendly .cell.c-g { background-color: #ccffcc !important; }
+.printer-friendly .cell.c-b { background-color: #ccccff !important; }
+.printer-friendly .cell.c-y { background-color: #ffffcc !important; }
+.printer-friendly .cell.c-p { background-color: #ffccff !important; }
+.printer-friendly .cell.c-w { background-color: #ffffff !important; }
 
 .printer-friendly .dice-face {
-    background: rgba(255,255,255,0.8);
-    box-shadow: none;
+    background: rgba(255,255,255,0.5) !important;
+    box-shadow: none !important;
 }
 
 .printer-friendly .dice-dot {
-    box-shadow: none;
+    box-shadow: none !important;
+    background-color: #000 !important;
 }
 
 /* Print styles */

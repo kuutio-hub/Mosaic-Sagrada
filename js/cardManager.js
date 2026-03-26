@@ -167,3 +167,10 @@ export function applySavedCard(title) {
     }
 }
 
+export function deleteSavedCard(title) {
+    let savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
+    savedCards = savedCards.filter(c => c.title !== title);
+    localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
+    loadSavedCardsList();
+}
+
