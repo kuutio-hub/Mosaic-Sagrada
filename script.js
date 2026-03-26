@@ -1,6 +1,6 @@
 import { state } from './js/state.js';
 import { renderGrid, renderDifficulty, updateQueueUI } from './js/ui.js';
-import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState } from './js/cardManager.js';
+import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard } from './js/cardManager.js';
 import { exportPDF } from './js/utils.js';
 import { translations } from './js/i18n.js';
 
@@ -80,6 +80,40 @@ function closePicker() {
  * Eseménykezelők beállítása
  */
 function setupEventListeners() {
+    // Double-sided mode toggle
+    document.getElementById('double-sided').addEventListener('change', (e) => {
+        const backCard = document.getElementById('card-back');
+        const toggle = document.getElementById('side-toggle');
+        if (e.target.checked) {
+            backCard.style.display = 'none'; // Default to front
+            toggle.style.display = 'block';
+        } else {
+            backCard.style.display = 'none';
+            document.getElementById('card-front').style.display = 'block';
+            toggle.style.display = 'none';
+        }
+    });
+
+    // Card flip functionality
+    const cardContainer = document.getElementById('card-container');
+    cardContainer.addEventListener('click', () => {
+        if (document.getElementById('double-sided').checked) {
+            const front = document.getElementById('card-front');
+            const back = document.getElementById('card-back');
+            const toggle = document.getElementById('side-toggle');
+            
+            if (front.style.display === 'none') {
+                front.style.display = 'block';
+                back.style.display = 'none';
+                toggle.textContent = 'ELŐLAP (Kattints a fordításhoz)';
+            } else {
+                front.style.display = 'none';
+                back.style.display = 'block';
+                toggle.textContent = 'HÁTLAP (Kattints a fordításhoz)';
+            }
+        }
+    });
+
     // Picker elemek kattintása
     document.querySelectorAll('.picker-item').forEach(item => {
         item.addEventListener('click', () => {
@@ -171,6 +205,14 @@ function setupEventListeners() {
         }
     });
 
+    // Apply saved card
+    document.getElementById('apply-saved').addEventListener('click', () => {
+        const title = document.getElementById('saved-select').value;
+        if (title) {
+            applySavedCard(title);
+        }
+    });
+
     // Mentés gomb
     document.getElementById('save-card').addEventListener('click', () => {
         const side = document.querySelector('input[name="saved-side"]:checked').value;
@@ -213,9 +255,11 @@ window.toggleSide = function() {
 // ... (existing imports)
 
 // Language switcher
-document.getElementById('lang-select').addEventListener('change', (e) => {
-    const lang = e.target.value;
-    updateLanguage(lang);
+document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const lang = btn.dataset.lang;
+        updateLanguage(lang);
+    });
 });
 
 function updateLanguage(lang) {
@@ -228,7 +272,7 @@ function updateLanguage(lang) {
     document.getElementById('print-btn').textContent = t.print;
     document.getElementById('save-card').textContent = t.saveCard;
     document.getElementById('clear-queue').textContent = t.clearQueue;
-    document.querySelector('h3').textContent = t.queue; // This might need more specific selector
+    document.querySelector('.queue-sidebar h3').textContent = t.queue;
     // ... update all UI elements
 }
 

@@ -22,12 +22,9 @@
             <h1>Sagrada Pattern Designer</h1>
             <div class="controls">
                 <div class="control-item">
-                    <label for="lang-select">Nyelv:</label>
-                    <select id="lang-select">
-                        <option value="hu">Magyar</option>
-                        <option value="en">English</option>
-                        <option value="de">Deutsch</option>
-                    </select>
+                    <button class="lang-btn" data-lang="hu">🇭🇺</button>
+                    <button class="lang-btn" data-lang="en">🇬🇧</button>
+                    <button class="lang-btn" data-lang="de">🇩🇪</button>
                 </div>
                 <div class="control-item">
                     <label for="printer-friendly">Nyomtatóbarát:</label>
@@ -63,6 +60,7 @@
                     <select id="saved-select">
                         <option value="">Válassz mentett kártyát...</option>
                     </select>
+                    <button id="apply-saved" class="btn-secondary" style="width: 100%; margin-top: 10px;">Alkalmaz</button>
                     <button id="save-card" class="btn-secondary" style="width: 100%; margin-top: 10px;">Mentés a tárba</button>
                 </div>
             </aside>
