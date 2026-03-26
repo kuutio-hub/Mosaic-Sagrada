@@ -104,6 +104,21 @@ export function loadSavedCardsList() {
     });
 }
 
+export function applyCardToState(card, side) {
+    state[side].title = card.title;
+    state[side].difficulty = card.difficulty;
+    
+    const cells = [];
+    card.grid.forEach(row => {
+        for (let char of row) {
+            let val = char.toUpperCase();
+            if (val === 'W') val = 'W'; 
+            cells.push(val);
+        }
+    });
+    state[side].cells = cells;
+}
+
 export function applySavedCard(title) {
     const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
     const card = savedCards.find(c => c.title === title);
