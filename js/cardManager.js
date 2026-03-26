@@ -39,7 +39,7 @@ export async function addToQueue() {
             state.patternQueue.push({
                 title: state.front.title,
                 difficulty: state.front.difficulty,
-                cells: [...state.front.cells],
+                cells: state.front.cells.map(c => ({ ...c })),
                 img: frontData,
                 side: 'front'
             });
@@ -48,7 +48,7 @@ export async function addToQueue() {
                 state.patternQueue.push({
                     title: state.back.title,
                     difficulty: state.back.difficulty,
-                    cells: [...state.back.cells],
+                    cells: state.back.cells.map(c => ({ ...c })),
                     img: backData,
                     side: 'back'
                 });
@@ -77,7 +77,7 @@ export function loadFromQueue(index) {
     
     state[side].title = item.title;
     state[side].difficulty = item.difficulty;
-    state[side].cells = [...item.cells];
+    state[side].cells = item.cells.map(c => ({ ...c }));
     renderGrid(side);
     document.querySelector(`.card-title-input[data-side="${side}"]`).value = item.title;
 }
@@ -142,8 +142,13 @@ export function applyCardToState(card, side) {
     card.grid.forEach(row => {
         for (let char of row) {
             let val = char.toUpperCase();
-            if (val === 'W') val = 'W'; 
-            cells.push(val);
+            if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(val)) {
+                cells.push({ color: val, value: '.' });
+            } else if (!isNaN(val) && val !== '.') {
+                cells.push({ color: '.', value: val });
+            } else {
+                cells.push({ color: '.', value: val });
+            }
         }
     });
     state[side].cells = cells;
@@ -156,7 +161,7 @@ export function applySavedCard(title) {
         const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
         state[side].title = card.title;
         state[side].difficulty = card.difficulty;
-        state[side].cells = [...card.cells];
+        state[side].cells = card.cells.map(c => ({ ...c }));
         renderGrid(side);
         document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
     }

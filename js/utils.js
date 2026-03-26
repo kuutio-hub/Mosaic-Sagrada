@@ -14,6 +14,12 @@ export async function renderToCanvas(id) {
     document.body.appendChild(tempContainer);
 
     const clone = el.cloneNode(true);
+    
+    // Apply printer friendly if checked
+    if (document.getElementById('printer-friendly')?.checked) {
+        clone.classList.add('printer-friendly');
+    }
+
     clone.style.transform = 'none';
     clone.style.zoom = '1';
     clone.style.position = 'relative';
@@ -120,7 +126,7 @@ export async function exportPDF(patternQueue) {
                 pdf.setDrawColor(150);
                 pdf.setLineWidth(0.2);
                 
-                const markLen = 3;
+                const markLen = 5;
                 // Top Left
                 pdf.line(x, y - markLen, x, y);
                 pdf.line(x - markLen, y, x, y);
@@ -133,6 +139,25 @@ export async function exportPDF(patternQueue) {
                 // Bottom Right
                 pdf.line(x + cardW, y + cardH + markLen, x + cardW, y + cardH);
                 pdf.line(x + cardW + markLen, y + cardH, x + cardW, y + cardH);
+
+                // Add laser targets (circles with crosshairs) at corners of the card
+                pdf.setDrawColor(0);
+                pdf.setLineWidth(0.1);
+                const targetRadius = 1.5;
+                const targetOffset = 4;
+
+                const targets = [
+                    { tx: x - targetOffset, ty: y - targetOffset },
+                    { tx: x + cardW + targetOffset, ty: y - targetOffset },
+                    { tx: x - targetOffset, ty: y + cardH + targetOffset },
+                    { tx: x + cardW + targetOffset, ty: y + cardH + targetOffset }
+                ];
+
+                targets.forEach(t => {
+                    pdf.circle(t.tx, t.ty, targetRadius);
+                    pdf.line(t.tx - targetRadius * 2, t.ty, t.tx + targetRadius * 2, t.ty);
+                    pdf.line(t.tx, t.ty - targetRadius * 2, t.tx, t.ty + targetRadius * 2);
+                });
             });
         }
 

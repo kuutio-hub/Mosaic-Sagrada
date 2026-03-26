@@ -5,13 +5,13 @@ export function renderGrid(side) {
     const gridContainer = document.getElementById(`grid-${side}`);
     gridContainer.innerHTML = '';
 
-    state[side].cells.forEach((val, index) => {
+    state[side].cells.forEach((cellData, index) => {
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.dataset.index = index;
         cell.dataset.side = side;
 
-        updateCellAppearance(cell, val);
+        updateCellAppearance(cell, cellData);
 
         cell.addEventListener('click', (e) => {
             // Need to import openPicker here, but it's in script.js.
@@ -25,28 +25,41 @@ export function renderGrid(side) {
     renderDifficulty(side);
 }
 
-export function updateCellAppearance(cell, val) {
-    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num');
+export function updateCellAppearance(cell, cellData) {
+    const { color, value } = cellData;
+    
+    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num', 'has-color', 'has-value');
     cell.innerHTML = '';
+    cell.style.backgroundColor = '';
 
-    if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(val)) {
-        cell.classList.add(`c-${val.toLowerCase()}`);
-        if (val === 'W') {
+    // Handle Color
+    if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(color)) {
+        cell.classList.add(`c-${color.toLowerCase()}`);
+        cell.classList.add('has-color');
+        if (color === 'W') {
             cell.style.backgroundColor = '#ffffff';
-        } else {
-            cell.style.backgroundColor = '';
         }
-    } else if (val === 'X') {
+    }
+
+    // Handle Value
+    if (value === 'X') {
         cell.classList.add('v-x');
+        cell.classList.add('has-value');
         cell.textContent = 'X';
-    } else if (val !== '.' && !isNaN(val)) {
+    } else if (value !== '.' && !isNaN(value)) {
         cell.classList.add('v-num');
+        cell.classList.add('has-value');
         
         const diceFace = document.createElement('div');
         diceFace.className = 'dice-face';
-        diceFace.dataset.val = val;
+        diceFace.dataset.val = value;
         
-        const numDots = parseInt(val);
+        // If there's also a color, make the dice face semi-transparent
+        if (color !== '.') {
+            diceFace.classList.add('overlay');
+        }
+        
+        const numDots = parseInt(value);
         for (let i = 0; i < numDots; i++) {
             const dot = document.createElement('div');
             dot.className = 'dice-dot';

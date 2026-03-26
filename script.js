@@ -127,7 +127,18 @@ function setupEventListeners() {
         item.addEventListener('click', () => {
             if (activeCell) {
                 const { side, index } = activeCell;
-                state[side].cells[index] = item.dataset.val;
+                const type = item.dataset.type;
+                const val = item.dataset.val;
+
+                if (type === 'color') {
+                    state[side].cells[index].color = val;
+                } else if (type === 'value') {
+                    state[side].cells[index].value = val;
+                } else if (type === 'clear') {
+                    state[side].cells[index].color = '.';
+                    state[side].cells[index].value = '.';
+                }
+
                 renderGrid(side);
                 closePicker();
             }
@@ -189,6 +200,18 @@ function setupEventListeners() {
         window.print();
     });
 
+    // Printer friendly toggle
+    document.getElementById('printer-friendly').addEventListener('change', (e) => {
+        const cards = document.querySelectorAll('.sagrada-card');
+        cards.forEach(card => {
+            if (e.target.checked) {
+                card.classList.add('printer-friendly');
+            } else {
+                card.classList.remove('printer-friendly');
+            }
+        });
+    });
+
     // Side toggle
     document.getElementById('side-toggle').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -230,6 +253,13 @@ function setupEventListeners() {
         if (title) {
             applySavedCard(title);
         }
+    });
+
+    // Kártya fordítása kattintásra
+    document.getElementById('card-container').addEventListener('click', (e) => {
+        // Ne forduljon meg, ha beviteli mezőre kattintunk
+        if (e.target.tagName === 'INPUT') return;
+        window.toggleSide();
     });
 
     // Mentés gomb
@@ -314,29 +344,31 @@ function updateLanguage(lang) {
     const t = translations[lang];
     if (!t) return;
     
-    document.querySelector('h1').textContent = t.title;
-    document.getElementById('label-double-sided').textContent = t.doubleSided;
-    document.getElementById('add-to-queue').textContent = t.addToQueue;
-    document.getElementById('print-menu-btn').textContent = t.print + ' ▼';
-    document.getElementById('export-pdf').textContent = t.exportPDF;
-    document.getElementById('print-btn').textContent = t.print + ' (Lista)';
-    document.getElementById('save-card').textContent = t.saveCard;
-    document.getElementById('clear-queue').textContent = t.clearQueue;
-    document.getElementById('title-queue').textContent = t.queue;
-    document.getElementById('title-promo').textContent = t.promoCards || 'Promo kártyák';
-    document.getElementById('title-saved').textContent = t.savedCards || 'Saját kártyák';
-    document.getElementById('apply-promo').textContent = t.apply || 'Alkalmaz';
-    document.getElementById('apply-saved').textContent = t.apply || 'Alkalmaz';
-    document.getElementById('label-colors').textContent = t.colors || 'Színek';
-    document.getElementById('label-numbers').textContent = t.numbers || 'Számok';
-    document.querySelector('.picker-item[data-val="."]').textContent = t.empty || 'Üres';
-    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (t[key]) {
+            if (key === 'print' && el.id === 'print-menu-btn') {
+                el.textContent = t[key] + ' ▼';
+            } else if (key === 'print' && el.id === 'print-btn') {
+                el.textContent = t[key] + ' (Lista)';
+            } else {
+                el.textContent = t[key];
+            }
+        }
+    });
+
+    // Update side toggle text
     const toggle = document.getElementById('side-toggle');
-    if (document.getElementById('card-front').style.display !== 'none') {
-        toggle.textContent = t.frontSide;
-    } else {
-        toggle.textContent = t.backSide;
+    if (toggle) {
+        if (document.getElementById('card-front').style.display !== 'none') {
+            toggle.textContent = t.frontSide;
+        } else {
+            toggle.textContent = t.backSide;
+        }
     }
+
+    // Update queue UI to reflect language change
+    updateQueueUI();
 }
 
 // Expose functions to window for onclick handlers
