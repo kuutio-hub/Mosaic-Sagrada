@@ -1,17 +1,41 @@
 import { state } from './state.js';
-import { renderGrid, updateQueueUI } from './ui.js';
+import { updateQueueUI, renderGrid } from './ui.js';
 import { renderToCanvas } from './utils.js';
+import { translations } from './i18n.js';
 
 export async function addToQueue() {
     const btn = document.getElementById('add-to-queue');
     btn.disabled = true;
-    btn.textContent = "Hozzáadás...";
+    
+    const lang = document.documentElement.lang || 'hu';
+    const t = translations[lang] || translations['hu'];
+    
+    // Temporarily change text
+    const originalText = btn.textContent;
+    btn.textContent = "...";
+
+    const isDoubleSided = document.getElementById('double-sided').checked;
+    const frontCard = document.getElementById('card-front');
+    const backCard = document.getElementById('card-back');
+
+    // Temporarily reset transform for clean capture
+    const originalTransformFront = frontCard.style.transform;
+    const originalTransformBack = backCard.style.transform;
+    frontCard.style.transform = 'scale(1)';
+    backCard.style.transform = 'scale(1)';
 
     try {
         const frontData = await renderToCanvas('card-front');
-        const backData = await renderToCanvas('card-back');
+        let backData = null;
 
-        if (frontData && backData) {
+        if (isDoubleSided) {
+            const originalDisplay = backCard.style.display;
+            backCard.style.display = 'block';
+            backData = await renderToCanvas('card-back');
+            backCard.style.display = originalDisplay;
+        }
+
+        if (frontData) {
             state.patternQueue.push({
                 title: state.front.title,
                 difficulty: state.front.difficulty,
@@ -19,21 +43,26 @@ export async function addToQueue() {
                 img: frontData,
                 side: 'front'
             });
-            state.patternQueue.push({
-                title: state.back.title,
-                difficulty: state.back.difficulty,
-                cells: [...state.back.cells],
-                img: backData,
-                side: 'back'
-            });
+            
+            if (isDoubleSided && backData) {
+                state.patternQueue.push({
+                    title: state.back.title,
+                    difficulty: state.back.difficulty,
+                    cells: [...state.back.cells],
+                    img: backData,
+                    side: 'back'
+                });
+            }
             updateQueueUI();
         }
     } catch (err) {
         console.error("Hiba a hozzáadáskor:", err);
-        alert("Hiba történt a kártya mentésekor.");
+        alert(t.alertSaveError);
     } finally {
+        frontCard.style.transform = originalTransformFront;
+        backCard.style.transform = originalTransformBack;
         btn.disabled = false;
-        btn.textContent = "Hozzáadás a listához";
+        btn.textContent = t.addToQueue;
     }
 }
 
@@ -44,12 +73,13 @@ export function removeFromQueue(index) {
 
 export function loadFromQueue(index) {
     const item = state.patternQueue[index];
-    state[item.side].title = item.title;
-    state[item.side].difficulty = item.difficulty;
-    state[item.side].cells = [...item.cells];
-    renderGrid(item.side);
-    // Also update the UI input
-    document.querySelector(`.card-title-input[data-side="${item.side}"]`).value = item.title;
+    const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+    
+    state[side].title = item.title;
+    state[side].difficulty = item.difficulty;
+    state[side].cells = [...item.cells];
+    renderGrid(side);
+    document.querySelector(`.card-title-input[data-side="${side}"]`).value = item.title;
 }
 
 export async function loadPromoCards() {
@@ -123,7 +153,6 @@ export function applySavedCard(title) {
     const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
     const card = savedCards.find(c => c.title === title);
     if (card) {
-        // Apply to currently visible side
         const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
         state[side].title = card.title;
         state[side].difficulty = card.difficulty;
@@ -132,3 +161,4 @@ export function applySavedCard(title) {
         document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
     }
 }
+

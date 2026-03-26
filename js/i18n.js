@@ -5,7 +5,7 @@ export const translations = {
         exportPDF: "PDF Export (Lista)",
         print: "Nyomtatás",
         printerFriendly: "Nyomtatóbarát",
-        doubleSided: "Kétoldalas",
+        doubleSided: "Kétoldalas:",
         promoCards: "Promo kártyák",
         savedCards: "Saját kártyák",
         saveCard: "Mentés a tárba",
@@ -15,7 +15,18 @@ export const translations = {
         back: "Hátlap",
         difficulty: "Nehézség",
         edit: "Szerkeszt",
-        emptyQueue: "A lista üres. Adj hozzá mintákat!"
+        emptyQueue: "A lista üres. Adj hozzá mintákat!",
+        frontSide: "ELŐLAP (Kattints a fordításhoz)",
+        backSide: "HÁTLAP (Kattints a fordításhoz)",
+        apply: "Alkalmaz",
+        colors: "Színek",
+        numbers: "Számok",
+        empty: "Üres",
+        alertSaveError: "Hiba történt a kártya mentésekor.",
+        alertSaved: "Kártya elmentve a böngésző tárjába!",
+        alertQueueEmpty: "A nyomtatási lista üres!",
+        confirmClear: "Biztosan törlöd a teljes listát?",
+        alertPdfError: "Hiba történt a PDF generálása közben."
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -23,7 +34,7 @@ export const translations = {
         exportPDF: "PDF Export (List)",
         print: "Print",
         printerFriendly: "Printer friendly",
-        doubleSided: "Double-sided",
+        doubleSided: "Double-sided:",
         promoCards: "Promo cards",
         savedCards: "My cards",
         saveCard: "Save to storage",
@@ -33,7 +44,18 @@ export const translations = {
         back: "Back",
         difficulty: "Difficulty",
         edit: "Edit",
-        emptyQueue: "The list is empty. Add patterns!"
+        emptyQueue: "The list is empty. Add patterns!",
+        frontSide: "FRONT (Click to flip)",
+        backSide: "BACK (Click to flip)",
+        apply: "Apply",
+        colors: "Colors",
+        numbers: "Numbers",
+        empty: "Empty",
+        alertSaveError: "Error saving card.",
+        alertSaved: "Card saved to browser storage!",
+        alertQueueEmpty: "The print list is empty!",
+        confirmClear: "Are you sure you want to clear the entire list?",
+        alertPdfError: "Error generating PDF."
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -41,7 +63,7 @@ export const translations = {
         exportPDF: "PDF-Export (Liste)",
         print: "Drucken",
         printerFriendly: "Druckerfreundlich",
-        doubleSided: "Doppelseitig",
+        doubleSided: "Doppelseitig:",
         promoCards: "Promo-Karten",
         savedCards: "Meine Karten",
         saveCard: "Speichern",
@@ -51,6 +73,20 @@ export const translations = {
         back: "Rückseite",
         difficulty: "Schwierigkeit",
         edit: "Bearbeiten",
-        emptyQueue: "Die Liste ist leer. Muster hinzufügen!"
+        emptyQueue: "Die Liste ist leer. Muster hinzufügen!",
+        frontSide: "VORDERSEITE (Klicken zum Wenden)",
+        backSide: "RÜCKSEITE (Klicken zum Wenden)",
+        apply: "Anwenden",
+        colors: "Farben",
+        numbers: "Zahlen",
+        empty: "Leer",
+        alertSaveError: "Fehler beim Speichern der Karte.",
+        alertSaved: "Karte im Browser-Speicher gespeichert!",
+        alertQueueEmpty: "Die Druckliste ist leer!",
+        confirmClear: "Möchten Sie die gesamte Liste wirklich löschen?",
+        alertPdfError: "Fehler beim Generieren der PDF."
     }
 };
+
+
+

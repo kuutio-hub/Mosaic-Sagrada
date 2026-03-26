@@ -22,21 +22,23 @@
             <h1>Sagrada Pattern Designer</h1>
             <div class="controls">
                 <div class="control-item">
-                    <button class="lang-btn" data-lang="hu">🇭🇺</button>
-                    <button class="lang-btn" data-lang="en">🇬🇧</button>
-                    <button class="lang-btn" data-lang="de">🇩🇪</button>
+                    <button class="lang-btn" data-lang="hu" title="Magyar">🇭🇺</button>
+                    <button class="lang-btn" data-lang="en" title="English">🇬🇧</button>
+                    <button class="lang-btn" data-lang="de" title="Deutsch">🇩🇪</button>
                 </div>
                 <div class="control-item">
-                    <label for="printer-friendly">Nyomtatóbarát:</label>
-                    <input type="checkbox" id="printer-friendly">
-                </div>
-                <div class="control-item">
-                    <label for="double-sided">Kétoldalas:</label>
+                    <label for="double-sided" id="label-double-sided">Kétoldalas:</label>
                     <input type="checkbox" id="double-sided" checked>
                 </div>
                 <button id="add-to-queue" class="btn-secondary">Hozzáadás a listához</button>
-                <button id="export-pdf" class="btn-primary">PDF Export (Lista)</button>
-                <button id="print-btn" class="btn-secondary">Nyomtatás</button>
+                
+                <div class="print-dropdown" style="position: relative; display: inline-block;">
+                    <button id="print-menu-btn" class="btn-primary">Nyomtatás ▼</button>
+                    <div id="print-menu-content" style="display: none; position: absolute; right: 0; background-color: var(--panel-bg); backdrop-filter: blur(20px); min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1; border-radius: 12px; padding: 10px; border: 1px solid var(--panel-border); margin-top: 5px;">
+                        <button id="export-pdf" class="btn-secondary" style="width: 100%; margin-bottom: 5px; text-align: left;">PDF Export (Lista)</button>
+                        <button id="print-btn" class="btn-secondary" style="width: 100%; text-align: left;">Nyomtatás (Lista)</button>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -45,18 +47,14 @@
         <div class="main-layout">
             <aside class="tools-sidebar no-print">
                 <div class="tool-section">
-                    <h3>Promo kártyák</h3>
+                    <h3 id="title-promo">Promo kártyák</h3>
                     <select id="promo-select">
                         <option value="">Válassz promo kártyát...</option>
                     </select>
                     <button id="apply-promo" class="btn-secondary" style="width: 100%; margin-top: 10px;">Alkalmaz</button>
                 </div>
                 <div class="tool-section">
-                    <h3>Saját kártyák</h3>
-                    <div class="side-selector">
-                        <label><input type="radio" name="saved-side" value="front" checked> Előlap</label>
-                        <label><input type="radio" name="saved-side" value="back"> Hátlap</label>
-                    </div>
+                    <h3 id="title-saved">Saját kártyák</h3>
                     <select id="saved-select">
                         <option value="">Válassz mentett kártyát...</option>
                     </select>
@@ -88,7 +86,7 @@
             </div>
 
             <aside class="queue-sidebar no-print">
-                <h3>Nyomtatási lista</h3>
+                <h3 id="title-queue">Nyomtatási lista</h3>
                 <div id="pattern-queue" class="queue-list">
                     <p class="empty-msg">A lista üres. Adj hozzá mintákat!</p>
                 </div>
@@ -102,7 +100,7 @@
     <!-- Cellaválasztó menü -->
     <div id="cell-picker" class="picker-hidden">
         <div class="picker-section">
-            <p>Színek</p>
+            <p id="label-colors">Színek</p>
             <div class="picker-grid colors">
                 <div class="picker-item color-r" data-val="R"></div>
                 <div class="picker-item color-g" data-val="G"></div>
@@ -113,7 +111,7 @@
             </div>
         </div>
         <div class="picker-section">
-            <p>Számok</p>
+            <p id="label-numbers">Számok</p>
             <div class="picker-grid numbers">
                 <div class="picker-item" data-val="1">1</div>
                 <div class="picker-item" data-val="2">2</div>
@@ -131,6 +129,10 @@
         </div>
     </div>
 
+    <!-- Nyomtatási konténer -->
+    <div id="print-container"></div>
+
     <script type="module" src="script.js"></script>
 </body>
 </html>
+

@@ -1,4 +1,5 @@
 import { state } from './state.js';
+import { translations } from './i18n.js';
 
 export function renderGrid(side) {
     const gridContainer = document.getElementById(`grid-${side}`);
@@ -78,27 +79,34 @@ export function renderDifficulty(side) {
 export function updateQueueUI() {
     const container = document.getElementById('pattern-queue');
     container.innerHTML = '';
+    
+    const lang = document.documentElement.lang || 'hu';
+    const t = translations[lang] || translations['hu'];
 
     if (state.patternQueue.length === 0) {
-        container.innerHTML = '<p class="empty-msg">A lista üres. Adj hozzá mintákat!</p>';
+        container.innerHTML = `<p class="empty-msg">${t.emptyQueue}</p>`;
         return;
     }
 
     state.patternQueue.forEach((item, idx) => {
         const div = document.createElement('div');
         div.className = 'queue-item';
-        div.style.border = "1px solid var(--accent-gold)";
+        div.style.border = "1px solid var(--panel-border)";
         div.style.padding = "5px";
         div.style.marginBottom = "10px";
+        
+        const sideText = item.side === 'front' ? t.front : t.back;
+        
         div.innerHTML = `
-            <img src="${item.img}" style="width:50px; height:50px; margin-right:10px;" />
+            <img src="${item.img}" style="width:50px; height:50px; margin-right:10px; border-radius: 4px; object-fit: cover;" />
             <div style="flex:1; font-size:12px">
-                <div>${item.title} (${item.side === 'front' ? 'Előlap' : 'Hátlap'})</div>
-                <div style="color:var(--gold)">Nehézség: ${item.difficulty}</div>
+                <div style="font-weight: 600;">${item.title} (${sideText})</div>
+                <div style="color:#86868b">${t.difficulty}: ${item.difficulty}</div>
             </div>
-            <button onclick="window.loadFromQueue(${idx})" class="btn-secondary" style="padding:2px 5px; font-size:10px; margin-right:5px">Szerkeszt</button>
-            <button onclick="window.removeFromQueue(${idx})" style="color:red; background:none; border:none; cursor:pointer">×</button>
+            <button onclick="window.loadFromQueue(${idx})" class="btn-secondary" style="padding:4px 8px; font-size:11px; margin-right:5px; border-radius: 10px;">${t.edit}</button>
+            <button onclick="window.removeFromQueue(${idx})" style="color:#ff3b30; background:none; border:none; cursor:pointer; font-size: 18px; padding: 0 5px;">×</button>
         `;
         container.appendChild(div);
     });
 }
+

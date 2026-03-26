@@ -51,6 +51,9 @@ async function init() {
 
     // Eseménykezelők
     setupEventListeners();
+    
+    // Set initial language
+    updateLanguage('hu');
 }
 
 /**
@@ -96,7 +99,12 @@ function setupEventListeners() {
 
     // Card flip functionality
     const cardContainer = document.getElementById('card-container');
-    cardContainer.addEventListener('click', () => {
+    cardContainer.addEventListener('click', (e) => {
+        // Ne forduljon meg, ha inputra vagy difficulty dotra kattintunk
+        if (e.target.tagName.toLowerCase() === 'input' || e.target.classList.contains('difficulty-dot')) {
+            return;
+        }
+        
         if (document.getElementById('double-sided').checked) {
             const front = document.getElementById('card-front');
             const back = document.getElementById('card-back');
@@ -105,11 +113,11 @@ function setupEventListeners() {
             if (front.style.display === 'none') {
                 front.style.display = 'block';
                 back.style.display = 'none';
-                toggle.textContent = 'ELŐLAP (Kattints a fordításhoz)';
+                toggle.textContent = translations[document.documentElement.lang || 'hu'].frontSide;
             } else {
                 front.style.display = 'none';
                 back.style.display = 'block';
-                toggle.textContent = 'HÁTLAP (Kattints a fordításhoz)';
+                toggle.textContent = translations[document.documentElement.lang || 'hu'].backSide;
             }
         }
     });
@@ -131,6 +139,13 @@ function setupEventListeners() {
         if (!document.getElementById('cell-picker').contains(e.target)) {
             closePicker();
         }
+        
+        // Print menu bezárása
+        const printMenu = document.getElementById('print-menu-content');
+        const printBtn = document.getElementById('print-menu-btn');
+        if (printMenu.style.display === 'block' && e.target !== printBtn && !printMenu.contains(e.target)) {
+            printMenu.style.display = 'none';
+        }
     });
 
     // Címek frissítése
@@ -146,45 +161,49 @@ function setupEventListeners() {
 
     // Lista törlése
     document.getElementById('clear-queue').addEventListener('click', () => {
-        if (confirm("Biztosan törlöd a teljes listát?")) {
+        const lang = document.documentElement.lang || 'hu';
+        const t = translations[lang] || translations['hu'];
+        if (confirm(t.confirmClear)) {
             state.patternQueue = [];
             updateQueueUI();
         }
     });
 
+    // Print menu toggle
+    document.getElementById('print-menu-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const menu = document.getElementById('print-menu-content');
+        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+    });
+
     // Export gomb
-    document.getElementById('export-pdf').addEventListener('click', () => exportPDF(state.patternQueue));
+    document.getElementById('export-pdf').addEventListener('click', () => {
+        document.getElementById('print-menu-content').style.display = 'none';
+        exportPDF(state.patternQueue);
+    });
 
     // Nyomtatás gomb
     document.getElementById('print-btn').addEventListener('click', () => {
+        document.getElementById('print-menu-content').style.display = 'none';
+        preparePrintLayout();
         window.print();
     });
 
-    // Nyomtatóbarát toggle
-    document.getElementById('printer-friendly').addEventListener('change', (e) => {
-        const cards = document.querySelectorAll('.sagrada-card');
-        cards.forEach(card => {
-            if (e.target.checked) {
-                card.classList.add('printer-friendly');
-            } else {
-                card.classList.remove('printer-friendly');
-            }
-        });
-    });
-
     // Side toggle
-    document.getElementById('side-toggle').addEventListener('click', toggleSide);
+    document.getElementById('side-toggle').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSide();
+    });
 
     // Promo kártya alkalmazása
     document.getElementById('apply-promo').addEventListener('click', () => {
         const cardId = document.getElementById('promo-select').value;
-        const side = document.querySelector('input[name="saved-side"]:checked')?.value || 'front';
+        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
         if (cardId) {
             const card = promoCards.find(c => c.id === cardId);
             if (card) {
                 applyCardToState(card, side);
                 renderGrid(side);
-                // Frissítsük az inputot is
                 document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
             }
         }
@@ -193,7 +212,7 @@ function setupEventListeners() {
     // Saját kártya választás
     document.getElementById('saved-select').addEventListener('change', (e) => {
         const cardTitle = e.target.value;
-        const side = document.querySelector('input[name="saved-side"]:checked').value;
+        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
         if (cardTitle) {
             const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
             const card = savedCards.find(c => c.title === cardTitle);
@@ -215,7 +234,7 @@ function setupEventListeners() {
 
     // Mentés gomb
     document.getElementById('save-card').addEventListener('click', () => {
-        const side = document.querySelector('input[name="saved-side"]:checked').value;
+        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
         const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
         const currentCard = JSON.parse(JSON.stringify(state[side]));
         
@@ -228,7 +247,36 @@ function setupEventListeners() {
         
         localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
         loadSavedCardsList();
-        alert("Kártya elmentve a böngésző tárjába!");
+        
+        const lang = document.documentElement.lang || 'hu';
+        const t = translations[lang] || translations['hu'];
+        alert(t.alertSaved);
+    });
+}
+
+/**
+ * Print layout előkészítése
+ */
+function preparePrintLayout() {
+    const printContainer = document.getElementById('print-container');
+    printContainer.innerHTML = '';
+    
+    if (state.patternQueue.length === 0) {
+        const lang = document.documentElement.lang || 'hu';
+        const t = translations[lang] || translations['hu'];
+        alert(t.alertQueueEmpty);
+        return;
+    }
+    
+    state.patternQueue.forEach(item => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'print-card';
+        
+        const img = document.createElement('img');
+        img.src = item.img;
+        
+        cardDiv.appendChild(img);
+        printContainer.appendChild(cardDiv);
     });
 }
 
@@ -239,20 +287,19 @@ window.toggleSide = function() {
     const front = document.getElementById('card-front');
     const back = document.getElementById('card-back');
     const toggle = document.getElementById('side-toggle');
+    const lang = document.documentElement.lang || 'hu';
     
     if (front.style.display === 'none') {
         front.style.display = 'block';
         back.style.display = 'none';
-        toggle.textContent = "ELŐLAP (Kattints a fordításhoz)";
+        toggle.textContent = translations[lang].frontSide;
     } else {
         front.style.display = 'none';
         back.style.display = 'block';
-        toggle.textContent = "HÁTLAP (Kattints a fordításhoz)";
+        toggle.textContent = translations[lang].backSide;
     }
 }
 
-
-// ... (existing imports)
 
 // Language switcher
 document.querySelectorAll('.lang-btn').forEach(btn => {
@@ -263,17 +310,33 @@ document.querySelectorAll('.lang-btn').forEach(btn => {
 });
 
 function updateLanguage(lang) {
+    document.documentElement.lang = lang;
     const t = translations[lang];
+    if (!t) return;
+    
     document.querySelector('h1').textContent = t.title;
-    document.querySelector('label[for="printer-friendly"]').textContent = t.printerFriendly;
-    document.querySelector('label[for="double-sided"]').textContent = t.doubleSided;
+    document.getElementById('label-double-sided').textContent = t.doubleSided;
     document.getElementById('add-to-queue').textContent = t.addToQueue;
+    document.getElementById('print-menu-btn').textContent = t.print + ' ▼';
     document.getElementById('export-pdf').textContent = t.exportPDF;
-    document.getElementById('print-btn').textContent = t.print;
+    document.getElementById('print-btn').textContent = t.print + ' (Lista)';
     document.getElementById('save-card').textContent = t.saveCard;
     document.getElementById('clear-queue').textContent = t.clearQueue;
-    document.querySelector('.queue-sidebar h3').textContent = t.queue;
-    // ... update all UI elements
+    document.getElementById('title-queue').textContent = t.queue;
+    document.getElementById('title-promo').textContent = t.promoCards || 'Promo kártyák';
+    document.getElementById('title-saved').textContent = t.savedCards || 'Saját kártyák';
+    document.getElementById('apply-promo').textContent = t.apply || 'Alkalmaz';
+    document.getElementById('apply-saved').textContent = t.apply || 'Alkalmaz';
+    document.getElementById('label-colors').textContent = t.colors || 'Színek';
+    document.getElementById('label-numbers').textContent = t.numbers || 'Számok';
+    document.querySelector('.picker-item[data-val="."]').textContent = t.empty || 'Üres';
+    
+    const toggle = document.getElementById('side-toggle');
+    if (document.getElementById('card-front').style.display !== 'none') {
+        toggle.textContent = t.frontSide;
+    } else {
+        toggle.textContent = t.backSide;
+    }
 }
 
 // Expose functions to window for onclick handlers
@@ -291,10 +354,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Add version to footer
     const footer = document.createElement('footer');
+    footer.className = 'no-print';
     footer.style.textAlign = 'center';
-    footer.style.padding = '10px';
+    footer.style.padding = '20px';
     footer.style.fontSize = '12px';
-    footer.style.color = '#666';
-    footer.textContent = 'Verzió: 0.1.0';
+    footer.style.color = '#86868b';
+    footer.textContent = 'Verzió: 0.1.1 | Sagrada Pattern Designer';
     document.body.appendChild(footer);
 });
