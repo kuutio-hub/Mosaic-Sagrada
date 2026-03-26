@@ -79,92 +79,137 @@ export async function exportPDF(patternQueue) {
     btn.disabled = true;
 
     try {
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-
-        // A Sagrada card is 63x88mm. The canvas is 1063x945px.
-        // Let's print it at actual size: 88mm x 63mm (landscape on the page)
-        const cardW = 88;
-        const cardH = 63;
+        const isPrinterFriendly = document.getElementById('printer-friendly')?.checked;
+        const mode = isPrinterFriendly ? "outline-only" : "full";
         
-        // How many cards fit on an A4 page?
-        // A4 is 210x297mm.
-        // We can fit 2 columns (2 * 88 = 176mm < 210mm)
-        // We can fit 4 rows (4 * 63 = 252mm < 297mm)
-        // Total 8 cards per page.
-        const cols = 2;
-        const rows = 4;
+        // Page parameters (A4)
+        const pageWidth = 210;
+        const pageHeight = 297;
+        
+        // Card parameters (Standard Sagrada card size)
+        const cardWidth = 63;
+        const cardHeight = 88;
+        
+        // 3x3 grid
+        const cols = 3;
+        const rows = 3;
         const cardsPerPage = cols * rows;
         
-        const marginX = (210 - (cols * cardW)) / (cols + 1);
-        const marginY = (297 - (rows * cardH)) / (rows + 1);
+        const totalWidth = cols * cardWidth;
+        const totalHeight = rows * cardHeight;
+        
+        const marginX = (pageWidth - totalWidth) / 2;
+        const marginY = (pageHeight - totalHeight) / 2;
 
-        const totalPages = Math.ceil(patternQueue.length / cardsPerPage);
+        const pages = [];
+        const numPages = Math.ceil(patternQueue.length / cardsPerPage);
 
-        for (let p = 0; p < totalPages; p++) {
-            if (p > 0) pdf.addPage();
-            
+        for (let p = 0; p < numPages; p++) {
             const startIdx = p * cardsPerPage;
-            const endIdx = Math.min(startIdx + cardsPerPage, patternQueue.length);
-            const pageItems = patternQueue.slice(startIdx, endIdx);
+            const pageItems = patternQueue.slice(startIdx, startIdx + cardsPerPage);
+            
+            const cardPositions = [];
+            const duplexCardPositions = [];
+            const cropMarks = [];
+            const laserTargets = [];
 
             pageItems.forEach((item, i) => {
                 const col = i % cols;
                 const row = Math.floor(i / cols);
                 
-                const x = marginX + col * (cardW + marginX);
-                const y = marginY + row * (cardH + marginY);
+                const x = marginX + col * cardWidth;
+                const y = marginY + row * cardHeight;
                 
-                // Add image
-                pdf.addImage(item.img, 'PNG', x, y, cardW, cardH);
-                
-                // Add crop marks
-                pdf.setDrawColor(150);
-                pdf.setLineWidth(0.2);
-                
-                const markLen = 5;
-                // Top Left
-                pdf.line(x, y - markLen, x, y);
-                pdf.line(x - markLen, y, x, y);
-                // Top Right
-                pdf.line(x + cardW, y - markLen, x + cardW, y);
-                pdf.line(x + cardW + markLen, y, x + cardW, y);
-                // Bottom Left
-                pdf.line(x, y + cardH + markLen, x, y + cardH);
-                pdf.line(x - markLen, y + cardH, x, y + cardH);
-                // Bottom Right
-                pdf.line(x + cardW, y + cardH + markLen, x + cardW, y + cardH);
-                pdf.line(x + cardW + markLen, y + cardH, x + cardW, y + cardH);
-
-                // Add laser targets (circles with crosshairs) at corners of the card
-                pdf.setDrawColor(0);
-                pdf.setLineWidth(0.1);
-                const targetRadius = 1.5;
-                const targetOffset = 4;
-
-                const targets = [
-                    { tx: x - targetOffset, ty: y - targetOffset },
-                    { tx: x + cardW + targetOffset, ty: y - targetOffset },
-                    { tx: x - targetOffset, ty: y + cardH + targetOffset },
-                    { tx: x + cardW + targetOffset, ty: y + cardH + targetOffset }
-                ];
-
-                targets.forEach(t => {
-                    pdf.circle(t.tx, t.ty, targetRadius);
-                    pdf.line(t.tx - targetRadius * 2, t.ty, t.tx + targetRadius * 2, t.ty);
-                    pdf.line(t.tx, t.ty - targetRadius * 2, t.tx, t.ty + targetRadius * 2);
+                cardPositions.push({
+                    id: item.id || `card-${p}-${i}`,
+                    title: item.title,
+                    x: parseFloat(x.toFixed(2)),
+                    y: parseFloat(y.toFixed(2)),
+                    width: cardWidth,
+                    height: cardHeight,
+                    side: "front"
                 });
+
+                // Duplex logic: flip horizontally across the page center
+                // The center of the page is pageWidth / 2
+                // A card at x has its right edge at x + cardWidth
+                // Its distance from left edge is x
+                // On the back side, it should be at the same distance from the RIGHT edge
+                const duplexX = pageWidth - x - cardWidth;
+                
+                duplexCardPositions.push({
+                    id: item.id || `card-${p}-${i}-back`,
+                    title: item.title + " (BACK)",
+                    x: parseFloat(duplexX.toFixed(2)),
+                    y: parseFloat(y.toFixed(2)),
+                    width: cardWidth,
+                    height: cardHeight,
+                    side: "back"
+                });
+
+                // Crop marks (only for outer edges)
+                const markSize = 5;
+                if (col === 0) { // Left edge
+                    cropMarks.push({ x1: x - markSize, y1: y, x2: x, y2: y });
+                    cropMarks.push({ x1: x - markSize, y1: y + cardHeight, x2: x, y2: y + cardHeight });
+                }
+                if (col === cols - 1 || i === pageItems.length - 1) { // Right edge
+                    const rightX = x + cardWidth;
+                    cropMarks.push({ x1: rightX, y1: y, x2: rightX + markSize, y2: y });
+                    cropMarks.push({ x1: rightX, y1: y + cardHeight, x2: rightX + markSize, y2: y + cardHeight });
+                }
+                if (row === 0) { // Top edge
+                    cropMarks.push({ x1: x, y1: y - markSize, x2: x, y2: y });
+                    cropMarks.push({ x1: x + cardWidth, y1: y - markSize, x2: x + cardWidth, y2: y });
+                }
+                if (row === rows - 1 || i >= pageItems.length - cols) { // Bottom edge
+                    const bottomY = y + cardHeight;
+                    cropMarks.push({ x1: x, y1: bottomY, x2: x, y2: bottomY + markSize });
+                    cropMarks.push({ x1: x + cardWidth, y1: bottomY, x2: x + cardWidth, y2: bottomY + markSize });
+                }
+            });
+
+            // Laser targets (4 corners of the printable area)
+            const targetOffset = 10;
+            laserTargets.push({ x: marginX - targetOffset, y: marginY - targetOffset });
+            laserTargets.push({ x: marginX + totalWidth + targetOffset, y: marginY - targetOffset });
+            laserTargets.push({ x: marginX - targetOffset, y: marginY + totalHeight + targetOffset });
+            laserTargets.push({ x: marginX + totalWidth + targetOffset, y: marginY + totalHeight + targetOffset });
+
+            pages.push({
+                pageNumber: p + 1,
+                cardPositions,
+                duplexCardPositions,
+                cropMarks,
+                laserTargets
             });
         }
 
-        pdf.save('sagrada_patterns.pdf');
+        const output = {
+            pageParameters: {
+                unit: "mm",
+                format: "A4",
+                width: pageWidth,
+                height: pageHeight,
+                marginX,
+                marginY
+            },
+            mode,
+            pages
+        };
+
+        // Download JSON
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(output, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "sagrada_print_layout.json");
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+
     } catch (err) {
-        console.error("PDF export error:", err);
-        alert(t.alertPdfError);
+        console.error("JSON export error:", err);
+        alert("Hiba történt a JSON generálása közben.");
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
