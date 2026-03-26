@@ -576,8 +576,32 @@ button:hover {
 /* Print styles */
 @media print {
     .no-print { display: none; }
-    body { background: white; }
-    #editor-area { padding: 0; }
-    .sagrada-card { zoom: 1; box-shadow: none; }
-    .card-wrapper h3 { display: none; }
+    body { background: white; margin: 0; padding: 0; }
+    #editor-area { padding: 0; display: flex; justify-content: center; }
+    .sagrada-card { 
+        transform: scale(1) !important; 
+        box-shadow: none !important; 
+        border: none !important;
+        position: relative;
+    }
+    
+    /* Crop marks */
+    .sagrada-card::before {
+        content: '';
+        position: absolute;
+        top: -20px; left: -20px;
+        width: 40px; height: 40px;
+        border-top: 2px solid #000;
+        border-left: 2px solid #000;
+    }
+    /* Add for other corners... */
+    
+    /* Target points */
+    .sagrada-card::after {
+        content: '⊕';
+        position: absolute;
+        top: -30px; left: 50%;
+        transform: translateX(-50%);
+        font-size: 20px;
+    }
 }

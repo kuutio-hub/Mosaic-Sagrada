@@ -141,10 +141,10 @@ function setupEventListeners() {
     // Side toggle
     document.getElementById('side-toggle').addEventListener('click', toggleSide);
 
-    // Promo kártya választás
-    document.getElementById('promo-select').addEventListener('change', (e) => {
-        const cardId = e.target.value;
-        const side = document.querySelector('input[name="promo-side"]:checked').value;
+    // Promo kártya alkalmazása
+    document.getElementById('apply-promo').addEventListener('click', () => {
+        const cardId = document.getElementById('promo-select').value;
+        const side = document.querySelector('input[name="saved-side"]:checked')?.value || 'front';
         if (cardId) {
             const card = promoCards.find(c => c.id === cardId);
             if (card) {
@@ -209,7 +209,6 @@ window.toggleSide = function() {
     }
 }
 
-import { translations } from './js/i18n.js';
 
 // ... (existing imports)
 
@@ -222,7 +221,14 @@ document.getElementById('lang-select').addEventListener('change', (e) => {
 function updateLanguage(lang) {
     const t = translations[lang];
     document.querySelector('h1').textContent = t.title;
-    document.querySelector('label[for="printer-friendly"]').textContent = "Nyomtatóbarát:"; // This needs to be translated too.
+    document.querySelector('label[for="printer-friendly"]').textContent = t.printerFriendly;
+    document.querySelector('label[for="double-sided"]').textContent = t.doubleSided;
+    document.getElementById('add-to-queue').textContent = t.addToQueue;
+    document.getElementById('export-pdf').textContent = t.exportPDF;
+    document.getElementById('print-btn').textContent = t.print;
+    document.getElementById('save-card').textContent = t.saveCard;
+    document.getElementById('clear-queue').textContent = t.clearQueue;
+    document.querySelector('h3').textContent = t.queue; // This might need more specific selector
     // ... update all UI elements
 }
 
@@ -245,6 +251,6 @@ window.addEventListener('DOMContentLoaded', async () => {
     footer.style.padding = '10px';
     footer.style.fontSize = '12px';
     footer.style.color = '#666';
-    footer.textContent = 'Verzió: 1.0.1';
+    footer.textContent = 'Verzió: 0.1.0';
     document.body.appendChild(footer);
 });
