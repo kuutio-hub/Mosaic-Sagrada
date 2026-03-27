@@ -315,10 +315,27 @@ function setupEventListeners() {
     // Nyomtatás gomb a fő panelen
     const printBtnMain = document.getElementById('print-btn-main');
     if (printBtnMain) {
-        printBtnMain.addEventListener('click', (e) => {
+        printBtnMain.addEventListener('click', async (e) => {
             e.stopPropagation();
+            
+            // PDF generálás
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const date = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+            const time = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }).replace(':', '');
+            const fileName = `Sagrada_${date}_${time}.pdf`;
+
             preparePrintLayout();
-            window.print();
+            const pages = document.querySelectorAll('.print-page');
+            
+            for (let i = 0; i < pages.length; i++) {
+                if (i > 0) doc.addPage();
+                const canvas = await html2canvas(pages[i], { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                doc.addImage(imgData, 'PNG', 10, 10, 190, 277);
+            }
+            
+            doc.save(fileName);
         });
     }
 
@@ -450,12 +467,20 @@ function setupEventListeners() {
     if (generateBtn) {
         generateBtn.addEventListener('click', () => {
             const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            
+            // Biztonságos érték lekérés, ha a mezők nincsenek a DOM-ban
+            const getColorCount = () => document.getElementById('gen-color-count') ? parseInt(document.getElementById('gen-color-count').value) : 7;
+            const getUniqueColors = () => document.getElementById('gen-unique-colors') ? parseInt(document.getElementById('gen-unique-colors').value) : 5;
+            const getValueCount = () => document.getElementById('gen-value-count') ? parseInt(document.getElementById('gen-value-count').value) : 7;
+            const getUniqueValues = () => document.getElementById('gen-unique-values') ? parseInt(document.getElementById('gen-unique-values').value) : 6;
+            const getSeed = () => document.getElementById('gen-seed') ? document.getElementById('gen-seed').value : null;
+
             const config = {
-                colorCount: parseInt(document.getElementById('gen-color-count').value) || 0,
-                uniqueColorsCount: parseInt(document.getElementById('gen-unique-colors').value) || 5,
-                valueCount: parseInt(document.getElementById('gen-value-count').value) || 0,
-                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6,
-                seed: document.getElementById('gen-seed').value || null
+                colorCount: getColorCount(),
+                uniqueColorsCount: getUniqueColors(),
+                valueCount: getValueCount(),
+                uniqueValuesCount: getUniqueValues(),
+                seed: getSeed()
             };
             generateRandomPattern(side, config);
         });
