@@ -38,7 +38,14 @@ export const translations = {
         backPage: "Hátlap (A4)",
         doubleSidedPrint: "Kétoldalas nyomtatás",
         confirmClearQueue: "Biztosan üríted a nyomtatási listát?",
-        printStart: "Nyomtatás indítása"
+        printStart: "Nyomtatás indítása",
+        pickerTab: "Segédablak",
+        promoTab: "Promo kártyák",
+        queueTab: "Nyomtatási lista",
+        settingsTab: "Beállítások",
+        glassEffect: "Üveg hatás",
+        saveCard: "Mentés",
+        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.1.9"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -79,7 +86,14 @@ export const translations = {
         backPage: "Back Page (A4)",
         doubleSidedPrint: "Double-sided Printing",
         confirmClearQueue: "Are you sure you want to clear the print list?",
-        printStart: "Start Printing"
+        printStart: "Start Printing",
+        pickerTab: "Picker",
+        promoTab: "Promo Cards",
+        queueTab: "Print Queue",
+        settingsTab: "Settings",
+        glassEffect: "Glass Effect",
+        saveCard: "Save",
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.1.9"
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -115,7 +129,14 @@ export const translations = {
         confirmClear: "Möchten Sie die gesamte Liste wirklich löschen?",
         reset: "Karte löschen (Zurücksetzen)",
         alertPdfError: "Fehler beim Generieren der PDF.",
-        printStart: "Drucken starten"
+        printStart: "Drucken starten",
+        pickerTab: "Auswahl",
+        promoTab: "Promo-Karten",
+        queueTab: "Druckliste",
+        settingsTab: "Einstellungen",
+        glassEffect: "Glaseffekt",
+        saveCard: "Speichern",
+        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.1.9"
     }
 };
 

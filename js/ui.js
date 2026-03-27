@@ -28,7 +28,7 @@ export function renderGrid(side) {
 export function updateCellAppearance(cell, cellData) {
     const { color, value } = cellData;
     
-    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num', 'has-color', 'has-value');
+    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num', 'has-color', 'has-value', 'glass');
     cell.innerHTML = '';
     cell.style.backgroundColor = '';
 
@@ -36,6 +36,11 @@ export function updateCellAppearance(cell, cellData) {
     if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(color)) {
         cell.classList.add(`c-${color.toLowerCase()}`);
         cell.classList.add('has-color');
+        
+        // Add glass effect if enabled in state
+        if (state.glassEffect) {
+            cell.classList.add('glass');
+        }
     }
 
     // Handle Value
@@ -58,19 +63,18 @@ export function updateCellAppearance(cell, cellData) {
         diceFace.className = 'dice-face';
         diceFace.dataset.val = value;
         
-        // If there's also a color, make the dice face semi-transparent
-        if (color !== '.') {
-            diceFace.classList.add('overlay');
-        }
-        
         const img = document.createElement('img');
         img.src = `Cells/${value}.png`;
         img.alt = `Dice ${value}`;
         img.className = 'dice-img';
-        img.style.filter = 'brightness(0)'; // Fekete pöttyök kényszerítése
+        // Force black dots if needed, but the user said they are white on white background.
+        // If the PNG has white dots, we might need to invert it or use a different image.
+        // For now, let's just ensure it's visible.
+        img.style.filter = 'brightness(0)'; 
+        
         img.onerror = () => {
-            // Fallback to SVG dots if PNG fails
             img.style.display = 'none';
+            // Fallback to dots if image fails
             const numDots = parseInt(value);
             for (let i = 0; i < numDots; i++) {
                 const dot = document.createElement('div');

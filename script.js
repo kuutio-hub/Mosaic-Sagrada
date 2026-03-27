@@ -12,6 +12,8 @@ if ('serviceWorker' in navigator) {
     });
 }
 
+const APP_VERSION = "0.0.1.9";
+
 // Aktuálisan szerkesztett cella
 let activeCell = null;
 
@@ -35,8 +37,10 @@ const frameSVG = `
  */
 async function init() {
     // SVG-k behelyezése
-    document.getElementById('frame-front-svg').innerHTML = frameSVG;
-    document.getElementById('frame-back-svg').innerHTML = frameSVG;
+    const frameFront = document.getElementById('frame-front-svg');
+    const frameBack = document.getElementById('frame-back-svg');
+    if (frameFront) frameFront.innerHTML = frameSVG;
+    if (frameBack) frameBack.innerHTML = frameSVG;
 
     // Rácsok generálása
     renderGrid('front');
@@ -57,6 +61,15 @@ async function init() {
     // Initial title scaling
     updateTitleScaling('front');
     updateTitleScaling('back');
+
+    // Initial card scaling
+    updateCardScaling();
+
+    // Glass effect initial state
+    const glassToggle = document.getElementById('glass-effect-toggle');
+    if (glassToggle) {
+        glassToggle.checked = state.glassEffect || false;
+    }
 }
 
 /**
@@ -65,12 +78,10 @@ async function init() {
 window.openPicker = function(e, side, index) {
     e.stopPropagation();
     
-    const picker = document.getElementById('fixed-picker');
-    
-    // Ha ugyanazt a cellát kattintjuk és nyitva van, zárjuk be
-    if (activeCell && activeCell.side === side && activeCell.index === index && picker.classList.contains('show')) {
-        closePicker();
-        return;
+    // Open the picker tab if it's not open
+    const pickerTab = document.getElementById('tab-picker');
+    if (pickerTab && !pickerTab.classList.contains('active')) {
+        openTab('tab-picker');
     }
 
     // Remove active class from all cells
@@ -81,9 +92,6 @@ window.openPicker = function(e, side, index) {
     cell.classList.add('active');
     
     activeCell = { side, index };
-    
-    // Mutassuk a pickert
-    picker.classList.add('show');
 }
 
 /**
@@ -91,43 +99,64 @@ window.openPicker = function(e, side, index) {
  */
 function closePicker() {
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-    document.getElementById('fixed-picker').classList.remove('show');
     activeCell = null;
+}
+
+/**
+ * Tab megnyitása
+ */
+function openTab(tabId) {
+    const tabs = document.querySelectorAll('.top-tab');
+    const targetTab = document.getElementById(tabId);
+    
+    if (!targetTab) return;
+
+    const isAlreadyActive = targetTab.classList.contains('active');
+
+    // Close all tabs
+    tabs.forEach(tab => tab.classList.remove('active'));
+
+    // If it wasn't active, open it
+    if (!isAlreadyActive) {
+        targetTab.classList.add('active');
+    } else {
+        // If it was active, we just closed it
+        if (tabId === 'tab-picker') closePicker();
+    }
 }
 
 /**
  * Eseménykezelők beállítása
  */
 function setupEventListeners() {
-    // Double-sided mode toggle
-    document.getElementById('double-sided').addEventListener('change', (e) => {
-        const backCard = document.getElementById('card-back');
-        const toggle = document.getElementById('side-toggle');
-        const backSchematic = document.getElementById('schematic-back');
-        
-        if (e.target.checked) {
-            backCard.style.display = 'none'; // Default to front
-            toggle.style.display = 'block';
-            if(backSchematic) backSchematic.style.display = 'grid';
-        } else {
-            backCard.style.display = 'none';
-            document.getElementById('card-front').style.display = 'block';
-            toggle.style.display = 'none';
-            if(backSchematic) backSchematic.style.display = 'none';
-        }
-        updateQueueUI();
+    // Tab handles
+    document.querySelectorAll('.tab-handle').forEach(handle => {
+        handle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const tabId = handle.parentElement.id;
+            openTab(tabId);
+        });
     });
 
-    // Card flip functionality removed from here to avoid redundancy
-    // It's handled by window.toggleSide and the card-container click listener at the end
-
-    // Picker kapcsoló gomb
-    const togglePickerBtn = document.getElementById('toggle-picker-btn');
-    if (togglePickerBtn) {
-        togglePickerBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const picker = document.getElementById('fixed-picker');
-            picker.classList.toggle('show');
+    // Double-sided mode toggle
+    const doubleSidedToggle = document.getElementById('double-sided');
+    if (doubleSidedToggle) {
+        doubleSidedToggle.addEventListener('change', (e) => {
+            const backCard = document.getElementById('card-back');
+            const toggle = document.getElementById('side-toggle');
+            const backSchematic = document.getElementById('schematic-back');
+            
+            if (e.target.checked) {
+                backCard.style.display = 'none'; // Default to front
+                toggle.style.display = 'block';
+                if(backSchematic) backSchematic.style.display = 'grid';
+            } else {
+                backCard.style.display = 'none';
+                document.getElementById('card-front').style.display = 'block';
+                toggle.style.display = 'none';
+                if(backSchematic) backSchematic.style.display = 'none';
+            }
+            updateQueueUI();
         });
     }
 
@@ -158,10 +187,13 @@ function setupEventListeners() {
     });
 
     // Language switcher
-    document.getElementById('current-lang').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.querySelector('.lang-content').classList.toggle('show');
-    });
+    const currentLangBtn = document.getElementById('current-lang');
+    if (currentLangBtn) {
+        currentLangBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelector('.lang-content').classList.toggle('show');
+        });
+    }
 
     document.querySelectorAll('.lang-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -173,64 +205,50 @@ function setupEventListeners() {
     });
 
     // Reset card
-    document.getElementById('reset-card').addEventListener('click', () => {
-        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-        const lang = document.documentElement.lang || 'hu';
-        const t = translations[lang] || translations['hu'];
-        
-        if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
-            state[side].title = side === 'front' ? "MINTA NÉV" : "MINTA NÉV (HÁT)";
-            state[side].difficulty = side === 'front' ? 3 : 4;
-            state[side].cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
+    const resetBtn = document.getElementById('reset-card');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            const lang = document.documentElement.lang || 'hu';
+            const t = translations[lang] || translations['hu'];
             
-            renderGrid(side);
-            document.querySelector(`.card-title-input[data-side="${side}"]`).value = state[side].title;
-        }
-    });
+            if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
+                state[side].title = side === 'front' ? "MINTA NÉV" : "MINTA NÉV (HÁT)";
+                state[side].difficulty = side === 'front' ? 3 : 4;
+                state[side].cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
+                
+                renderGrid(side);
+                const titleInput = document.querySelector(`.card-title-input[data-side="${side}"]`);
+                if (titleInput) titleInput.value = state[side].title;
+                updateTitleScaling(side);
+            }
+        });
+    }
 
-    // Preview Panel toggle
-    document.getElementById('open-preview-btn').addEventListener('click', () => {
-        document.getElementById('preview-panel').classList.add('open');
-    });
-    
-    document.getElementById('open-preview-tab').addEventListener('click', () => {
-        document.getElementById('preview-panel').classList.add('open');
-    });
-
-    document.getElementById('close-preview').addEventListener('click', () => {
-        document.getElementById('preview-panel').classList.remove('open');
-    });
+    // Glass effect toggle
+    const glassToggle = document.getElementById('glass-effect-toggle');
+    if (glassToggle) {
+        glassToggle.addEventListener('change', (e) => {
+            state.glassEffect = e.target.checked;
+            renderGrid('front');
+            renderGrid('back');
+        });
+    }
 
     // Kattintás bárhova máshova -> picker/dropdown bezárása
     document.addEventListener('click', (e) => {
-        // Deselect cell if clicking outside card and picker
-        const cardContainer = document.getElementById('card-container');
-        const fixedPicker = document.getElementById('fixed-picker');
-        if (cardContainer && fixedPicker && !cardContainer.contains(e.target) && !fixedPicker.contains(e.target)) {
+        // Close tabs if clicking outside
+        const tabsContainer = document.querySelector('.top-tabs-container');
+        if (tabsContainer && !tabsContainer.contains(e.target)) {
+            document.querySelectorAll('.top-tab').forEach(tab => tab.classList.remove('active'));
             closePicker();
         }
         
-        // Print menu bezárása
-        const printMenu = document.getElementById('print-menu-content');
-        const printBtn = document.getElementById('print-menu-btn');
-        if (printMenu && printMenu.style.display === 'block' && e.target !== printBtn && !printMenu.contains(e.target)) {
-            printMenu.style.display = 'none';
-        }
-
         // Lang menu bezárása
         const langContent = document.querySelector('.lang-content');
         const langBtn = document.getElementById('current-lang');
         if (langContent && langContent.classList.contains('show') && e.target !== langBtn && !langContent.contains(e.target)) {
             langContent.classList.remove('show');
-        }
-
-        // Preview panel bezárása ha kívülre kattintunk
-        const previewPanel = document.getElementById('preview-panel');
-        const openPreviewBtn = document.getElementById('open-preview-btn');
-        const openPreviewTab = document.getElementById('open-preview-tab');
-        if (previewPanel && previewPanel.classList.contains('open') && 
-            !previewPanel.contains(e.target) && e.target !== openPreviewBtn && e.target !== openPreviewTab) {
-            previewPanel.classList.remove('open');
         }
     });
 
@@ -244,17 +262,21 @@ function setupEventListeners() {
     });
 
     // Hozzáadás a listához
-    document.getElementById('add-to-queue').addEventListener('click', addToQueue);
+    const addToQueueBtn = document.getElementById('add-to-queue');
+    if (addToQueueBtn) addToQueueBtn.addEventListener('click', addToQueue);
 
     // Lista törlése
-    document.getElementById('clear-queue').addEventListener('click', () => {
-        const lang = document.documentElement.lang || 'hu';
-        const t = translations[lang] || translations['hu'];
-        if (confirm(t.confirmClear)) {
-            state.patternQueue = [];
-            updateQueueUI();
-        }
-    });
+    const clearQueueBtn = document.getElementById('clear-queue');
+    if (clearQueueBtn) {
+        clearQueueBtn.addEventListener('click', () => {
+            const lang = document.documentElement.lang || 'hu';
+            const t = translations[lang] || translations['hu'];
+            if (confirm(t.confirmClearQueue || 'Biztosan üríted a nyomtatási listát?')) {
+                state.patternQueue = [];
+                updateQueueUI();
+            }
+        });
+    }
 
     // Nyomtatás gomb a fő panelen
     const printBtnMain = document.getElementById('print-btn-main');
@@ -282,92 +304,121 @@ function setupEventListeners() {
     }
 
     // Side toggle
-    document.getElementById('side-toggle').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleSide();
-    });
+    const sideToggle = document.getElementById('side-toggle');
+    if (sideToggle) {
+        sideToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleSide();
+        });
+    }
 
     // Promo kártya alkalmazása
-    document.getElementById('apply-promo').addEventListener('click', () => {
-        const cardId = document.getElementById('promo-select').value;
-        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-        if (cardId) {
-            const card = promoCards.find(c => c.id === cardId);
-            if (card) {
-                applyCardToState(card, side);
-                renderGrid(side);
-                document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
-                updateTitleScaling(side);
-            }
-        }
-    });
-
-    // Saját kártya választás
-    document.getElementById('saved-select').addEventListener('change', (e) => {
-        const cardTitle = e.target.value;
-        if (cardTitle) {
-            applySavedCard(cardTitle);
-            updateTitleScaling('front');
-            updateTitleScaling('back');
-        }
-    });
-
-    // Apply saved card
-    document.getElementById('apply-saved').addEventListener('click', () => {
-        const title = document.getElementById('saved-select').value;
-        if (title) {
-            applySavedCard(title);
-            updateTitleScaling('front');
-            updateTitleScaling('back');
-        }
-    });
-
-    // Saved kártya törlése
-    let deleteBtn = document.getElementById('delete-saved');
-    if (!deleteBtn) {
-        deleteBtn = document.createElement('button');
-        deleteBtn.id = 'delete-saved';
-        deleteBtn.className = 'btn-danger';
-        deleteBtn.style.width = '100%';
-        deleteBtn.style.marginTop = '10px';
-        deleteBtn.dataset.i18n = 'delete';
-        deleteBtn.textContent = 'Törlés';
-        deleteBtn.addEventListener('click', () => {
-            const title = document.getElementById('saved-select').value;
-            if (title) {
-                const lang = document.documentElement.lang || 'hu';
-                const t = translations[lang] || translations['hu'];
-                if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
-                    deleteSavedCard(title);
+    const applyPromoBtn = document.getElementById('apply-promo');
+    if (applyPromoBtn) {
+        applyPromoBtn.addEventListener('click', () => {
+            const cardId = document.getElementById('promo-select').value;
+            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            if (cardId) {
+                const card = promoCards.find(c => c.id === cardId);
+                if (card) {
+                    applyCardToState(card, side);
+                    renderGrid(side);
+                    const titleInput = document.querySelector(`.card-title-input[data-side="${side}"]`);
+                    if (titleInput) titleInput.value = card.title;
+                    updateTitleScaling(side);
                 }
             }
         });
-        document.getElementById('apply-saved').parentNode.appendChild(deleteBtn);
     }
 
-    // Kártya fordítása kattintásra eltávolítva az user kérésére
-    // Csak a gombbal lehessen fordítani
+    // Saját kártya választás
+    const savedSelect = document.getElementById('saved-select');
+    if (savedSelect) {
+        savedSelect.addEventListener('change', (e) => {
+            const cardTitle = e.target.value;
+            if (cardTitle) {
+                applySavedCard(cardTitle);
+                updateTitleScaling('front');
+                updateTitleScaling('back');
+            }
+        });
+    }
+
+    // Apply saved card
+    const applySavedBtn = document.getElementById('apply-saved');
+    if (applySavedBtn) {
+        applySavedBtn.addEventListener('click', () => {
+            const title = document.getElementById('saved-select').value;
+            if (title) {
+                applySavedCard(title);
+                updateTitleScaling('front');
+                updateTitleScaling('back');
+            }
+        });
+    }
 
     // Mentés gomb
-    document.getElementById('save-card').addEventListener('click', () => {
-        const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-        const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
-        const currentCard = JSON.parse(JSON.stringify(state[side]));
-        
-        const existingIdx = savedCards.findIndex(c => c.title === currentCard.title);
-        if (existingIdx >= 0) {
-            savedCards[existingIdx] = currentCard;
-        } else {
-            savedCards.push(currentCard);
-        }
-        
-        localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
-        loadSavedCardsList();
-        
-        const lang = document.documentElement.lang || 'hu';
-        const t = translations[lang] || translations['hu'];
-        alert(t.alertSaved);
-    });
+    const saveCardBtn = document.getElementById('save-card');
+    if (saveCardBtn) {
+        saveCardBtn.addEventListener('click', () => {
+            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
+            const currentCard = JSON.parse(JSON.stringify(state[side]));
+            
+            const existingIdx = savedCards.findIndex(c => c.title === currentCard.title);
+            if (existingIdx >= 0) {
+                savedCards[existingIdx] = currentCard;
+            } else {
+                savedCards.push(currentCard);
+            }
+            
+            localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
+            loadSavedCardsList();
+            
+            const lang = document.documentElement.lang || 'hu';
+            const t = translations[lang] || translations['hu'];
+            alert(t.alertSaved);
+        });
+    }
+
+    // Resize observer for card container
+    const editorContainer = document.getElementById('editor-container');
+    if (editorContainer) {
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                updateCardScaling();
+            }
+        });
+        resizeObserver.observe(editorContainer);
+    }
+}
+
+/**
+ * Kártya méretezése az ablakhoz
+ */
+function updateCardScaling() {
+    const container = document.getElementById('editor-container');
+    const card = document.getElementById('card-container');
+    if (!container || !card) return;
+
+    const containerWidth = container.clientWidth - 40;
+    const containerHeight = container.clientHeight - 40;
+    
+    const cardBaseWidth = 900;
+    const cardBaseHeight = 800;
+    
+    const scaleX = containerWidth / cardBaseWidth;
+    const scaleY = containerHeight / cardBaseHeight;
+    const scale = Math.min(scaleX, scaleY, 1);
+    
+    card.style.transform = `scale(${scale})`;
+    
+    // Update wrapper height to match scaled card
+    const wrapper = document.querySelector('.card-wrapper');
+    if (wrapper) {
+        wrapper.style.width = (cardBaseWidth * scale) + 'px';
+        wrapper.style.height = (cardBaseHeight * scale) + 'px';
+    }
 }
 
 /**
@@ -412,11 +463,6 @@ function preparePrintLayout() {
             const backPage = document.createElement('div');
             backPage.className = 'print-page';
             
-            // For back page, we need to mirror the order horizontally
-            // Front: 1 2 -> Back: 2 1
-            // Front: 3 4 -> Back: 4 3
-            // Front: 5 6 -> Back: 6 5
-            
             const rows = [
                 pageItems.slice(0, 2),
                 pageItems.slice(2, 4),
@@ -424,10 +470,8 @@ function preparePrintLayout() {
             ];
             
             rows.forEach(row => {
-                // Reverse the row for the back page
                 const reversedRow = [...row].reverse();
                 
-                // If the row has only 1 item, we need to add an empty placeholder to keep the grid layout correct
                 if (row.length === 1) {
                     const emptyWrapper = document.createElement('div');
                     emptyWrapper.className = 'print-card';
@@ -490,16 +534,13 @@ window.toggleSide = function() {
     if (front.style.display === 'none') {
         front.style.display = 'block';
         back.style.display = 'none';
-        toggle.innerHTML = `${t.frontSide}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
+        toggle.innerHTML = t.frontSide;
     } else {
         front.style.display = 'none';
         back.style.display = 'block';
-        toggle.innerHTML = `${t.backSide}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
+        toggle.innerHTML = t.backSide;
     }
 }
-
-
-// Language switcher logic moved to setupEventListeners
 
 function updateLanguage(lang) {
     document.documentElement.lang = lang;
@@ -509,25 +550,14 @@ function updateLanguage(lang) {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         if (t[key]) {
-            if (el.tagName === 'OPTION') {
-                el.textContent = t[key];
-            } else {
-                el.textContent = t[key];
-            }
+            el.textContent = t[key];
         }
     });
-
-    // Update delete button text if it exists
-    const deleteBtn = document.getElementById('delete-saved');
-    if (deleteBtn && t.delete) {
-        deleteBtn.textContent = t.delete;
-    }
 
     // Update side toggle text
     const toggle = document.getElementById('side-toggle');
     if (toggle) {
-        const sideText = document.getElementById('card-front').style.display !== 'none' ? t.frontSide : t.backSide;
-        toggle.innerHTML = `${sideText}\n<span style="font-size: 10px; font-weight: normal;">Kattints a fordításhoz</span>`;
+        toggle.innerHTML = document.getElementById('card-front').style.display !== 'none' ? t.frontSide : t.backSide;
     }
 
     // Update current lang button
@@ -546,23 +576,11 @@ function updateLanguage(lang) {
 // Expose functions to window for onclick handlers
 window.loadFromQueue = loadFromQueue;
 window.removeFromQueue = removeFromQueue;
-window.clearQueue = () => {
-    const lang = document.documentElement.lang || 'hu';
-    const t = translations[lang] || translations['hu'];
-    if (confirm(t.confirmClearQueue || 'Biztosan üríted a nyomtatási listát?')) {
-        state.patternQueue = [];
-        updateQueueUI();
-    }
-};
 
 // Start
 window.addEventListener('DOMContentLoaded', async () => {
     try {
         await init();
-        const clearBtn = document.getElementById('clear-queue');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', window.clearQueue);
-        }
     } catch (err) {
         console.error("Initialization error:", err);
         document.body.innerHTML = `<div style="color:red; padding:20px;">Hiba történt az alkalmazás betöltésekor: ${err.message}</div>`;

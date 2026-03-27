@@ -249,20 +249,21 @@ button {
 .editor-main-area {
     flex: 1;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 30px;
     justify-content: flex-start;
-    align-items: flex-start;
+    align-items: center;
     min-width: 0;
-    margin-left: 120px; /* Kártya jobbra tolása a picker miatt */
+    padding-top: 20px;
 }
 
 .editor-container {
-    flex: 1;
+    width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
     min-width: 0;
+    overflow: visible;
 }
 
 .tool-section h3, .queue-sidebar h3 {
@@ -365,12 +366,12 @@ button {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    width: calc(var(--card-width) * 0.5);
-    height: calc(var(--card-height) * 0.5);
-    transition: width 0.3s, height 0.3s;
+    width: auto;
+    height: auto;
     max-width: 100%;
     position: relative;
     margin-bottom: 40px;
+    transform-origin: top center;
 }
 
 .side-tag {
@@ -449,7 +450,7 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 25px;
+    top: 25px; /* 2.5mm felső margó (kb. 9.45px, de az user 2.5mm-t kért, ami 25px a 10px=1mm skálán) */
     left: 25px;
     display: grid;
     grid-template-columns: repeat(5, var(--cell-size));
@@ -520,8 +521,22 @@ button {
 .cell.c-g.has-value { background-color: #32A050; }
 .cell.c-b.has-value { background-color: #3264C8; }
 .cell.c-y.has-value { background-color: #F0C828; }
-.cell.c-p.has-value { background-color: #8C3CA0; }
-.cell.c-w.has-value { background-color: #f0f0f0; }
+/* Glass effect */
+.cell.glass {
+    position: relative;
+}
+
+.cell.glass::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
 
 /* Dice Face Simulation */
 .dice-face {
@@ -671,29 +686,115 @@ button {
     border-color: #fff;
 }
 
-/* Fixed Cell Picker - Toggleable Drawer */
-.fixed-picker {
-    position: fixed;
-    left: 250px; /* Sidebar szélessége */
-    top: 50%;
-    transform: translateY(-50%) translateX(-110%); /* Rejtve a sidebar mögött */
-    width: 140px; /* Kisebb méret */
+/* Top Tabs UI */
+.top-tabs-container {
+    width: 100%;
     background-color: var(--panel-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--panel-border);
-    border-radius: 0 15px 15px 0;
-    padding: 12px;
-    box-shadow: 5px 0 25px rgba(0,0,0,0.6);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    height: fit-content;
-    z-index: 90; /* Sidebar (100) alatt */
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-bottom: 1px solid var(--panel-border);
+    position: relative;
+    z-index: 900;
 }
 
-.fixed-picker.show {
-    transform: translateY(-50%) translateX(0);
+.tabs-header {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 20px;
+}
+
+.tab-handle {
+    background-color: var(--btn-secondary-bg);
+    color: var(--text-main);
+    padding: 10px 20px;
+    border-radius: 0 0 12px 12px;
+    border: 1px solid var(--panel-border);
+    border-top: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab-handle:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+    color: var(--accent-gold);
+}
+
+.top-tab.active .tab-handle {
+    background-color: var(--accent-gold);
+    color: #000;
+    border-color: var(--accent-gold);
+}
+
+.tab-content {
+    display: none;
+    background-color: rgba(15, 15, 15, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.top-tab.active .tab-content {
+    display: block;
+}
+
+/* Picker inside tab */
+.picker-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.picker-section {
+    min-width: 150px;
+}
+
+.picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+/* Promo/Saved inside tab */
+.promo-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.promo-section {
+    flex: 1;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+/* Queue inside tab */
+.queue-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.queue-controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.schematic-wrapper {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 
 .picker-section h4 {
