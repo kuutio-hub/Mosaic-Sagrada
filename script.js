@@ -60,21 +60,22 @@ async function init() {
  */
 window.openPicker = function(e, side, index) {
     e.stopPropagation();
+    
+    // Remove active class from all cells
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+    
+    // Add active class to clicked cell
+    const cell = e.currentTarget;
+    cell.classList.add('active');
+    
     activeCell = { side, index };
-    
-    const picker = document.getElementById('cell-picker');
-    picker.classList.remove('picker-hidden');
-    
-    // Pozicionálás a kurzorhoz
-    picker.style.top = `${e.pageY}px`;
-    picker.style.left = `${e.pageX}px`;
 }
 
 /**
  * Picker bezárása
  */
 function closePicker() {
-    document.getElementById('cell-picker').classList.add('picker-hidden');
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
     activeCell = null;
 }
 
@@ -86,21 +87,26 @@ function setupEventListeners() {
     document.getElementById('double-sided').addEventListener('change', (e) => {
         const backCard = document.getElementById('card-back');
         const toggle = document.getElementById('side-toggle');
+        const backSchematic = document.getElementById('schematic-back');
+        
         if (e.target.checked) {
             backCard.style.display = 'none'; // Default to front
             toggle.style.display = 'block';
+            if(backSchematic) backSchematic.style.display = 'grid';
         } else {
             backCard.style.display = 'none';
             document.getElementById('card-front').style.display = 'block';
             toggle.style.display = 'none';
+            if(backSchematic) backSchematic.style.display = 'none';
         }
+        updateQueueUI();
     });
 
     // Card flip functionality removed from here to avoid redundancy
     // It's handled by window.toggleSide and the card-container click listener at the end
 
     // Picker elemek kattintása
-    document.querySelectorAll('.picker-item').forEach(item => {
+    document.querySelectorAll('.picker-btn').forEach(item => {
         item.addEventListener('click', () => {
             if (activeCell) {
                 const { side, index } = activeCell;
@@ -117,7 +123,10 @@ function setupEventListeners() {
                 }
 
                 renderGrid(side);
-                closePicker();
+                
+                // Keep cell active after edit
+                const cell = document.querySelector(`.cell[data-side="${side}"][data-index="${index}"]`);
+                if(cell) cell.classList.add('active');
             }
         });
     });
@@ -157,6 +166,10 @@ function setupEventListeners() {
     document.getElementById('open-preview-btn').addEventListener('click', () => {
         document.getElementById('preview-panel').classList.add('open');
     });
+    
+    document.getElementById('open-preview-tab').addEventListener('click', () => {
+        document.getElementById('preview-panel').classList.add('open');
+    });
 
     document.getElementById('close-preview').addEventListener('click', () => {
         document.getElementById('preview-panel').classList.remove('open');
@@ -164,7 +177,10 @@ function setupEventListeners() {
 
     // Kattintás bárhova máshova -> picker/dropdown bezárása
     document.addEventListener('click', (e) => {
-        if (!document.getElementById('cell-picker').contains(e.target)) {
+        // Deselect cell if clicking outside card and picker
+        const cardContainer = document.getElementById('card-container');
+        const fixedPicker = document.getElementById('fixed-picker');
+        if (cardContainer && fixedPicker && !cardContainer.contains(e.target) && !fixedPicker.contains(e.target)) {
             closePicker();
         }
         
@@ -185,8 +201,9 @@ function setupEventListeners() {
         // Preview panel bezárása ha kívülre kattintunk
         const previewPanel = document.getElementById('preview-panel');
         const openPreviewBtn = document.getElementById('open-preview-btn');
+        const openPreviewTab = document.getElementById('open-preview-tab');
         if (previewPanel && previewPanel.classList.contains('open') && 
-            !previewPanel.contains(e.target) && e.target !== openPreviewBtn) {
+            !previewPanel.contains(e.target) && e.target !== openPreviewBtn && e.target !== openPreviewTab) {
             previewPanel.classList.remove('open');
         }
     });
@@ -347,49 +364,56 @@ function preparePrintLayout() {
     
     const isDoubleSided = document.getElementById('double-sided').checked;
     
-    // Front page
-    const frontPage = document.createElement('div');
-    frontPage.className = 'print-page';
-    
-    state.patternQueue.forEach((item, index) => {
-        if (index >= 9) return;
-        const cardWrapper = document.createElement('div');
-        cardWrapper.className = 'print-card-wrapper';
-        const img = document.createElement('img');
-        img.src = item.frontImg;
-        cardWrapper.appendChild(img);
-        frontPage.appendChild(cardWrapper);
-    });
-    printContainer.appendChild(frontPage);
+    // Handle multiple pages (6 cards per page)
+    const itemsPerPage = 6;
+    const numPages = Math.ceil(state.patternQueue.length / itemsPerPage);
 
-    // Back page if double sided
-    if (isDoubleSided) {
-        const backPage = document.createElement('div');
-        backPage.className = 'print-page';
+    for (let p = 0; p < numPages; p++) {
+        const pageItems = state.patternQueue.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
         
-        // For back page, we need to mirror the order horizontally
-        // Front: 1 2 3 -> Back: 3 2 1
-        // Front: 4 5 6 -> Back: 6 5 4
-        // Front: 7 8 9 -> Back: 9 8 7
+        // Front page
+        const frontPage = document.createElement('div');
+        frontPage.className = 'print-page';
         
-        const rows = [
-            state.patternQueue.slice(0, 3),
-            state.patternQueue.slice(3, 6),
-            state.patternQueue.slice(6, 9)
-        ];
-
-        rows.forEach(row => {
-            const reversedRow = [...row].reverse();
-            reversedRow.forEach(item => {
-                const cardWrapper = document.createElement('div');
-                cardWrapper.className = 'print-card-wrapper';
-                const img = document.createElement('img');
-                img.src = item.backImg || item.frontImg; // Fallback to front if no back
-                cardWrapper.appendChild(img);
-                backPage.appendChild(cardWrapper);
-            });
+        pageItems.forEach(item => {
+            const cardWrapper = document.createElement('div');
+            cardWrapper.className = 'print-card';
+            const img = document.createElement('img');
+            img.src = item.frontImg;
+            cardWrapper.appendChild(img);
+            frontPage.appendChild(cardWrapper);
         });
-        printContainer.appendChild(backPage);
+        printContainer.appendChild(frontPage);
+
+        // Back page if double sided
+        if (isDoubleSided) {
+            const backPage = document.createElement('div');
+            backPage.className = 'print-page';
+            
+            // For back page, we need to mirror the order horizontally
+            // Front: 1 2 -> Back: 2 1
+            // Front: 3 4 -> Back: 4 3
+            // Front: 5 6 -> Back: 6 5
+            
+            const rows = [
+                pageItems.slice(0, 2),
+                pageItems.slice(2, 4),
+                pageItems.slice(4, 6)
+            ];
+
+            rows.forEach(row => {
+                const reversedRow = [...row].reverse();
+                reversedRow.forEach(item => {
+                    const cardWrapper = document.createElement('div');
+                    cardWrapper.className = 'print-card';
+                    const img = document.createElement('img');
+                    img.src = item.backImg || item.frontImg; // Fallback to front if no back
+                    cardWrapper.appendChild(img);
+                    backPage.appendChild(cardWrapper);
+                });
+            });
+            printContainer.appendChild(backPage);
+        }
     }
 }
 

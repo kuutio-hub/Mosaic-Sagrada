@@ -73,25 +73,58 @@
                 </div>
             </aside>
 
-            <div class="editor-container">
-                <div class="card-wrapper active" id="card-container">
-                    <div class="side-tag">
-                        <button id="side-toggle" class="flip-btn">ELŐLAP</button>
-                    </div>
-                    <div id="card-front" class="sagrada-card">
-                        <div class="svg-layer" id="frame-front-svg"></div>
-                        <div class="grid-layer" id="grid-front"></div>
-                        <div class="footer-layer">
-                            <input type="text" class="card-title-input" value="MINTA NÉV" data-side="front">
-                            <div class="difficulty-display" data-side="front"></div>
+            <div class="editor-main-area">
+                <div class="editor-container">
+                    <div class="card-wrapper active" id="card-container">
+                        <div class="side-tag">
+                            <button id="side-toggle" class="flip-btn">ELŐLAP</button>
+                        </div>
+                        <div id="card-front" class="sagrada-card">
+                            <div class="svg-layer" id="frame-front-svg"></div>
+                            <div class="grid-layer" id="grid-front"></div>
+                            <div class="footer-layer">
+                                <input type="text" class="card-title-input" value="MINTA NÉV" data-side="front">
+                                <div class="difficulty-display" data-side="front"></div>
+                            </div>
+                        </div>
+                        <div id="card-back" class="sagrada-card" style="display:none;">
+                            <div class="svg-layer" id="frame-back-svg"></div>
+                            <div class="grid-layer" id="grid-back"></div>
+                            <div class="footer-layer">
+                                <input type="text" class="card-title-input" value="MINTA NÉV (HÁT)" data-side="back">
+                                <div class="difficulty-display" data-side="back"></div>
+                            </div>
                         </div>
                     </div>
-                    <div id="card-back" class="sagrada-card" style="display:none;">
-                        <div class="svg-layer" id="frame-back-svg"></div>
-                        <div class="grid-layer" id="grid-back"></div>
-                        <div class="footer-layer">
-                            <input type="text" class="card-title-input" value="MINTA NÉV (HÁT)" data-side="back">
-                            <div class="difficulty-display" data-side="back"></div>
+                </div>
+
+                <!-- Fixed Cell Picker -->
+                <div id="fixed-picker" class="fixed-picker">
+                    <div class="picker-section">
+                        <h4 data-i18n="colors">Színek</h4>
+                        <div class="picker-grid">
+                            <button class="picker-btn color-r" data-val="R" data-type="color"></button>
+                            <button class="picker-btn color-g" data-val="G" data-type="color"></button>
+                            <button class="picker-btn color-b" data-val="B" data-type="color"></button>
+                            <button class="picker-btn color-y" data-val="Y" data-type="color"></button>
+                            <button class="picker-btn color-p" data-val="P" data-type="color"></button>
+                            <button class="picker-btn color-w" data-val="W" data-type="color"></button>
+                        </div>
+                    </div>
+                    <div class="picker-section">
+                        <h4 data-i18n="numbers">Számok</h4>
+                        <div class="picker-grid">
+                            <button class="picker-btn val-btn" data-val="1" data-type="value">1</button>
+                            <button class="picker-btn val-btn" data-val="2" data-type="value">2</button>
+                            <button class="picker-btn val-btn" data-val="3" data-type="value">3</button>
+                            <button class="picker-btn val-btn" data-val="4" data-type="value">4</button>
+                            <button class="picker-btn val-btn" data-val="5" data-type="value">5</button>
+                            <button class="picker-btn val-btn" data-val="6" data-type="value">6</button>
+                        </div>
+                    </div>
+                    <div class="picker-section">
+                        <div class="picker-grid">
+                            <button class="picker-btn clear-btn" data-val="." data-type="clear" data-i18n="empty">Üres</button>
                         </div>
                     </div>
                 </div>
@@ -100,6 +133,7 @@
     </main>
 
     <!-- Nyomtatási Előnézet Panel -->
+    <div id="open-preview-tab" class="preview-side-tab" data-i18n="printQueue">Nyomtatási lista</div>
     <button id="open-preview-btn" title="Nyomtatási lista">🖨️</button>
     <div id="preview-panel" class="preview-panel">
         <div class="preview-header">
@@ -115,28 +149,22 @@
 
             <div class="schematic-container">
                 <div class="a4-schematic" id="schematic-front" data-label="ELŐLAP (A4)">
-                    <!-- 9 slots -->
+                    <!-- 6 slots -->
                     <div class="schematic-card" data-index="0">1</div>
                     <div class="schematic-card" data-index="1">2</div>
                     <div class="schematic-card" data-index="2">3</div>
                     <div class="schematic-card" data-index="3">4</div>
                     <div class="schematic-card" data-index="4">5</div>
                     <div class="schematic-card" data-index="5">6</div>
-                    <div class="schematic-card" data-index="6">7</div>
-                    <div class="schematic-card" data-index="7">8</div>
-                    <div class="schematic-card" data-index="8">9</div>
                 </div>
                 <div class="a4-schematic" id="schematic-back" data-label="HÁTLAP (A4)">
-                    <!-- 9 slots (mirrored order for duplex) -->
-                    <div class="schematic-card" data-index="2">3</div>
+                    <!-- 6 slots (mirrored order for duplex) -->
                     <div class="schematic-card" data-index="1">2</div>
                     <div class="schematic-card" data-index="0">1</div>
+                    <div class="schematic-card" data-index="3">4</div>
+                    <div class="schematic-card" data-index="2">3</div>
                     <div class="schematic-card" data-index="5">6</div>
                     <div class="schematic-card" data-index="4">5</div>
-                    <div class="schematic-card" data-index="3">4</div>
-                    <div class="schematic-card" data-index="8">9</div>
-                    <div class="schematic-card" data-index="7">8</div>
-                    <div class="schematic-card" data-index="6">7</div>
                 </div>
             </div>
         </div>
@@ -185,7 +213,7 @@
     <footer class="no-print">
         <div class="footer-content">
             <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva.</p>
-            <p>Verzió: 0.1.2</p>
+            <p>Verzió: 3.1.0</p>
         </div>
     </footer>
 

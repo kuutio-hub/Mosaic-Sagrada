@@ -59,12 +59,21 @@ export function updateCellAppearance(cell, cellData) {
             diceFace.classList.add('overlay');
         }
         
-        const numDots = parseInt(value);
-        for (let i = 0; i < numDots; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'dice-dot';
-            diceFace.appendChild(dot);
-        }
+        const img = document.createElement('img');
+        img.src = `Cells/${value}.png`;
+        img.alt = `Dice ${value}`;
+        img.className = 'dice-img';
+        img.onerror = () => {
+            // Fallback to SVG dots if PNG fails
+            img.style.display = 'none';
+            const numDots = parseInt(value);
+            for (let i = 0; i < numDots; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dice-dot';
+                diceFace.appendChild(dot);
+            }
+        };
+        diceFace.appendChild(img);
         cell.appendChild(diceFace);
     }
 }
@@ -114,7 +123,7 @@ export function updateQueueUI() {
 
     // Fill slots
     state.patternQueue.forEach((item, idx) => {
-        if (idx >= 9) return; // Only 9 slots on A4
+        if (idx >= 6) return; // Only 6 slots on A4
 
         const frontSlot = frontSchematic.querySelector(`.schematic-card[data-index="${idx}"]`);
         // Back slots are mirrored horizontally for duplex

@@ -59,7 +59,7 @@ export async function addToQueue() {
         frontCard.style.transform = originalTransformFront;
         backCard.style.transform = originalTransformBack;
         btn.disabled = false;
-        btn.textContent = t.addToQueue;
+        btn.textContent = originalText;
     }
 }
 
