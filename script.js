@@ -675,8 +675,8 @@ window.generatePDF = async function() {
     // 1. Kártyák képként generálása
     const cardImages = [];
     for (const item of state.patternQueue) {
-        const frontImg = await generateCardImage({ cells: item.frontCells });
-        const backImg = isDoubleSided ? await generateCardImage({ cells: item.backCells }) : null;
+        const frontImg = await generateCardImage(item.frontState);
+        const backImg = isDoubleSided ? await generateCardImage(item.backState || item.frontState) : null;
         cardImages.push({ frontImg, backImg });
     }
 
