@@ -1,10 +1,11 @@
 /* Sagrada Designer Styles */
 :root {
-    --card-width: 895px;
-    --card-height: 795px;
-    --cell-size: 150px;
-    --gap-h: 24px;
-    --gap-v: 24px;
+    /* 90x80mm card dimensions. Assuming 1mm = 10px for easier calculation */
+    --card-width: 900px;
+    --card-height: 800px;
+    --cell-size: 155px; /* Adjusting cell size to fit 5 columns with 25px gap */
+    --gap-h: 25px; /* 2.5mm */
+    --gap-v: 25px; /* 2.5mm */
     --accent-gold: #d4af37;
     
     /* Default (Dark) Theme - More Sagrada-like */
@@ -100,18 +101,26 @@ h1 {
 }
 
 .lang-dropbtn {
-    background: var(--btn-secondary-bg);
-    color: var(--btn-secondary-text);
-    padding: 8px 12px;
-    border-radius: 12px;
+    background: transparent;
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 20px;
     border: 1px solid var(--panel-border);
     cursor: pointer;
-    font-size: 24px;
+    font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-width: 50px;
+    min-width: 100px;
     height: 40px;
+    transition: all 0.2s ease;
+}
+
+.lang-dropbtn:hover {
+    background-color: rgba(212, 175, 55, 0.1);
+    border-color: var(--accent-gold);
 }
 
 .lang-content {
@@ -120,7 +129,7 @@ h1 {
     right: 0;
     background-color: var(--panel-bg);
     backdrop-filter: blur(20px);
-    min-width: 100px;
+    min-width: 120px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.3);
     z-index: 1001;
     border-radius: 12px;
@@ -133,13 +142,16 @@ h1 {
     background: transparent;
     color: var(--text-main);
     width: 100%;
-    text-align: left;
+    text-align: center;
     padding: 10px 15px;
     border-radius: 0;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     font-size: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-weight: 500;
 }
 
 .lang-btn:hover {
@@ -212,16 +224,18 @@ button {
 
 .main-layout {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 20px;
     max-width: 100%;
     width: 100%;
     padding: 10px;
     justify-content: center;
+    align-items: flex-start;
 }
 
-.tools-sidebar, .queue-sidebar {
+.tools-sidebar {
     width: 280px;
+    flex-shrink: 0;
     background-color: var(--panel-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -232,6 +246,24 @@ button {
     flex-direction: column;
     gap: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+}
+
+.editor-main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.editor-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-width: 0;
 }
 
 .tool-section h3, .queue-sidebar h3 {
@@ -334,8 +366,8 @@ button {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    width: calc(var(--card-width) * 0.45);
-    height: calc(var(--card-height) * 0.45);
+    width: calc(var(--card-width) * 0.5);
+    height: calc(var(--card-height) * 0.5);
     transition: width 0.3s, height 0.3s;
     max-width: 100%;
     position: relative;
@@ -367,19 +399,28 @@ button {
     height: var(--card-height);
     background-color: #000 !important;
     position: relative;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.4), 0 20px 50px rgba(0,0,0,0.8);
     border-radius: 25px;
     transform-origin: top center;
-    transform: scale(0.45);
+    transform: scale(0.5);
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 1;
 }
 
 .sagrada-card:hover {
-    transform: scale(0.46);
+    transform: scale(0.51);
 }
 
 @media (max-width: 1200px) {
+    .card-wrapper {
+        width: calc(var(--card-width) * 0.4);
+        height: calc(var(--card-height) * 0.4);
+    }
+    .sagrada-card { transform: scale(0.4); }
+    .sagrada-card:hover { transform: scale(0.41); }
+}
+@media (max-width: 768px) {
     .card-wrapper {
         width: calc(var(--card-width) * 0.35);
         height: calc(var(--card-height) * 0.35);
@@ -387,21 +428,13 @@ button {
     .sagrada-card { transform: scale(0.35); }
     .sagrada-card:hover { transform: scale(0.36); }
 }
-@media (max-width: 768px) {
+@media (max-width: 480px) {
     .card-wrapper {
         width: calc(var(--card-width) * 0.28);
-        height: calc(var(--card-height) * 0.28);
+        height: calc(var(--card-height) * 0.28 + 30px);
     }
     .sagrada-card { transform: scale(0.28); }
     .sagrada-card:hover { transform: scale(0.29); }
-}
-@media (max-width: 480px) {
-    .card-wrapper {
-        width: calc(var(--card-width) * 0.22);
-        height: calc(var(--card-height) * 0.22 + 30px);
-    }
-    .sagrada-card { transform: scale(0.22); }
-    .sagrada-card:hover { transform: scale(0.23); }
 }
 
 .svg-layer {
@@ -416,8 +449,8 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 24px;
-    left: 24.5px;
+    top: 25px;
+    left: 25px;
     display: grid;
     grid-template-columns: repeat(5, var(--cell-size));
     grid-template-rows: repeat(4, var(--cell-size));
@@ -452,6 +485,20 @@ button {
     background-color: #1a1a1a;
     border: 3px dashed #333;
     background-image: none;
+    position: relative;
+}
+
+.cell.empty-cell::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    background-color: #333;
+    border-radius: 50%;
+    opacity: 0.5;
 }
 
 .cell.empty-cell:hover {
@@ -588,8 +635,9 @@ button {
     justify-content: space-between;
     align-items: center;
     z-index: 20;
-    padding: 0 30px;
+    padding: 0 40px;
     box-sizing: border-box;
+    margin-bottom: 10px;
 }
 
 .card-title-input {
@@ -597,32 +645,32 @@ button {
     border: none;
     color: #fff;
     font-family: 'Uncial Antiqua', serif;
-    font-size: 28px;
+    font-size: 32px;
     text-align: left;
     width: 60%;
     outline: none;
     padding: 0;
-    margin-left: 10px;
+    margin: 0;
 }
 
 .card-title-input:focus {
-    border-bottom-color: var(--accent-gold);
+    border-bottom: 2px solid var(--accent-gold);
 }
 
 .difficulty-display {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     cursor: pointer;
     z-index: 30;
-    margin-right: 10px;
+    margin: 0;
 }
 
 .difficulty-dot {
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     background-color: #333;
     border-radius: 50%;
-    border: 1px solid #555;
+    border: 2px solid #555;
     transition: all 0.2s;
     position: relative;
 }
@@ -694,11 +742,10 @@ button {
 }
 
 .picker-btn.clear-btn {
-    grid-column: span 3;
-    aspect-ratio: auto;
-    padding: 10px;
+    aspect-ratio: 1;
     background-color: #ff3b30;
-    font-size: 16px;
+    font-size: 24px;
+    color: white;
 }
 
 /* Printer Friendly Mode */
@@ -779,7 +826,8 @@ button {
     position: fixed;
     right: -100%;
     top: 0;
-    width: 500px;
+    width: 450px;
+    max-width: 100vw;
     height: 100vh;
     background-color: var(--panel-bg);
     backdrop-filter: blur(30px);
@@ -833,16 +881,17 @@ button {
 }
 
 .a4-schematic {
-    width: 380px; /* Scaled A4 */
-    height: 537px;
+    width: 100%; /* Scaled A4 */
+    max-width: 400px;
+    aspect-ratio: 1 / 1.414;
     background-color: #fff;
     border: 1px solid #ccc;
     position: relative;
-    padding: 20px;
+    padding: 10px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(3, 1fr);
-    gap: 20px;
+    gap: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
@@ -951,11 +1000,11 @@ button {
 }
 
 @media (max-width: 768px) {
-    .main-content {
+    .main-layout {
         flex-direction: column;
     }
     
-    .sidebar {
+    .tools-sidebar {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid var(--panel-border);
@@ -1020,16 +1069,16 @@ button {
         width: 190mm; /* A4 width minus margins */
         height: 277mm; /* A4 height minus margins */
         display: grid;
-        grid-template-columns: repeat(2, 89.5mm);
-        grid-template-rows: repeat(3, 79.5mm);
-        gap: 10mm;
+        grid-template-columns: repeat(2, 90mm);
+        grid-template-rows: repeat(3, 80mm);
+        gap: 2mm; /* Reduced gap to bring cards closer */
         justify-content: center;
-        align-content: start;
+        align-content: center;
         page-break-after: always;
     }
     .print-card {
-        width: 89.5mm;
-        height: 79.5mm;
+        width: 90mm;
+        height: 80mm;
         position: relative;
         page-break-inside: avoid;
     }

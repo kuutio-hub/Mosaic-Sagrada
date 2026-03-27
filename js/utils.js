@@ -8,8 +8,8 @@ export async function renderToCanvas(id) {
     tempContainer.style.position = 'fixed';
     tempContainer.style.left = '-5000px';
     tempContainer.style.top = '-5000px';
-    tempContainer.style.width = '895px';
-    tempContainer.style.height = '795px';
+    tempContainer.style.width = '900px';
+    tempContainer.style.height = '800px';
     tempContainer.style.backgroundColor = 'white';
     document.body.appendChild(tempContainer);
 
@@ -52,8 +52,8 @@ export async function renderToCanvas(id) {
             useCORS: true,
             backgroundColor: null,
             logging: false,
-            width: 895,
-            height: 795
+            width: 900,
+            height: 800
         });
         document.body.removeChild(tempContainer);
         return canvas.toDataURL('image/png');

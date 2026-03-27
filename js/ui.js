@@ -46,6 +46,13 @@ export function updateCellAppearance(cell, cellData) {
         cell.classList.add('v-x');
         cell.classList.add('has-value');
         cell.textContent = 'X';
+        cell.style.color = '#fff';
+        cell.style.fontSize = '80px';
+        cell.style.fontFamily = 'Arial, sans-serif';
+        cell.style.fontWeight = 'bold';
+        if (color === '.') {
+            cell.style.color = '#333';
+        }
     } else if (value !== '.' && !isNaN(value)) {
         cell.classList.add('v-num');
         cell.classList.add('has-value');
@@ -75,6 +82,11 @@ export function updateCellAppearance(cell, cellData) {
         };
         diceFace.appendChild(img);
         cell.appendChild(diceFace);
+    }
+    
+    // Handle Empty Cell
+    if (color === '.' && value === '.') {
+        cell.classList.add('empty-cell');
     }
 }
 

@@ -20,13 +20,13 @@ let promoCards = [];
 
 // SVG Sablonok
 const frameSVG = `
-<svg width="880" height="630" viewBox="0 0 880 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="900" height="800" viewBox="0 0 900 800" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- Egyszerű fekete keret -->
-    <rect x="0" y="0" width="880" height="630" fill="#000"/>
-    <rect x="2" y="2" width="876" height="626" stroke="#333" stroke-width="1"/>
+    <rect x="0" y="0" width="900" height="800" fill="#000"/>
+    <rect x="2" y="2" width="896" height="796" stroke="#333" stroke-width="1"/>
     
     <!-- Rács keret -->
-    <rect x="15" y="15" width="850" height="580" rx="5" stroke="#222" stroke-width="2" class="grid-frame"/>
+    <rect x="15" y="15" width="870" height="670" rx="5" stroke="#222" stroke-width="2" class="grid-frame"/>
 </svg>
 `;
 
@@ -400,18 +400,35 @@ function preparePrintLayout() {
                 pageItems.slice(2, 4),
                 pageItems.slice(4, 6)
             ];
-
+            
             rows.forEach(row => {
+                // Reverse the row for the back page
                 const reversedRow = [...row].reverse();
-                reversedRow.forEach(item => {
+                
+                // If the row has only 1 item, we need to add an empty placeholder to keep the grid layout correct
+                if (row.length === 1) {
+                    const emptyWrapper = document.createElement('div');
+                    emptyWrapper.className = 'print-card';
+                    backPage.appendChild(emptyWrapper);
+                    
                     const cardWrapper = document.createElement('div');
                     cardWrapper.className = 'print-card';
                     const img = document.createElement('img');
-                    img.src = item.backImg || item.frontImg; // Fallback to front if no back
+                    img.src = reversedRow[0].backImg || reversedRow[0].frontImg;
                     cardWrapper.appendChild(img);
                     backPage.appendChild(cardWrapper);
-                });
+                } else {
+                    reversedRow.forEach(item => {
+                        const cardWrapper = document.createElement('div');
+                        cardWrapper.className = 'print-card';
+                        const img = document.createElement('img');
+                        img.src = item.backImg || item.frontImg;
+                        cardWrapper.appendChild(img);
+                        backPage.appendChild(cardWrapper);
+                    });
+                }
             });
+            
             printContainer.appendChild(backPage);
         }
     }
