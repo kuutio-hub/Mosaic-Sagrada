@@ -727,37 +727,22 @@ button {
     transform: translateY(4px);
 }
 
-/* Floating Panels - Narrow and centered */
+/* Floating Panels - Left aligned */
 .floating-panel {
     display: none;
     position: fixed;
-    top: 115px; /* Tabs alatt */
-    left: 50%;
-    transform: translateX(-50%);
-    width: 320px; /* Keskenyebb */
-    max-width: 90vw;
+    top: 120px;
+    left: 20px;
+    width: 300px;
+    max-height: calc(100vh - 140px);
     background-color: rgba(15, 15, 15, 0.98);
     backdrop-filter: blur(25px);
     border: 1px solid var(--accent-gold);
     border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     z-index: 1100;
-    overflow: hidden;
+    overflow-y: auto;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Palette panel specific - slide from left */
-#panel-palette {
-    left: -350px;
-    transform: none;
-    top: 60px;
-    height: calc(100vh - 120px);
-    border-radius: 0 16px 16px 0;
-}
-
-#panel-palette.active {
-    display: block;
-    left: 0;
 }
 
 .floating-panel.active {
@@ -1236,8 +1221,7 @@ button {
         height: 64mm;
         position: relative;
         page-break-inside: avoid;
-        border-right: 0.2mm solid #000;
-        border-bottom: 0.2mm solid #000;
+        border: 0.2mm solid #000;
         box-sizing: border-box;
         background: white;
     }
