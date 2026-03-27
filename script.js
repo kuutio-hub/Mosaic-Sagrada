@@ -256,13 +256,6 @@ function setupEventListeners() {
         }
     });
 
-    // Print menu toggle
-    document.getElementById('print-menu-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const menu = document.getElementById('print-menu-content');
-        menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-    });
-
     // Nyomtatás gomb a fő panelen
     const printBtnMain = document.getElementById('print-btn-main');
     if (printBtnMain) {
@@ -273,38 +266,20 @@ function setupEventListeners() {
         });
     }
 
-    // Export gomb (most már csak nyomtatást hív)
-    document.getElementById('export-pdf').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const menu = document.getElementById('print-menu-content');
-        if(menu) menu.style.display = 'none';
-        preparePrintLayout();
-        window.print();
-    });
-
-    // Nyomtatás gomb a menüben
-    const printBtnMenu = document.getElementById('print-btn');
-    if (printBtnMenu) {
-        printBtnMenu.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const menu = document.getElementById('print-menu-content');
-            if(menu) menu.style.display = 'none';
-            preparePrintLayout();
-            window.print();
+    // Printer friendly toggle
+    const printerFriendly = document.getElementById('printer-friendly');
+    if (printerFriendly) {
+        printerFriendly.addEventListener('change', (e) => {
+            const cards = document.querySelectorAll('.sagrada-card');
+            cards.forEach(card => {
+                if (e.target.checked) {
+                    card.classList.add('printer-friendly');
+                } else {
+                    card.classList.remove('printer-friendly');
+                }
+            });
         });
     }
-
-    // Printer friendly toggle
-    document.getElementById('printer-friendly').addEventListener('change', (e) => {
-        const cards = document.querySelectorAll('.sagrada-card');
-        cards.forEach(card => {
-            if (e.target.checked) {
-                card.classList.add('printer-friendly');
-            } else {
-                card.classList.remove('printer-friendly');
-            }
-        });
-    });
 
     // Side toggle
     document.getElementById('side-toggle').addEventListener('click', (e) => {
@@ -322,6 +297,7 @@ function setupEventListeners() {
                 applyCardToState(card, side);
                 renderGrid(side);
                 document.querySelector(`.card-title-input[data-side="${side}"]`).value = card.title;
+                updateTitleScaling(side);
             }
         }
     });
@@ -331,6 +307,8 @@ function setupEventListeners() {
         const cardTitle = e.target.value;
         if (cardTitle) {
             applySavedCard(cardTitle);
+            updateTitleScaling('front');
+            updateTitleScaling('back');
         }
     });
 
@@ -339,6 +317,8 @@ function setupEventListeners() {
         const title = document.getElementById('saved-select').value;
         if (title) {
             applySavedCard(title);
+            updateTitleScaling('front');
+            updateTitleScaling('back');
         }
     });
 
@@ -529,11 +509,7 @@ function updateLanguage(lang) {
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.dataset.i18n;
         if (t[key]) {
-            if (key === 'print' && el.id === 'print-menu-btn') {
-                el.textContent = t[key] + ' ▼';
-            } else if (key === 'print' && el.id === 'print-btn') {
-                el.textContent = t[key] + ' (Lista)';
-            } else if (el.tagName === 'OPTION') {
+            if (el.tagName === 'OPTION') {
                 el.textContent = t[key];
             } else {
                 el.textContent = t[key];

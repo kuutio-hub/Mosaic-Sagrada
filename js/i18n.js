@@ -37,7 +37,8 @@ export const translations = {
         frontPage: "Előlap (A4)",
         backPage: "Hátlap (A4)",
         doubleSidedPrint: "Kétoldalas nyomtatás",
-        confirmClearQueue: "Biztosan üríted a nyomtatási listát?"
+        confirmClearQueue: "Biztosan üríted a nyomtatási listát?",
+        printStart: "Nyomtatás indítása"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -77,7 +78,8 @@ export const translations = {
         frontPage: "Front Page (A4)",
         backPage: "Back Page (A4)",
         doubleSidedPrint: "Double-sided Printing",
-        confirmClearQueue: "Are you sure you want to clear the print list?"
+        confirmClearQueue: "Are you sure you want to clear the print list?",
+        printStart: "Start Printing"
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -112,7 +114,8 @@ export const translations = {
         alertQueueEmpty: "Die Druckliste ist leer!",
         confirmClear: "Möchten Sie die gesamte Liste wirklich löschen?",
         reset: "Karte löschen (Zurücksetzen)",
-        alertPdfError: "Fehler beim Generieren der PDF."
+        alertPdfError: "Fehler beim Generieren der PDF.",
+        printStart: "Drucken starten"
     }
 };
 
