@@ -38,51 +38,72 @@
         </div>
     </header>
 
-    <!-- Toolbar with small tabs -->
+    <!-- Toolbar with tabs hanging from header -->
     <div class="toolbar no-print">
-        <button class="toolbar-tab" data-target="panel-palette" data-i18n="paletteTab">🎨 Paletta</button>
+        <button class="toolbar-tab" data-target="panel-palette" data-i18n="pickerTab">🎨 Paletta</button>
         <button class="toolbar-tab" data-target="panel-promo" data-i18n="promoTab">🃏 Promo</button>
         <button class="toolbar-tab" data-target="panel-queue" data-i18n="queueTab">🖨️ Lista</button>
         <button class="toolbar-tab" data-target="panel-settings" data-i18n="settingsTab">⚙️ Beállítások</button>
     </div>
 
-    <!-- Floating Panels -->
+    <!-- Toolbar removed from here -->
+
     <div id="panel-palette" class="floating-panel">
         <div class="panel-header">
-            <span data-i18n="paletteTab">Paletta</span>
+            <span data-i18n="pickerTab">Paletta</span>
             <button class="close-panel">×</button>
         </div>
         <div class="panel-content">
+            <!-- Generator Section -->
+            <div class="generator-section" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333;">
+                <h3 data-i18n="generatorTitle" style="margin-bottom: 15px; font-size: 16px; color: var(--accent-gold);">Minta generátor</h3>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label data-i18n="genColorCount">Színes mezők:</label>
+                    <input type="number" id="gen-color-count" value="7" min="0" max="20" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label data-i18n="genUniqueColors">Hányféle szín:</label>
+                    <input type="number" id="gen-unique-colors" value="5" min="1" max="5" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label data-i18n="genValueCount">Számos mezők:</label>
+                    <input type="number" id="gen-value-count" value="7" min="0" max="20" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <label data-i18n="genUniqueValues">Hányféle szám:</label>
+                    <input type="number" id="gen-unique-values" value="6" min="1" max="6" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <button id="generate-pattern-btn" class="btn-primary" style="width: 100%;" data-i18n="generate">Generálás</button>
+            </div>
+
             <div class="picker-section">
                 <h4 data-i18n="colors">Színek</h4>
                 <div class="picker-grid small">
-                    <button class="picker-btn color-r" data-val="R" data-type="color"></button>
-                    <button class="picker-btn color-g" data-val="G" data-type="color"></button>
-                    <button class="picker-btn color-b" data-val="B" data-type="color"></button>
-                    <button class="picker-btn color-y" data-val="Y" data-type="color"></button>
-                    <button class="picker-btn color-p" data-val="P" data-type="color"></button>
-                    <button class="picker-btn color-w" data-val="W" data-type="color"></button>
+                    <button class="picker-btn color-btn c-r" data-color="R" title="Piros"></button>
+                    <button class="picker-btn color-btn c-g" data-color="G" title="Zöld"></button>
+                    <button class="picker-btn color-btn c-b" data-color="B" title="Kék"></button>
+                    <button class="picker-btn color-btn c-y" data-color="Y" title="Sárga"></button>
+                    <button class="picker-btn color-btn c-p" data-color="P" title="Lila"></button>
+                    <button class="picker-btn color-btn c-w" data-color="W" title="Fehér"></button>
+                    <button class="picker-btn color-btn c-none" data-color="." title="Nincs szín">×</button>
                 </div>
             </div>
-            <div class="picker-section">
+            <div class="picker-section" style="margin-top: 15px;">
                 <h4 data-i18n="numbers">Számok</h4>
                 <div class="picker-grid small">
-                    <button class="picker-btn val-btn" data-val="1" data-type="value">1</button>
-                    <button class="picker-btn val-btn" data-val="2" data-type="value">2</button>
-                    <button class="picker-btn val-btn" data-val="3" data-type="value">3</button>
-                    <button class="picker-btn val-btn" data-val="4" data-type="value">4</button>
-                    <button class="picker-btn val-btn" data-val="5" data-type="value">5</button>
-                    <button class="picker-btn val-btn" data-val="6" data-type="value">6</button>
+                    <button class="picker-btn val-btn" data-val="1">1</button>
+                    <button class="picker-btn val-btn" data-val="2">2</button>
+                    <button class="picker-btn val-btn" data-val="3">3</button>
+                    <button class="picker-btn val-btn" data-val="4">4</button>
+                    <button class="picker-btn val-btn" data-val="5">5</button>
+                    <button class="picker-btn val-btn" data-val="6">6</button>
+                    <button class="picker-btn val-btn" data-val="X">X</button>
+                    <button class="picker-btn val-btn" data-val=".">🗑️</button>
                 </div>
             </div>
-            <div class="picker-section">
-                <div class="picker-grid small">
-                    <button class="picker-btn val-btn" data-val="X" data-type="value" title="Tiltott mező">X</button>
-                    <button class="picker-btn clear-btn" data-val="." data-type="clear" title="Mező törlése">🗑️</button>
-                </div>
-            </div>
-            <div class="picker-section" style="margin-top: 10px; border-top: 1px solid var(--panel-border); padding-top: 10px;">
-                <button id="clear-card-btn" class="btn-danger" style="width: 100%; font-size: 12px;" data-i18n="clearCard">Kártya ürítése</button>
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button id="clear-card-btn" class="btn-secondary" style="flex: 1; font-size: 12px;" data-i18n="clearCard">Kártya ürítése</button>
+                <button id="save-card-btn" class="btn-primary" style="flex: 1; font-size: 12px;" data-i18n="saveCard">Mentés</button>
             </div>
         </div>
     </div>
@@ -175,30 +196,6 @@
                     <input type="checkbox" id="rounded-corners"> <span data-i18n="roundedCorners">Lekerekített sarkok (5mm)</span>
                 </label>
             </div>
-
-            <!-- Minta generátor szekció -->
-            <div class="generator-section" style="border-top: 1px solid var(--panel-border); padding-top: 15px; margin-top: 15px;">
-                <h4 data-i18n="generatorTitle" style="margin-bottom: 10px; font-family: 'Uncial Antiqua', serif; color: var(--accent-color);">Minta generátor</h4>
-                
-                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label data-i18n="genColorCount" style="font-size: 13px;">Színes mezők:</label>
-                    <input type="number" id="gen-color-count" min="0" max="20" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
-                </div>
-                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label data-i18n="genUniqueColors" style="font-size: 13px;">Hányféle szín:</label>
-                    <input type="number" id="gen-unique-colors" min="1" max="5" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
-                </div>
-                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <label data-i18n="genValueCount" style="font-size: 13px;">Számos mezők:</label>
-                    <input type="number" id="gen-value-count" min="0" max="20" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
-                </div>
-                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <label data-i18n="genUniqueValues" style="font-size: 13px;">Hányféle szám:</label>
-                    <input type="number" id="gen-unique-values" min="1" max="6" value="6" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
-                </div>
-                
-                <button id="generate-pattern-btn" class="btn-primary" style="width: 100%; padding: 10px; font-family: 'Uncial Antiqua', serif; cursor: pointer;" data-i18n="generate">Generálás</button>
-            </div>
         </div>
     </div>
 
@@ -208,7 +205,7 @@
                 <div class="editor-container" id="editor-container">
                     <div class="card-wrapper active" id="card-container">
                         <div class="side-tag">
-                            <button id="side-toggle" class="flip-btn">ELŐLAP</button>
+                            <button id="side-toggle" class="flip-btn" data-i18n="flipSide">FORDÍTS!</button>
                         </div>
                         <div id="card-front" class="sagrada-card">
                             <div class="svg-layer" id="frame-front-svg"></div>

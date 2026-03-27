@@ -24,12 +24,11 @@ let promoCards = [];
 // SVG Sablonok
 const frameSVG = `
 <svg width="900" height="800" viewBox="0 0 900 800" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Egyszerű fekete keret -->
-    <rect x="0" y="0" width="900" height="800" fill="#000"/>
-    <rect x="2" y="2" width="896" height="796" stroke="#333" stroke-width="1"/>
+    <!-- Csak a keret és a díszítés, a kártya alapja a CSS background -->
+    <rect x="2" y="2" width="896" height="796" stroke="#333" stroke-width="1" fill="none"/>
     
     <!-- Rács keret -->
-    <rect x="15" y="15" width="870" height="670" rx="5" stroke="#222" stroke-width="2" class="grid-frame"/>
+    <rect x="15" y="15" width="870" height="670" rx="5" stroke="#222" stroke-width="2" fill="none" class="grid-frame"/>
 </svg>
 `;
 
@@ -425,21 +424,6 @@ function setupEventListeners() {
         });
     }
 
-    // Generate pattern button
-    const generateBtn = document.getElementById('generate-pattern-btn');
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-            const config = {
-                colorCount: parseInt(document.getElementById('gen-color-count').value) || 0,
-                uniqueColorsCount: parseInt(document.getElementById('gen-unique-colors').value) || 5,
-                valueCount: parseInt(document.getElementById('gen-value-count').value) || 0,
-                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6
-            };
-            generateRandomPattern(side, config);
-        });
-    }
-
     // Resize observer for card container
     const editorContainer = document.getElementById('editor-container');
     if (editorContainer) {
@@ -617,7 +601,7 @@ function updateLanguage(lang) {
     // Update side toggle text
     const toggle = document.getElementById('side-toggle');
     if (toggle) {
-        toggle.innerHTML = document.getElementById('card-front').style.display !== 'none' ? t.frontSide : t.backSide;
+        toggle.textContent = t.flipSide;
     }
 
     // Update current lang button

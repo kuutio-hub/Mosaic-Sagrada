@@ -63,16 +63,19 @@ export function updateCellAppearance(cell, cellData) {
         diceFace.className = 'dice-face';
         diceFace.dataset.val = value;
         
+        // Ha van szín, akkor a kocka legyen áttetsző (overlay)
+        if (color !== '.') {
+            diceFace.classList.add('overlay');
+        }
+        
         const img = document.createElement('img');
         img.src = `Cells/${value}.png`;
         img.alt = `Dice ${value}`;
         img.className = 'dice-img';
         
         // A pöttyöknek feketének kell lenniük. 
-        // Ha a PNG-k fehérek, invertáljuk őket.
-        // Ha a PNG-k feketék, akkor nem kell semmi.
-        // A biztonság kedvéért sötétítjük őket, hogy biztosan látsszanak a színes háttéren.
-        img.style.filter = 'brightness(0)'; 
+        // Fehér árnyékot adunk hozzá, hogy látszódjanak a sötét színeken is.
+        img.style.filter = 'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))'; 
         
         img.onerror = () => {
             img.style.display = 'none';
