@@ -91,14 +91,38 @@
             <button class="close-panel">×</button>
         </div>
         <div class="panel-content">
-            <!-- Generator Section -->
             <div class="generator-section" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #333;">
                 <h3 data-i18n="generatorTitle" style="margin-bottom: 15px; font-size: 16px; color: var(--accent-gold);">Minta generátor</h3>
                 <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <label data-i18n="genSeed">Seed (pl. A-1):</label>
+                    <label>Színes mezők:</label>
+                    <input type="number" id="gen-color-count" value="7" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label>Színek száma:</label>
+                    <input type="number" id="gen-unique-colors" value="5" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label>Számozott mezők:</label>
+                    <input type="number" id="gen-value-count" value="7" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label>Számok száma:</label>
+                    <input type="number" id="gen-unique-values" value="6" style="width: 50px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <label data-i18n="genSeed">Seed:</label>
                     <input type="text" id="gen-seed" placeholder="A-1" style="width: 80px; background: #222; border: 1px solid #444; color: #fff; padding: 2px 5px; border-radius: 4px;">
                 </div>
-                <button id="generate-pattern-btn" class="btn-primary" style="width: 100%;" data-i18n="generate">Generálás</button>
+                <button id="generate-pattern-btn" class="btn-primary" style="width: 100%; margin-bottom: 15px;" data-i18n="generate">Generálás</button>
+                
+                <h4 data-i18n="bgPatterns">Beállítások</h4>
+                <label style="display: block; margin-bottom: 5px;"><input type="checkbox" id="glass-effect-toggle"> Üveg hatás</label>
+                <div class="radio-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px;">
+                    <label><input type="radio" name="bg-pattern" value="none" checked> Nincs</label>
+                    <label><input type="radio" name="bg-pattern" value="marble"> Márvány</label>
+                    <label><input type="radio" name="bg-pattern" value="glass"> Üveg</label>
+                    <label><input type="radio" name="bg-pattern" value="stained"> Ólomüveg</label>
+                </div>
             </div>
 
             <div class="tool-section">
@@ -167,11 +191,6 @@
         <div class="panel-content">
             <div class="setting-item">
                 <label style="cursor: pointer; display: block; margin-bottom: 10px;">
-                    <input type="checkbox" id="glass-effect-toggle"> <span data-i18n="glassEffect">Üveg hatás</span>
-                </label>
-            </div>
-            <div class="setting-item">
-                <label style="cursor: pointer; display: block; margin-bottom: 10px;">
                     <input type="checkbox" id="printer-friendly-global"> <span data-i18n="printerFriendly">Nyomtatóbarát mód (lista)</span>
                 </label>
             </div>
@@ -179,17 +198,6 @@
                 <label style="cursor: pointer; display: block; margin-bottom: 10px;">
                     <input type="checkbox" id="rounded-corners"> <span data-i18n="roundedCorners">Lekerekített sarkok (5mm)</span>
                 </label>
-            </div>
-            <div class="setting-item">
-                <h4 data-i18n="bgPatterns">Háttér minták</h4>
-                <div class="radio-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                    <label><input type="radio" name="bg-pattern" value="none" checked> Nincs</label>
-                    <label><input type="radio" name="bg-pattern" value="marble"> Márvány</label>
-                    <label><input type="radio" name="bg-pattern" value="glass"> Üveg</label>
-                    <label><input type="radio" name="bg-pattern" value="stained"> Ólomüveg</label>
-                    <label><input type="radio" name="bg-pattern" value="wood"> Fa</label>
-                    <label><input type="radio" name="bg-pattern" value="metal"> Fém</label>
-                </div>
             </div>
         </div>
     </div>
@@ -225,7 +233,7 @@
 
     <footer class="no-print">
         <div class="footer-content">
-            <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.2</p>
+            <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.4</p>
         </div>
     </footer>
 
