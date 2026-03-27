@@ -27,38 +27,7 @@ export const translations = {
         selectSaved: "Válassz mentett kártyát...",
         delete: "Törlés",
         confirmDelete: "Biztosan törlöd a kártyát?",
-        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva.",
-        alertSaveError: "Hiba történt a kártya mentésekor.",
-        alertSaved: "Kártya elmentve a böngésző tárjába!",
-        alertQueueEmpty: "A nyomtatási lista üres!",
-        confirmClear: "Biztosan törlöd a teljes listát?",
-        reset: "Kártya törlése (Alaphelyzet)",
-        alertPdfError: "Hiba történt a PDF generálása közben.",
-        previewTitle: "Nyomtatási előnézet",
-        frontPage: "Előlap (A4)",
-        backPage: "Hátlap (A4)",
-        doubleSidedPrint: "Kétoldalas nyomtatás",
-        confirmClearQueue: "Biztosan üríted a nyomtatási listát?",
-        printStart: "Nyomtatás indítása",
-        pickerTab: "Paletta",
-        promoTab: "Promo kártyák",
-        queueTab: "Nyomtatási lista",
-        settingsTab: "Beállítások",
-        glassEffect: "Üveg hatás",
-        saveCard: "Mentés",
-        clearCard: "Kártya ürítése",
-        roundedCorners: "Lekerekített sarkok",
-        generatorTitle: "Minta generátor",
-        genColorCount: "Színes mezők:",
-        genUniqueColors: "Hányféle szín:",
-        genValueCount: "Számos mezők:",
-        genUniqueValues: "Hányféle szám:",
-        generate: "Generálás",
-        genSeed: "Seed (opcionális):",
-        promoCards: "Minta tár",
-        zoomIn: "Nagyítás",
-        zoomOut: "Kicsinyítés",
-        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.1"
+        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.5"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -88,7 +57,7 @@ export const translations = {
         selectSaved: "Select saved card...",
         delete: "Delete",
         confirmDelete: "Are you sure you want to delete this card?",
-        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved.",
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.5",
         alertSaveError: "Error saving card.",
         alertSaved: "Card saved to browser storage!",
         alertQueueEmpty: "The print list is empty!",
@@ -119,7 +88,7 @@ export const translations = {
         promoCards: "Pattern Library",
         zoomIn: "Zoom In",
         zoomOut: "Zoom Out",
-        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.1"
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.5"
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -175,7 +144,7 @@ export const translations = {
         promoCards: "Mustervorlagen",
         zoomIn: "Vergrößern",
         zoomOut: "Verkleinern",
-        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.2.1"
+        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.2.5"
     }
 };
 

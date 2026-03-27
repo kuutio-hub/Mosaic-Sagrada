@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Zoom state
 let currentScale = 1.0;
+let activeCell = null;
 const SCALE_STEP = 0.1;
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 2.0;
@@ -42,6 +43,44 @@ const frameSVG = `
     <rect x="15" y="15" width="870" height="670" rx="5" stroke="#222" stroke-width="2" fill="none" class="grid-frame"/>
 </svg>
 `;
+
+/**
+ * Kártya kép generálása (PNG)
+ */
+async function generateCardImage(cardData) {
+    const container = document.createElement('div');
+    container.style.width = '900px';
+    container.style.height = '800px';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.background = 'white';
+    document.body.appendChild(container);
+
+    // Render card structure
+    container.innerHTML = `
+        <div class="sagrada-card" style="width: 900px; height: 800px; position: relative;">
+            <div class="svg-layer">${frameSVG}</div>
+            <div class="grid-layer" id="temp-grid"></div>
+        </div>
+    `;
+
+    // Render grid
+    const grid = container.querySelector('#temp-grid');
+    // Simplified grid rendering for the temporary container
+    cardData.cells.forEach(cell => {
+        const cellDiv = document.createElement('div');
+        cellDiv.className = 'cell';
+        // Apply cell appearance (simplified)
+        if (cell.color !== '.') cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
+        if (cell.value !== '.') cellDiv.textContent = cell.value;
+        grid.appendChild(cellDiv);
+    });
+
+    const canvas = await html2canvas(container, { scale: 1 });
+    const imgData = canvas.toDataURL('image/png');
+    document.body.removeChild(container);
+    return imgData;
+}
 
 /**
  * Inicializálás
@@ -338,28 +377,7 @@ function setupEventListeners() {
     if (printBtnMain) {
         printBtnMain.addEventListener('click', async (e) => {
             e.stopPropagation();
-            
-            // PDF generálás
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            const date = new Date().toISOString().slice(2, 10).replace(/-/g, '');
-            const time = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }).replace(':', '');
-            const fileName = `Sagrada_${date}_${time}.pdf`;
-
-            const printContainer = document.getElementById('print-container');
-            printContainer.style.display = 'block'; // Megjelenítés
-            preparePrintLayout();
-            const pages = document.querySelectorAll('.print-page');
-            
-            for (let i = 0; i < pages.length; i++) {
-                if (i > 0) doc.addPage();
-                const canvas = await html2canvas(pages[i], { scale: 2 });
-                const imgData = canvas.toDataURL('image/png');
-                doc.addImage(imgData, 'PNG', 10, 10, 190, 277);
-            }
-            
-            printContainer.style.display = 'none'; // Elrejtés
-            doc.save(fileName);
+            await generatePDF();
         });
     }
 
@@ -647,8 +665,55 @@ function preparePrintLayout() {
 }
 
 /**
- * Kártyacím méretezése, hogy beleférjen a helyére
+ * PDF exportálás: kártyák képként mentése és A4-re helyezése
  */
+window.generatePDF = async function() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const isDoubleSided = document.getElementById('double-sided').checked;
+    
+    // 1. Kártyák képként generálása
+    const cardImages = [];
+    for (const item of state.patternQueue) {
+        const frontImg = await generateCardImage({ cells: item.frontCells });
+        const backImg = isDoubleSided ? await generateCardImage({ cells: item.backCells }) : null;
+        cardImages.push({ frontImg, backImg });
+    }
+
+    // 2. A4 oldalakra helyezés (6 kártya/oldal)
+    const itemsPerPage = 6;
+    const numPages = Math.ceil(cardImages.length / itemsPerPage);
+
+    for (let p = 0; p < numPages; p++) {
+        if (p > 0) doc.addPage();
+        const pageItems = cardImages.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
+        
+        // Előlap elrendezése (3x2 grid)
+        pageItems.forEach((item, idx) => {
+            const x = (idx % 2) * 90 + 15;
+            const y = Math.floor(idx / 2) * 64 + 20;
+            doc.addImage(item.frontImg, 'PNG', x, y, 90, 64);
+        });
+    }
+
+    // 3. Hátlapok (ha szükséges)
+    if (isDoubleSided) {
+        for (let p = 0; p < numPages; p++) {
+            doc.addPage();
+            const pageItems = cardImages.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
+            
+            // Hátlapok elrendezése (tükrözve)
+            const reversedItems = [...pageItems].reverse();
+            reversedItems.forEach((item, idx) => {
+                const x = (idx % 2) * 90 + 15;
+                const y = Math.floor(idx / 2) * 64 + 20;
+                doc.addImage(item.backImg || item.frontImg, 'PNG', x, y, 90, 64);
+            });
+        }
+    }
+
+    doc.save(`Sagrada_${new Date().getTime()}.pdf`);
+}
 function updateTitleScaling(side) {
     const titleEl = document.querySelector(`.card-title[data-side="${side}"]`);
     if (!titleEl) return;
