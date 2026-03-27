@@ -73,9 +73,16 @@ export function updateCellAppearance(cell, cellData) {
         img.alt = `Dice ${value}`;
         img.className = 'dice-img';
         
-        // A pöttyöknek feketének kell lenniük. 
-        // Fehér árnyékot adunk hozzá, hogy látszódjanak a sötét színeken is.
-        img.style.filter = 'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))'; 
+        // A pöttyök láthatóságának javítása
+        img.style.filter = 'drop-shadow(0 0 2px rgba(0,0,0,0.8)) brightness(1.2)'; 
+        
+        if (color === '.') {
+            // Ha nincs szín, a pöttyök legyenek feketék fehér árnyékkal
+            img.style.filter = 'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))';
+        } else {
+            // Ha van szín, a pöttyök legyenek fehérek fekete árnyékkal
+            img.style.filter = 'brightness(0) invert(1) drop-shadow(0 0 1px rgba(0,0,0,0.8))';
+        }
         
         img.onerror = () => {
             img.style.display = 'none';

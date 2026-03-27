@@ -365,13 +365,20 @@ button {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
     width: auto;
     height: auto;
     max-width: 100%;
     position: relative;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
     transform-origin: top center;
+    transition: transform 0.3s ease;
+}
+
+.card-wrapper.zoomed {
+    transform: scale(1.5);
+    margin-bottom: 150px;
+    z-index: 1000;
 }
 
 .side-tag {
@@ -415,33 +422,14 @@ button {
     flex-shrink: 0;
 }
 
-.sagrada-card:hover {
-    transform: scale(0.51);
-}
-
 @media (max-width: 1200px) {
-    .card-wrapper {
-        width: calc(var(--card-width) * 0.4);
-        height: calc(var(--card-height) * 0.4);
-    }
     .sagrada-card { transform: scale(0.4); }
-    .sagrada-card:hover { transform: scale(0.41); }
 }
 @media (max-width: 768px) {
-    .card-wrapper {
-        width: calc(var(--card-width) * 0.35);
-        height: calc(var(--card-height) * 0.35);
-    }
     .sagrada-card { transform: scale(0.35); }
-    .sagrada-card:hover { transform: scale(0.36); }
 }
 @media (max-width: 480px) {
-    .card-wrapper {
-        width: calc(var(--card-width) * 0.28);
-        height: calc(var(--card-height) * 0.28 + 30px);
-    }
     .sagrada-card { transform: scale(0.28); }
-    .sagrada-card:hover { transform: scale(0.29); }
 }
 
 .svg-layer {
@@ -758,6 +746,21 @@ button {
     box-shadow: 0 20px 60px rgba(0,0,0,0.7);
     z-index: 1100;
     overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Palette panel specific - slide from left */
+#panel-palette {
+    left: -350px;
+    transform: none;
+    top: 60px;
+    height: calc(100vh - 120px);
+    border-radius: 0 16px 16px 0;
+}
+
+#panel-palette.active {
+    display: block;
+    left: 0;
 }
 
 .floating-panel.active {
@@ -860,12 +863,12 @@ button {
     border-color: var(--accent-gold);
 }
 
-.picker-btn.color-r { background-color: #DC3232; }
-.picker-btn.color-g { background-color: #32A050; }
-.picker-btn.color-b { background-color: #3264C8; }
-.picker-btn.color-y { background-color: #F0C828; color: #000; }
-.picker-btn.color-p { background-color: #8C3CA0; }
-.picker-btn.color-w { background-color: #f0f0f0; color: #000; }
+.picker-btn.color-r { background-color: #DC3232 !important; }
+.picker-btn.color-g { background-color: #32A050 !important; }
+.picker-btn.color-b { background-color: #3264C8 !important; }
+.picker-btn.color-y { background-color: #F0C828 !important; color: #000 !important; }
+.picker-btn.color-p { background-color: #8C3CA0 !important; }
+.picker-btn.color-w { background-color: #f0f0f0 !important; color: #000 !important; }
 
 .picker-btn.val-btn {
     background-color: #333;
@@ -877,10 +880,57 @@ button {
     font-size: 20px;
 }
 
-/* Printer Friendly Mode */
-.printer-friendly .sagrada-card {
-    background: #fff !important;
-    box-shadow: none !important;
+/* Nyomtatási elrendezés javítása */
+@media print {
+    body * { visibility: hidden; }
+    #print-container, #print-container * { visibility: visible; }
+    #print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .print-page {
+        width: 210mm;
+        height: 297mm;
+        padding: 10mm;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(3, 1fr);
+        gap: 0;
+        page-break-after: always;
+        background: white;
+    }
+    .print-card {
+        width: 90mm;
+        height: 80mm;
+        border: 0.1mm solid #ccc;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .print-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+}
+
+.print-card-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 10mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5mm;
+    background: white;
+    font-family: 'Uncial Antiqua', serif;
+    font-size: 12px;
+    border-top: 0.1mm solid #eee;
 }
 
 .printer-friendly .svg-layer {
@@ -1179,44 +1229,68 @@ button {
         size: A4 portrait;
         margin: 10mm;
     }
-    body * {
-        visibility: hidden;
-    }
-    #print-container, #print-container * {
-        visibility: visible;
+    header, .toolbar, .floating-panel, main, footer {
+        display: none !important;
     }
     #print-container {
+        display: flex !important;
+        visibility: visible !important;
         position: absolute;
         left: 0;
         top: 0;
         width: 100%;
-        display: flex;
         flex-direction: column;
         gap: 0;
     }
+    #print-container * {
+        visibility: visible !important;
+    }
     .print-page {
-        width: 190mm; /* A4 width minus margins */
-        height: 277mm; /* A4 height minus margins */
+        width: 190mm;
+        height: 277mm;
         display: grid;
         grid-template-columns: repeat(2, 90mm);
-        grid-template-rows: repeat(3, 80mm);
-        gap: 2mm; /* Reduced gap to bring cards closer */
+        grid-template-rows: repeat(3, 64mm);
+        gap: 0;
         justify-content: center;
         align-content: center;
         page-break-after: always;
+        border-top: 0.2mm solid #000;
+        border-left: 0.2mm solid #000;
+        box-sizing: border-box;
+        background: white;
     }
     .print-card {
         width: 90mm;
-        height: 80mm;
+        height: 64mm;
         position: relative;
         page-break-inside: avoid;
+        border-right: 0.2mm solid #000;
+        border-bottom: 0.2mm solid #000;
+        box-sizing: border-box;
+        background: white;
     }
     .print-card img {
         width: 100%;
         height: 100%;
         display: block;
-        object-fit: contain;
-        /* A szövegek a canvas renderelés miatt a kártya képének részét képezik, így automatikusan a kártyával együtt forognak/helyezkednek el. */
+        object-fit: cover;
+    }
+    .print-card-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.9);
+        color: #000;
+        font-size: 8pt;
+        padding: 1mm 2mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 0.1mm solid #eee;
+        font-family: sans-serif;
+        z-index: 10;
     }
 }
 

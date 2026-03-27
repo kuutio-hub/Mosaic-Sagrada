@@ -54,7 +54,11 @@ export const translations = {
         genValueCount: "Számos mezők:",
         genUniqueValues: "Hányféle szám:",
         generate: "Generálás",
-        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.0"
+        genSeed: "Seed (opcionális):",
+        promoCards: "Minta tár",
+        zoomIn: "Nagyítás",
+        zoomOut: "Kicsinyítés",
+        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.1"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -111,7 +115,11 @@ export const translations = {
         genValueCount: "Numbered cells:",
         genUniqueValues: "Unique numbers:",
         generate: "Generate",
-        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.0"
+        genSeed: "Seed (optional):",
+        promoCards: "Pattern Library",
+        zoomIn: "Zoom In",
+        zoomOut: "Zoom Out",
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.1"
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -163,7 +171,11 @@ export const translations = {
         genValueCount: "Nummerierte Zellen:",
         genUniqueValues: "Einzigartige Zahlen:",
         generate: "Generieren",
-        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.2.0"
+        genSeed: "Seed (optional):",
+        promoCards: "Mustervorlagen",
+        zoomIn: "Vergrößern",
+        zoomOut: "Verkleinern",
+        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.2.1"
     }
 };
 

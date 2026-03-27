@@ -13,7 +13,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const APP_VERSION = "0.0.2.0";
+const APP_VERSION = "0.0.2.1";
 
 // Aktuálisan szerkesztett cella
 let activeCell = null;
@@ -372,6 +372,24 @@ function setupEventListeners() {
         });
     }
 
+    // Zoom toggle
+    const zoomToggle = document.getElementById('zoom-toggle');
+    if (zoomToggle) {
+        zoomToggle.addEventListener('click', () => {
+            const container = document.getElementById('card-container');
+            container.classList.toggle('zoomed');
+            
+            const icon = zoomToggle.querySelector('i') || zoomToggle.querySelector('span');
+            if (container.classList.contains('zoomed')) {
+                zoomToggle.innerHTML = '🔍 <span data-i18n="zoomOut">Kicsinyítés</span>';
+            } else {
+                zoomToggle.innerHTML = '🔍 <span data-i18n="zoomIn">Nagyítás</span>';
+            }
+            // Re-apply translations for the new content
+            const lang = document.documentElement.lang || 'hu';
+            applyTranslations(lang);
+        });
+    }
     // Apply saved card
     const applySavedBtn = document.getElementById('apply-saved');
     if (applySavedBtn) {
@@ -381,6 +399,21 @@ function setupEventListeners() {
                 applySavedCard(title);
                 updateTitleScaling('front');
                 updateTitleScaling('back');
+            }
+        });
+    }
+
+    // Delete saved card
+    const deleteSavedBtn = document.getElementById('delete-saved-btn');
+    if (deleteSavedBtn) {
+        deleteSavedBtn.addEventListener('click', () => {
+            const title = document.getElementById('saved-select').value;
+            if (title) {
+                const lang = document.documentElement.lang || 'hu';
+                const t = translations[lang] || translations['hu'];
+                if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
+                    deleteSavedCard(title);
+                }
             }
         });
     }
@@ -418,7 +451,8 @@ function setupEventListeners() {
                 colorCount: parseInt(document.getElementById('gen-color-count').value) || 0,
                 uniqueColorsCount: parseInt(document.getElementById('gen-unique-colors').value) || 5,
                 valueCount: parseInt(document.getElementById('gen-value-count').value) || 0,
-                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6
+                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6,
+                seed: document.getElementById('gen-seed').value || null
             };
             generateRandomPattern(side, config);
         });
@@ -495,9 +529,24 @@ function preparePrintLayout() {
         pageItems.forEach(item => {
             const cardWrapper = document.createElement('div');
             cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
+            
             const img = document.createElement('img');
             img.src = item.frontImg;
             cardWrapper.appendChild(img);
+            
+            // Info bar at bottom
+            const infoBar = document.createElement('div');
+            infoBar.className = 'print-card-info';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = item.title;
+            infoBar.appendChild(nameSpan);
+            
+            const dotsSpan = document.createElement('span');
+            dotsSpan.textContent = '●'.repeat(item.difficulty);
+            infoBar.appendChild(dotsSpan);
+            
+            cardWrapper.appendChild(infoBar);
             frontPage.appendChild(cardWrapper);
         });
         printContainer.appendChild(frontPage);
@@ -578,11 +627,13 @@ window.toggleSide = function() {
     if (front.style.display === 'none') {
         front.style.display = 'block';
         back.style.display = 'none';
-        toggle.innerHTML = t.frontSide;
     } else {
         front.style.display = 'none';
         back.style.display = 'block';
-        toggle.innerHTML = t.backSide;
+    }
+    
+    if (toggle) {
+        toggle.textContent = t.flipSide;
     }
 }
 
@@ -620,6 +671,9 @@ function updateLanguage(lang) {
 // Expose functions to window for onclick handlers
 window.loadFromQueue = loadFromQueue;
 window.removeFromQueue = removeFromQueue;
+window.openPicker = openPicker;
+window.applySavedCard = applySavedCard;
+window.deleteSavedCard = deleteSavedCard;
 
 // Start
 window.addEventListener('DOMContentLoaded', async () => {

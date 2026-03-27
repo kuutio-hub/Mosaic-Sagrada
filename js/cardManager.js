@@ -29,11 +29,16 @@ export async function addToQueue() {
         let backData = null;
 
         if (isDoubleSided) {
+            // Ensure back is visible for capture
             const originalDisplayFront = frontCard.style.display;
             const originalDisplayBack = backCard.style.display;
             
             frontCard.style.display = 'none';
             backCard.style.display = 'block';
+            
+            // Wait a bit for browser to render
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             backData = await renderToCanvas('card-back');
             
             frontCard.style.display = originalDisplayFront;
@@ -183,5 +188,9 @@ export function deleteSavedCard(title) {
     savedCards = savedCards.filter(c => c.title !== title);
     localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
     loadSavedCardsList();
+    
+    // Reset selection
+    const select = document.getElementById('saved-select');
+    if (select) select.value = "";
 }
 
