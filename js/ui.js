@@ -36,9 +36,6 @@ export function updateCellAppearance(cell, cellData) {
     if (['R', 'G', 'B', 'Y', 'P', 'W'].includes(color)) {
         cell.classList.add(`c-${color.toLowerCase()}`);
         cell.classList.add('has-color');
-        if (color === 'W') {
-            cell.style.backgroundColor = '#ffffff';
-        }
     }
 
     // Handle Value
@@ -70,6 +67,7 @@ export function updateCellAppearance(cell, cellData) {
         img.src = `Cells/${value}.png`;
         img.alt = `Dice ${value}`;
         img.className = 'dice-img';
+        img.style.filter = 'brightness(0)'; // Fekete pöttyök kényszerítése
         img.onerror = () => {
             // Fallback to SVG dots if PNG fails
             img.style.display = 'none';
@@ -120,7 +118,7 @@ export function updateQueueUI() {
     [frontSchematic, backSchematic].forEach(schematic => {
         const slots = schematic.querySelectorAll('.schematic-card');
         slots.forEach((slot, i) => {
-            slot.innerHTML = i + 1;
+            slot.innerHTML = ''; // Számok eltávolítása
             slot.classList.remove('filled');
             slot.onclick = null;
         });

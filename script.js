@@ -53,6 +53,10 @@ async function init() {
     
     // Set initial language
     updateLanguage('hu');
+
+    // Initial title scaling
+    updateTitleScaling('front');
+    updateTitleScaling('back');
 }
 
 /**
@@ -61,6 +65,14 @@ async function init() {
 window.openPicker = function(e, side, index) {
     e.stopPropagation();
     
+    const picker = document.getElementById('fixed-picker');
+    
+    // Ha ugyanazt a cellát kattintjuk és nyitva van, zárjuk be
+    if (activeCell && activeCell.side === side && activeCell.index === index && picker.classList.contains('show')) {
+        closePicker();
+        return;
+    }
+
     // Remove active class from all cells
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
     
@@ -69,6 +81,9 @@ window.openPicker = function(e, side, index) {
     cell.classList.add('active');
     
     activeCell = { side, index };
+    
+    // Mutassuk a pickert
+    picker.classList.add('show');
 }
 
 /**
@@ -76,6 +91,7 @@ window.openPicker = function(e, side, index) {
  */
 function closePicker() {
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+    document.getElementById('fixed-picker').classList.remove('show');
     activeCell = null;
 }
 
@@ -104,6 +120,16 @@ function setupEventListeners() {
 
     // Card flip functionality removed from here to avoid redundancy
     // It's handled by window.toggleSide and the card-container click listener at the end
+
+    // Picker kapcsoló gomb
+    const togglePickerBtn = document.getElementById('toggle-picker-btn');
+    if (togglePickerBtn) {
+        togglePickerBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const picker = document.getElementById('fixed-picker');
+            picker.classList.toggle('show');
+        });
+    }
 
     // Picker elemek kattintása
     document.querySelectorAll('.picker-btn').forEach(item => {
@@ -213,6 +239,7 @@ function setupEventListeners() {
         input.addEventListener('input', (e) => {
             const side = e.target.dataset.side;
             state[side].title = e.target.value;
+            updateTitleScaling(side);
         });
     });
 
@@ -236,21 +263,36 @@ function setupEventListeners() {
         menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
     });
 
+    // Nyomtatás gomb a fő panelen
+    const printBtnMain = document.getElementById('print-btn-main');
+    if (printBtnMain) {
+        printBtnMain.addEventListener('click', (e) => {
+            e.stopPropagation();
+            preparePrintLayout();
+            window.print();
+        });
+    }
+
     // Export gomb (most már csak nyomtatást hív)
     document.getElementById('export-pdf').addEventListener('click', (e) => {
         e.stopPropagation();
-        document.getElementById('print-menu-content').style.display = 'none';
+        const menu = document.getElementById('print-menu-content');
+        if(menu) menu.style.display = 'none';
         preparePrintLayout();
         window.print();
     });
 
-    // Nyomtatás gomb
-    document.getElementById('print-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.getElementById('print-menu-content').style.display = 'none';
-        preparePrintLayout();
-        window.print();
-    });
+    // Nyomtatás gomb a menüben
+    const printBtnMenu = document.getElementById('print-btn');
+    if (printBtnMenu) {
+        printBtnMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = document.getElementById('print-menu-content');
+            if(menu) menu.style.display = 'none';
+            preparePrintLayout();
+            window.print();
+        });
+    }
 
     // Printer friendly toggle
     document.getElementById('printer-friendly').addEventListener('change', (e) => {
@@ -431,6 +473,27 @@ function preparePrintLayout() {
             
             printContainer.appendChild(backPage);
         }
+    }
+}
+
+/**
+ * Kártyacím méretezése, hogy beleférjen a helyére
+ */
+function updateTitleScaling(side) {
+    const titleEl = document.querySelector(`.card-title[data-side="${side}"]`);
+    if (!titleEl) return;
+    
+    const text = state[side].title || "";
+    titleEl.textContent = text;
+    
+    // Alapértelmezett méret
+    titleEl.style.fontSize = '42px';
+    
+    // Ha túl hosszú, csökkentsük a betűméretet
+    let fontSize = 42;
+    while (titleEl.scrollWidth > titleEl.offsetWidth && fontSize > 12) {
+        fontSize -= 2;
+        titleEl.style.fontSize = fontSize + 'px';
     }
 }
 

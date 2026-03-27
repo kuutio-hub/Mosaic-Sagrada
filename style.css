@@ -3,12 +3,10 @@
     /* 90x80mm card dimensions. Assuming 1mm = 10px for easier calculation */
     --card-width: 900px;
     --card-height: 800px;
-    --cell-size: 155px; /* Adjusting cell size to fit 5 columns with 25px gap */
-    --gap-h: 25px; /* 2.5mm */
-    --gap-v: 25px; /* 2.5mm */
+    --cell-size: 150px; 
+    --gap-h: 25px; 
+    --gap-v: 25px; 
     --accent-gold: #d4af37;
-    
-    /* Default (Dark) Theme - More Sagrada-like */
     --bg-main: #0a0a0a;
     --text-main: #e0e0e0;
     --panel-bg: rgba(20, 20, 20, 0.9);
@@ -256,6 +254,7 @@ button {
     justify-content: flex-start;
     align-items: flex-start;
     min-width: 0;
+    margin-left: 120px; /* Kártya jobbra tolása a picker miatt */
 }
 
 .editor-container {
@@ -450,7 +449,7 @@ button {
 
 .grid-layer {
     position: absolute;
-    top: 100px;
+    top: 25px;
     left: 25px;
     display: grid;
     grid-template-columns: repeat(5, var(--cell-size));
@@ -464,12 +463,11 @@ button {
 .cell {
     width: var(--cell-size);
     height: var(--cell-size);
-    background-color: #fff;
-    /* Üvegszerű/Márványos hatás alapból */
+    background-color: #f0f0f0; /* Világosabb alap */
     background-image: 
-        linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%),
+        linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.05) 100%),
         url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
-    border: 3px solid rgba(255,255,255,0.2);
+    border: 3px solid rgba(255,255,255,0.3);
     border-radius: 12px;
     cursor: pointer;
     display: flex;
@@ -479,18 +477,18 @@ button {
     font-size: 90px;
     position: relative;
     color: #000;
-    box-shadow: inset 0 2px 15px rgba(255,255,255,0.3), 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: inset 0 2px 15px rgba(255,255,255,0.5), 0 5px 15px rgba(0,0,0,0.2);
     transition: all 0.2s;
     overflow: hidden;
 }
 
 .cell.empty-cell {
-    background-color: rgba(255, 255, 255, 0.8); /* 80% opacitás üres mezőre */
-    border: 3px solid rgba(255,255,255,0.4);
+    background-color: #f0f0f0;
+    border: 3px solid rgba(255,255,255,0.5);
 }
 
 .cell.v-num {
-    background-color: rgba(255, 255, 255, 0.5); /* 50% opacitás számokra */
+    background-color: #f0f0f0;
 }
 
 .cell.empty-cell:hover {
@@ -509,24 +507,21 @@ button {
     box-shadow: inset 0 2px 15px rgba(212, 175, 55, 0.2);
 }
 
-/* Erős színek, ha nincs szám */
-.cell.c-r { background-color: rgba(220, 50, 50, 0.8); border: 2px solid rgba(0,0,0,0.3); }
-.cell.c-g { background-color: rgba(50, 160, 80, 0.8); border: 2px solid rgba(0,0,0,0.3); }
-.cell.c-b { background-color: rgba(50, 100, 200, 0.8); border: 2px solid rgba(0,0,0,0.3); }
-.cell.c-y { background-color: rgba(240, 200, 40, 0.8); border: 2px solid rgba(0,0,0,0.3); }
-.cell.c-p { background-color: rgba(140, 60, 160, 0.8); border: 2px solid rgba(0,0,0,0.3); }
-.cell.c-w { background-color: rgba(240, 240, 240, 0.8); border: 2px solid rgba(0,0,0,0.3); }
+/* Színek visszaállítása az eredetire, márvány textúrával */
+.cell.c-r { background-color: #DC3232; }
+.cell.c-g { background-color: #32A050; }
+.cell.c-b { background-color: #3264C8; }
+.cell.c-y { background-color: #F0C828; }
+.cell.c-p { background-color: #8C3CA0; }
+.cell.c-w { background-color: #f0f0f0; }
 
-/* Ha van szám is rajta, a szín legyen áttetszőbb */
-.cell.has-color.has-value {
-    /* Megtartjuk a márványos textúrát */
-}
-.cell.c-r.has-value { background-color: rgba(220, 50, 50, 0.5); }
-.cell.c-g.has-value { background-color: rgba(50, 160, 80, 0.5); }
-.cell.c-b.has-value { background-color: rgba(50, 100, 200, 0.5); }
-.cell.c-y.has-value { background-color: rgba(240, 200, 40, 0.5); }
-.cell.c-p.has-value { background-color: rgba(140, 60, 160, 0.5); }
-.cell.c-w.has-value { background-color: rgba(240, 240, 240, 0.5); }
+/* Ha van szám is rajta, maradjon az eredeti szín */
+.cell.c-r.has-value { background-color: #DC3232; }
+.cell.c-g.has-value { background-color: #32A050; }
+.cell.c-b.has-value { background-color: #3264C8; }
+.cell.c-y.has-value { background-color: #F0C828; }
+.cell.c-p.has-value { background-color: #8C3CA0; }
+.cell.c-w.has-value { background-color: #f0f0f0; }
 
 /* Dice Face Simulation */
 .dice-face {
@@ -618,10 +613,10 @@ button {
 
 .footer-layer {
     position: absolute;
-    bottom: 15px;
+    bottom: 0;
     left: 0;
     width: 100%;
-    height: 60px;
+    height: 100px; /* 10mm sáv alul */
     background-color: transparent;
     display: flex;
     justify-content: space-between;
@@ -629,7 +624,7 @@ button {
     z-index: 20;
     padding: 0 45px;
     box-sizing: border-box;
-    pointer-events: none; /* Átengedi a kattintást a cellákra */
+    pointer-events: none;
 }
 
 .card-title-input {
@@ -637,13 +632,15 @@ button {
     border: none;
     color: #fff;
     font-family: 'Uncial Antiqua', serif;
-    font-size: 32px;
+    font-size: 42px;
     text-align: left;
-    width: 60%;
+    width: 70%;
     outline: none;
     padding: 0;
     margin: 0;
-    pointer-events: auto; /* De a cím szerkeszthető marad */
+    pointer-events: auto;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .card-title-input:focus {
@@ -674,24 +671,35 @@ button {
     border-color: #fff;
 }
 
-/* Fixed Cell Picker */
+/* Fixed Cell Picker - Toggleable Drawer */
 .fixed-picker {
-    width: 280px;
+    position: fixed;
+    left: 250px; /* Sidebar szélessége */
+    top: 50%;
+    transform: translateY(-50%) translateX(-110%); /* Rejtve a sidebar mögött */
+    width: 140px; /* Kisebb méret */
     background-color: var(--panel-bg);
+    backdrop-filter: blur(20px);
     border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    border-radius: 0 15px 15px 0;
+    padding: 12px;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.6);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     height: fit-content;
+    z-index: 90; /* Sidebar (100) alatt */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.fixed-picker.show {
+    transform: translateY(-50%) translateX(0);
 }
 
 .picker-section h4 {
-    margin: 0 0 10px 0;
-    font-size: 14px;
-    color: #86868b;
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: var(--accent-gold);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -699,7 +707,7 @@ button {
 .picker-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
+    gap: 8px;
 }
 
 .picker-btn {
@@ -711,10 +719,10 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
     color: #fff;
-    background-color: #333;
+    background-color: #2a2a2a;
     transition: transform 0.1s, border-color 0.2s;
 }
 
@@ -723,23 +731,21 @@ button {
     border-color: var(--accent-gold);
 }
 
-.picker-btn.color-r { background-color: #ff3b30; }
-.picker-btn.color-g { background-color: #34c759; }
-.picker-btn.color-b { background-color: #007aff; }
-.picker-btn.color-y { background-color: #ffcc00; color: #000; }
-.picker-btn.color-p { background-color: #af52de; }
-.picker-btn.color-w { background-color: #ffffff; color: #000; }
+.picker-btn.color-r { background-color: #DC3232; }
+.picker-btn.color-g { background-color: #32A050; }
+.picker-btn.color-b { background-color: #3264C8; }
+.picker-btn.color-y { background-color: #F0C828; color: #000; }
+.picker-btn.color-p { background-color: #8C3CA0; }
+.picker-btn.color-w { background-color: #f0f0f0; color: #000; }
 
 .picker-btn.val-btn {
-    background-color: #2a2a2a;
+    background-color: #333;
     border: 1px solid #444;
 }
 
 .picker-btn.clear-btn {
-    aspect-ratio: 1;
     background-color: #ff3b30;
-    font-size: 24px;
-    color: white;
+    font-size: 20px;
 }
 
 /* Printer Friendly Mode */

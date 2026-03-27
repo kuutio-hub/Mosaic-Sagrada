@@ -36,16 +36,7 @@
 
                 <button id="add-to-queue" class="btn-primary" data-i18n="addToQueue">Hozzáadás a listához</button>
                 
-                <div class="print-dropdown" style="position: relative; display: inline-block;">
-                    <button id="print-menu-btn" class="btn-primary" data-i18n="print">Nyomtatás ▼</button>
-                    <div id="print-menu-content" style="display: none; position: absolute; right: 0; background-color: var(--panel-bg); backdrop-filter: blur(20px); min-width: 160px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 1002; border-radius: 12px; padding: 10px; border: 1px solid var(--panel-border); margin-top: 5px;">
-                        <button id="export-pdf" class="btn-secondary" style="width: 100%; margin-bottom: 5px; text-align: left;" data-i18n="exportPDF">PDF Export (Lista)</button>
-                        <button id="print-btn" class="btn-secondary" style="width: 100%; margin-bottom: 5px; text-align: left;" data-i18n="print">Nyomtatás (Lista)</button>
-                        <label style="display: block; margin-top: 10px; font-size: 12px; color: var(--text-main); cursor: pointer;">
-                            <input type="checkbox" id="printer-friendly"> <span data-i18n="printerFriendly">Nyomtatóbarát</span>
-                        </label>
-                    </div>
-                </div>
+                <button id="toggle-picker-btn" class="btn-secondary">🎨 Segédablak</button>
             </div>
         </div>
     </header>
@@ -171,42 +162,18 @@
         </div>
 
         <div class="preview-actions">
-            <button id="print-btn" class="btn-primary" data-i18n="print">Nyomtatás indítása</button>
+            <div class="print-options" style="margin-bottom: 10px;">
+                <label style="display: block; font-size: 12px; color: var(--text-main); cursor: pointer;">
+                    <input type="checkbox" id="printer-friendly"> <span data-i18n="printerFriendly">Nyomtatóbarát mód</span>
+                </label>
+            </div>
+            <button id="print-btn-main" class="btn-primary" data-i18n="print">Nyomtatás indítása</button>
             <button id="clear-queue" class="btn-danger" data-i18n="clearQueue">Lista ürítése</button>
         </div>
     </div>
 
-    <!-- Cellaválasztó menü -->
-    <div id="cell-picker" class="picker-hidden">
-        <div class="picker-section">
-            <p id="label-colors" data-i18n="colors">Színek</p>
-            <div class="picker-grid colors">
-                <div class="picker-item color-r" data-val="R" data-type="color"></div>
-                <div class="picker-item color-g" data-val="G" data-type="color"></div>
-                <div class="picker-item color-b" data-val="B" data-type="color"></div>
-                <div class="picker-item color-y" data-val="Y" data-type="color"></div>
-                <div class="picker-item color-p" data-val="P" data-type="color"></div>
-                <div class="picker-item color-w" data-val="W" data-type="color"></div>
-            </div>
-        </div>
-        <div class="picker-section">
-            <p id="label-numbers" data-i18n="numbers">Számok</p>
-            <div class="picker-grid numbers">
-                <div class="picker-item" data-val="1" data-type="value">1</div>
-                <div class="picker-item" data-val="2" data-type="value">2</div>
-                <div class="picker-item" data-val="3" data-type="value">3</div>
-                <div class="picker-item" data-val="4" data-type="value">4</div>
-                <div class="picker-item" data-val="5" data-type="value">5</div>
-                <div class="picker-item" data-val="6" data-type="value">6</div>
-            </div>
-        </div>
-        <div class="picker-section">
-            <div class="picker-grid special">
-                <div class="picker-item" data-val="X" data-type="value">X</div>
-                <div class="picker-item" data-val="." data-type="clear" data-i18n="empty">Üres</div>
-            </div>
-        </div>
-    </div>
+    <!-- Cellaválasztó menü (rejtett maradványok eltávolítva) -->
+    <div id="cell-picker" style="display: none;"></div>
 
     <!-- Nyomtatási konténer -->
     <div id="print-container"></div>
