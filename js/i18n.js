@@ -39,13 +39,21 @@ export const translations = {
         doubleSidedPrint: "Kétoldalas nyomtatás",
         confirmClearQueue: "Biztosan üríted a nyomtatási listát?",
         printStart: "Nyomtatás indítása",
-        pickerTab: "Segédablak",
+        pickerTab: "Paletta",
         promoTab: "Promo kártyák",
         queueTab: "Nyomtatási lista",
         settingsTab: "Beállítások",
         glassEffect: "Üveg hatás",
         saveCard: "Mentés",
-        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.1.9"
+        clearCard: "Kártya ürítése",
+        roundedCorners: "Lekerekített sarkok",
+        generatorTitle: "Minta generátor",
+        genColorCount: "Színes mezők:",
+        genUniqueColors: "Hányféle szín:",
+        genValueCount: "Számos mezők:",
+        genUniqueValues: "Hányféle szám:",
+        generate: "Generálás",
+        copyright: "© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.0"
     },
     en: {
         title: "Sagrada Pattern Designer",
@@ -87,13 +95,21 @@ export const translations = {
         doubleSidedPrint: "Double-sided Printing",
         confirmClearQueue: "Are you sure you want to clear the print list?",
         printStart: "Start Printing",
-        pickerTab: "Picker",
+        pickerTab: "Palette",
         promoTab: "Promo Cards",
         queueTab: "Print Queue",
         settingsTab: "Settings",
         glassEffect: "Glass Effect",
         saveCard: "Save",
-        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.1.9"
+        clearCard: "Clear Card",
+        roundedCorners: "Rounded Corners",
+        generatorTitle: "Pattern Generator",
+        genColorCount: "Colored cells:",
+        genUniqueColors: "Unique colors:",
+        genValueCount: "Numbered cells:",
+        genUniqueValues: "Unique numbers:",
+        generate: "Generate",
+        copyright: "© 2026 Sagrada Pattern Designer. All rights reserved. | v0.0.2.0"
     },
     de: {
         title: "Sagrada Muster-Designer",
@@ -130,13 +146,21 @@ export const translations = {
         reset: "Karte löschen (Zurücksetzen)",
         alertPdfError: "Fehler beim Generieren der PDF.",
         printStart: "Drucken starten",
-        pickerTab: "Auswahl",
+        pickerTab: "Palette",
         promoTab: "Promo-Karten",
         queueTab: "Druckliste",
         settingsTab: "Einstellungen",
         glassEffect: "Glaseffekt",
         saveCard: "Speichern",
-        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.1.9"
+        clearCard: "Karte leeren",
+        roundedCorners: "Abgerundete Ecken",
+        generatorTitle: "Mustergenerator",
+        genColorCount: "Farbige Zellen:",
+        genUniqueColors: "Einzigartige Farben:",
+        genValueCount: "Nummerierte Zellen:",
+        genUniqueValues: "Einzigartige Zahlen:",
+        generate: "Generieren",
+        copyright: "© 2026 Sagrada Pattern Designer. Alle Rechte vorbehalten. | v0.0.2.0"
     }
 };
 

@@ -9,6 +9,7 @@ export const state = {
         difficulty: 4,
         cells: Array(20).fill(null).map(() => ({ color: '.', value: '.' }))
     },
-    patternQueue: []
+    patternQueue: [],
+    glassEffect: true
 };
 

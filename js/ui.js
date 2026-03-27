@@ -28,7 +28,7 @@ export function renderGrid(side) {
 export function updateCellAppearance(cell, cellData) {
     const { color, value } = cellData;
     
-    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num', 'has-color', 'has-value', 'glass');
+    cell.classList.remove('c-r', 'c-g', 'c-b', 'c-y', 'c-p', 'c-w', 'v-x', 'v-num', 'has-color', 'has-value', 'glass-on');
     cell.innerHTML = '';
     cell.style.backgroundColor = '';
 
@@ -39,7 +39,7 @@ export function updateCellAppearance(cell, cellData) {
         
         // Add glass effect if enabled in state
         if (state.glassEffect) {
-            cell.classList.add('glass');
+            cell.classList.add('glass-on');
         }
     }
 
@@ -67,9 +67,11 @@ export function updateCellAppearance(cell, cellData) {
         img.src = `Cells/${value}.png`;
         img.alt = `Dice ${value}`;
         img.className = 'dice-img';
-        // Force black dots if needed, but the user said they are white on white background.
-        // If the PNG has white dots, we might need to invert it or use a different image.
-        // For now, let's just ensure it's visible.
+        
+        // A pöttyöknek feketének kell lenniük. 
+        // Ha a PNG-k fehérek, invertáljuk őket.
+        // Ha a PNG-k feketék, akkor nem kell semmi.
+        // A biztonság kedvéért sötétítjük őket, hogy biztosan látsszanak a színes háttéren.
         img.style.filter = 'brightness(0)'; 
         
         img.onerror = () => {

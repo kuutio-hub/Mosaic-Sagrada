@@ -2,6 +2,7 @@ import { state } from './js/state.js';
 import { renderGrid, renderDifficulty, updateQueueUI } from './js/ui.js';
 import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard, deleteSavedCard } from './js/cardManager.js';
 import { translations } from './js/i18n.js';
+import { generateRandomPattern } from './js/generator.js';
 
 // Service worker eltávolítása, ha van (megoldás a "gura" oldal frissítésre)
 if ('serviceWorker' in navigator) {
@@ -12,7 +13,7 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const APP_VERSION = "0.0.1.9";
+const APP_VERSION = "0.0.2.0";
 
 // Aktuálisan szerkesztett cella
 let activeCell = null;
@@ -36,6 +37,10 @@ const frameSVG = `
  * Inicializálás
  */
 async function init() {
+    // Verziószám beállítása
+    const versionEl = document.getElementById('app-version');
+    if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
+
     // SVG-k behelyezése
     const frameFront = document.getElementById('frame-front-svg');
     const frameBack = document.getElementById('frame-back-svg');
@@ -78,11 +83,8 @@ async function init() {
 window.openPicker = function(e, side, index) {
     e.stopPropagation();
     
-    // Open the picker tab if it's not open
-    const pickerTab = document.getElementById('tab-picker');
-    if (pickerTab && !pickerTab.classList.contains('active')) {
-        openTab('tab-picker');
-    }
+    // Open the palette panel if it's not open
+    togglePanel('panel-palette', true);
 
     // Remove active class from all cells
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
@@ -103,25 +105,30 @@ function closePicker() {
 }
 
 /**
- * Tab megnyitása
+ * Panel kezelése
  */
-function openTab(tabId) {
-    const tabs = document.querySelectorAll('.top-tab');
-    const targetTab = document.getElementById(tabId);
+function togglePanel(panelId, forceOpen = false) {
+    const panels = document.querySelectorAll('.floating-panel');
+    const tabs = document.querySelectorAll('.toolbar-tab');
+    const targetPanel = document.getElementById(panelId);
     
-    if (!targetTab) return;
+    if (!targetPanel) return;
 
-    const isAlreadyActive = targetTab.classList.contains('active');
+    const isOpen = targetPanel.classList.contains('active');
 
-    // Close all tabs
-    tabs.forEach(tab => tab.classList.remove('active'));
-
-    // If it wasn't active, open it
-    if (!isAlreadyActive) {
-        targetTab.classList.add('active');
+    if (isOpen && !forceOpen) {
+        // Close it
+        targetPanel.classList.remove('active');
+        document.querySelector(`.toolbar-tab[data-target="${panelId}"]`)?.classList.remove('active');
+        if (panelId === 'panel-palette') closePicker();
     } else {
-        // If it was active, we just closed it
-        if (tabId === 'tab-picker') closePicker();
+        // Close others
+        panels.forEach(p => p.classList.remove('active'));
+        tabs.forEach(t => t.classList.remove('active'));
+
+        // Open target
+        targetPanel.classList.add('active');
+        document.querySelector(`.toolbar-tab[data-target="${panelId}"]`)?.classList.add('active');
     }
 }
 
@@ -129,12 +136,21 @@ function openTab(tabId) {
  * Eseménykezelők beállítása
  */
 function setupEventListeners() {
-    // Tab handles
-    document.querySelectorAll('.tab-handle').forEach(handle => {
-        handle.addEventListener('click', (e) => {
+    // Toolbar tabs
+    document.querySelectorAll('.toolbar-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
             e.stopPropagation();
-            const tabId = handle.parentElement.id;
-            openTab(tabId);
+            const panelId = tab.dataset.target;
+            togglePanel(panelId);
+        });
+    });
+
+    // Panel close buttons
+    document.querySelectorAll('.close-panel').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const panel = btn.closest('.floating-panel');
+            if (panel) togglePanel(panel.id);
         });
     });
 
@@ -185,6 +201,20 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Clear card button
+    const clearCardBtn = document.getElementById('clear-card-btn');
+    if (clearCardBtn) {
+        clearCardBtn.addEventListener('click', () => {
+            const lang = document.documentElement.lang || 'hu';
+            const t = translations[lang] || translations['hu'];
+            if (confirm(t.confirmDelete || 'Biztosan törlöd a kártya tartalmát?')) {
+                const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+                state[side].cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
+                renderGrid(side);
+            }
+        });
+    }
 
     // Language switcher
     const currentLangBtn = document.getElementById('current-lang');
@@ -237,10 +267,15 @@ function setupEventListeners() {
 
     // Kattintás bárhova máshova -> picker/dropdown bezárása
     document.addEventListener('click', (e) => {
-        // Close tabs if clicking outside
-        const tabsContainer = document.querySelector('.top-tabs-container');
-        if (tabsContainer && !tabsContainer.contains(e.target)) {
-            document.querySelectorAll('.top-tab').forEach(tab => tab.classList.remove('active'));
+        // Close panels if clicking outside
+        const toolbar = document.querySelector('.toolbar');
+        const panels = document.querySelectorAll('.floating-panel');
+        let clickedOnPanel = false;
+        panels.forEach(p => { if(p.contains(e.target)) clickedOnPanel = true; });
+
+        if (toolbar && !toolbar.contains(e.target) && !clickedOnPanel) {
+            panels.forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.toolbar-tab').forEach(t => t.classList.remove('active'));
             closePicker();
         }
         
@@ -288,18 +323,12 @@ function setupEventListeners() {
         });
     }
 
-    // Printer friendly toggle
-    const printerFriendly = document.getElementById('printer-friendly');
-    if (printerFriendly) {
-        printerFriendly.addEventListener('change', (e) => {
-            const cards = document.querySelectorAll('.sagrada-card');
-            cards.forEach(card => {
-                if (e.target.checked) {
-                    card.classList.add('printer-friendly');
-                } else {
-                    card.classList.remove('printer-friendly');
-                }
-            });
+    // Printer friendly toggle (global)
+    const printerFriendlyGlobal = document.getElementById('printer-friendly-global');
+    if (printerFriendlyGlobal) {
+        printerFriendlyGlobal.addEventListener('change', (e) => {
+            // This will affect the print layout generation
+            state.printerFriendly = e.target.checked;
         });
     }
 
@@ -381,6 +410,36 @@ function setupEventListeners() {
         });
     }
 
+    // Generate pattern button
+    const generateBtn = document.getElementById('generate-pattern-btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            const config = {
+                colorCount: parseInt(document.getElementById('gen-color-count').value) || 0,
+                uniqueColorsCount: parseInt(document.getElementById('gen-unique-colors').value) || 5,
+                valueCount: parseInt(document.getElementById('gen-value-count').value) || 0,
+                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6
+            };
+            generateRandomPattern(side, config);
+        });
+    }
+
+    // Generate pattern button
+    const generateBtn = document.getElementById('generate-pattern-btn');
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+            const config = {
+                colorCount: parseInt(document.getElementById('gen-color-count').value) || 0,
+                uniqueColorsCount: parseInt(document.getElementById('gen-unique-colors').value) || 5,
+                valueCount: parseInt(document.getElementById('gen-value-count').value) || 0,
+                uniqueValuesCount: parseInt(document.getElementById('gen-unique-values').value) || 6
+            };
+            generateRandomPattern(side, config);
+        });
+    }
+
     // Resize observer for card container
     const editorContainer = document.getElementById('editor-container');
     if (editorContainer) {
@@ -436,6 +495,7 @@ function preparePrintLayout() {
     }
     
     const isDoubleSided = document.getElementById('double-sided').checked;
+    const isRounded = document.getElementById('rounded-corners').checked;
     
     // Handle multiple pages (6 cards per page)
     const itemsPerPage = 6;
@@ -450,7 +510,7 @@ function preparePrintLayout() {
         
         pageItems.forEach(item => {
             const cardWrapper = document.createElement('div');
-            cardWrapper.className = 'print-card';
+            cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
             const img = document.createElement('img');
             img.src = item.frontImg;
             cardWrapper.appendChild(img);
@@ -478,7 +538,7 @@ function preparePrintLayout() {
                     backPage.appendChild(emptyWrapper);
                     
                     const cardWrapper = document.createElement('div');
-                    cardWrapper.className = 'print-card';
+                    cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
                     const img = document.createElement('img');
                     img.src = reversedRow[0].backImg || reversedRow[0].frontImg;
                     cardWrapper.appendChild(img);
@@ -486,7 +546,7 @@ function preparePrintLayout() {
                 } else {
                     reversedRow.forEach(item => {
                         const cardWrapper = document.createElement('div');
-                        cardWrapper.className = 'print-card';
+                        cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
                         const img = document.createElement('img');
                         img.src = item.backImg || item.frontImg;
                         cardWrapper.appendChild(img);

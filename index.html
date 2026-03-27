@@ -33,127 +33,174 @@
                         <button class="lang-btn" data-lang="de" title="Deutsch"><span>🇩🇪</span> Deutsch</button>
                     </div>
                 </div>
-
                 <button id="add-to-queue" class="btn-primary" data-i18n="addToQueue">Hozzáadás a listához</button>
             </div>
         </div>
+    </header>
 
-        <!-- Top Tabs -->
-        <div class="top-tabs-container no-print">
-            <div class="top-tab" id="tab-picker">
-                <div class="tab-handle" data-i18n="picker">🎨 Segédablak</div>
-                <div class="tab-content">
-                    <div id="fixed-picker" class="fixed-picker-content">
-                        <div class="picker-section">
-                            <h4 data-i18n="colors">Színek</h4>
-                            <div class="picker-grid">
-                                <button class="picker-btn color-r" data-val="R" data-type="color"></button>
-                                <button class="picker-btn color-g" data-val="G" data-type="color"></button>
-                                <button class="picker-btn color-b" data-val="B" data-type="color"></button>
-                                <button class="picker-btn color-y" data-val="Y" data-type="color"></button>
-                                <button class="picker-btn color-p" data-val="P" data-type="color"></button>
-                                <button class="picker-btn color-w" data-val="W" data-type="color"></button>
-                            </div>
-                        </div>
-                        <div class="picker-section">
-                            <h4 data-i18n="numbers">Számok</h4>
-                            <div class="picker-grid">
-                                <button class="picker-btn val-btn" data-val="1" data-type="value">1</button>
-                                <button class="picker-btn val-btn" data-val="2" data-type="value">2</button>
-                                <button class="picker-btn val-btn" data-val="3" data-type="value">3</button>
-                                <button class="picker-btn val-btn" data-val="4" data-type="value">4</button>
-                                <button class="picker-btn val-btn" data-val="5" data-type="value">5</button>
-                                <button class="picker-btn val-btn" data-val="6" data-type="value">6</button>
-                            </div>
-                        </div>
-                        <div class="picker-section">
-                            <div class="picker-grid">
-                                <button class="picker-btn val-btn" data-val="X" data-type="value" title="Tiltott mező">X</button>
-                                <button class="picker-btn clear-btn" data-val="." data-type="clear" title="Mező törlése">🗑️</button>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Toolbar with small tabs -->
+    <div class="toolbar no-print">
+        <button class="toolbar-tab" data-target="panel-palette" data-i18n="paletteTab">🎨 Paletta</button>
+        <button class="toolbar-tab" data-target="panel-promo" data-i18n="promoTab">🃏 Promo</button>
+        <button class="toolbar-tab" data-target="panel-queue" data-i18n="queueTab">🖨️ Lista</button>
+        <button class="toolbar-tab" data-target="panel-settings" data-i18n="settingsTab">⚙️ Beállítások</button>
+    </div>
+
+    <!-- Floating Panels -->
+    <div id="panel-palette" class="floating-panel">
+        <div class="panel-header">
+            <span data-i18n="paletteTab">Paletta</span>
+            <button class="close-panel">×</button>
+        </div>
+        <div class="panel-content">
+            <div class="picker-section">
+                <h4 data-i18n="colors">Színek</h4>
+                <div class="picker-grid small">
+                    <button class="picker-btn color-r" data-val="R" data-type="color"></button>
+                    <button class="picker-btn color-g" data-val="G" data-type="color"></button>
+                    <button class="picker-btn color-b" data-val="B" data-type="color"></button>
+                    <button class="picker-btn color-y" data-val="Y" data-type="color"></button>
+                    <button class="picker-btn color-p" data-val="P" data-type="color"></button>
+                    <button class="picker-btn color-w" data-val="W" data-type="color"></button>
                 </div>
             </div>
-            <div class="top-tab" id="tab-promo">
-                <div class="tab-handle" data-i18n="promoCards">🃏 Promo kártyák</div>
-                <div class="tab-content">
-                    <div class="tool-section">
-                        <h3 id="title-promo" data-i18n="promoCards">Promo kártyák</h3>
-                        <select id="promo-select">
-                            <option value="" data-i18n="selectPromo">Válassz promo kártyát...</option>
-                        </select>
-                        <button id="apply-promo" class="btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="apply">Alkalmaz</button>
-                    </div>
-                    <div class="tool-section" style="margin-top: 20px;">
-                        <h3 id="title-saved" data-i18n="savedCards">Saját kártyák</h3>
-                        <select id="saved-select">
-                            <option value="" data-i18n="selectSaved">Válassz mentett kártyát...</option>
-                        </select>
-                        <div style="display: flex; gap: 5px; margin-top: 10px;">
-                            <button id="apply-saved" class="btn-secondary" style="flex: 1;" data-i18n="apply">Alkalmaz</button>
-                            <button id="save-card" class="btn-secondary" style="flex: 1;" data-i18n="saveCard">Mentés</button>
-                        </div>
-                    </div>
-                    <div class="tool-section" style="margin-top: 20px;">
-                        <button id="reset-card" class="btn-danger" style="width: 100%;" data-i18n="reset">Visszaállítás alaphelyzetbe</button>
-                    </div>
+            <div class="picker-section">
+                <h4 data-i18n="numbers">Számok</h4>
+                <div class="picker-grid small">
+                    <button class="picker-btn val-btn" data-val="1" data-type="value">1</button>
+                    <button class="picker-btn val-btn" data-val="2" data-type="value">2</button>
+                    <button class="picker-btn val-btn" data-val="3" data-type="value">3</button>
+                    <button class="picker-btn val-btn" data-val="4" data-type="value">4</button>
+                    <button class="picker-btn val-btn" data-val="5" data-type="value">5</button>
+                    <button class="picker-btn val-btn" data-val="6" data-type="value">6</button>
                 </div>
             </div>
-            <div class="top-tab" id="tab-queue">
-                <div class="tab-handle" data-i18n="printQueue">🖨️ Nyomtatási lista</div>
-                <div class="tab-content">
-                    <div id="preview-panel-content">
-                        <div class="preview-scroll">
-                            <div class="double-sided-control">
-                                <input type="checkbox" id="double-sided" checked>
-                                <label for="double-sided" data-i18n="doubleSided">Kétoldalas nyomtatás</label>
-                            </div>
-
-                            <div class="schematic-container">
-                                <div class="a4-schematic" id="schematic-front" data-label="ELŐLAP (A4)">
-                                    <div class="schematic-card" data-index="0"></div>
-                                    <div class="schematic-card" data-index="1"></div>
-                                    <div class="schematic-card" data-index="2"></div>
-                                    <div class="schematic-card" data-index="3"></div>
-                                    <div class="schematic-card" data-index="4"></div>
-                                    <div class="schematic-card" data-index="5"></div>
-                                </div>
-                                <div class="a4-schematic" id="schematic-back" data-label="HÁTLAP (A4)">
-                                    <div class="schematic-card" data-index="1"></div>
-                                    <div class="schematic-card" data-index="0"></div>
-                                    <div class="schematic-card" data-index="3"></div>
-                                    <div class="schematic-card" data-index="2"></div>
-                                    <div class="schematic-card" data-index="5"></div>
-                                    <div class="schematic-card" data-index="4"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="preview-actions">
-                            <div class="print-options" style="margin-bottom: 10px;">
-                                <label style="display: block; font-size: 12px; color: var(--text-main); cursor: pointer;">
-                                    <input type="checkbox" id="printer-friendly"> <span data-i18n="printerFriendly">Nyomtatóbarát mód</span>
-                                </label>
-                            </div>
-                            <button id="print-btn-main" class="btn-primary" data-i18n="printStart">Nyomtatás indítása</button>
-                            <button id="clear-queue" class="btn-danger" data-i18n="clearQueue">Lista ürítése</button>
-                        </div>
-                    </div>
+            <div class="picker-section">
+                <div class="picker-grid small">
+                    <button class="picker-btn val-btn" data-val="X" data-type="value" title="Tiltott mező">X</button>
+                    <button class="picker-btn clear-btn" data-val="." data-type="clear" title="Mező törlése">🗑️</button>
                 </div>
             </div>
-            <div class="top-tab" id="tab-settings">
-                <div class="tab-handle">⚙️ Beállítások</div>
-                <div class="tab-content">
-                    <div class="setting-item">
-                        <label style="cursor: pointer;">
-                            <input type="checkbox" id="glass-effect-toggle"> <span data-i18n="glassEffect">Üveg hatás</span>
-                        </label>
-                    </div>
-                </div>
+            <div class="picker-section" style="margin-top: 10px; border-top: 1px solid var(--panel-border); padding-top: 10px;">
+                <button id="clear-card-btn" class="btn-danger" style="width: 100%; font-size: 12px;" data-i18n="clearCard">Kártya ürítése</button>
             </div>
         </div>
-    </header>
+    </div>
+
+    <div id="panel-promo" class="floating-panel">
+        <div class="panel-header">
+            <span data-i18n="promoTab">Promo kártyák</span>
+            <button class="close-panel">×</button>
+        </div>
+        <div class="panel-content">
+            <div class="tool-section">
+                <select id="promo-select">
+                    <option value="" data-i18n="selectPromo">Válassz promo kártyát...</option>
+                </select>
+                <button id="apply-promo" class="btn-secondary" style="width: 100%; margin-top: 10px;" data-i18n="apply">Alkalmaz</button>
+            </div>
+            <div class="tool-section" style="margin-top: 20px;">
+                <h3 data-i18n="savedCards">Saját kártyák</h3>
+                <select id="saved-select">
+                    <option value="" data-i18n="selectSaved">Válassz mentett kártyát...</option>
+                </select>
+                <div style="display: flex; gap: 5px; margin-top: 10px;">
+                    <button id="apply-saved" class="btn-secondary" style="flex: 1;" data-i18n="apply">Alkalmaz</button>
+                    <button id="save-card" class="btn-secondary" style="flex: 1;" data-i18n="saveCard">Mentés</button>
+                </div>
+            </div>
+            <div class="tool-section" style="margin-top: 20px;">
+                <button id="reset-card" class="btn-danger" style="width: 100%;" data-i18n="reset">Visszaállítás alaphelyzetbe</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-queue" class="floating-panel">
+        <div class="panel-header">
+            <span data-i18n="queueTab">Nyomtatási lista</span>
+            <button class="close-panel">×</button>
+        </div>
+        <div class="panel-content">
+            <div class="queue-scroll">
+                <div class="double-sided-control">
+                    <input type="checkbox" id="double-sided" checked>
+                    <label for="double-sided" data-i18n="doubleSided">Kétoldalas nyomtatás</label>
+                </div>
+
+                <div class="schematic-container">
+                    <div class="a4-schematic" id="schematic-front" data-label="ELŐLAP (A4)">
+                        <div class="schematic-card" data-index="0"></div>
+                        <div class="schematic-card" data-index="1"></div>
+                        <div class="schematic-card" data-index="2"></div>
+                        <div class="schematic-card" data-index="3"></div>
+                        <div class="schematic-card" data-index="4"></div>
+                        <div class="schematic-card" data-index="5"></div>
+                    </div>
+                    <div class="a4-schematic" id="schematic-back" data-label="HÁTLAP (A4)">
+                        <div class="schematic-card" data-index="1"></div>
+                        <div class="schematic-card" data-index="0"></div>
+                        <div class="schematic-card" data-index="3"></div>
+                        <div class="schematic-card" data-index="2"></div>
+                        <div class="schematic-card" data-index="5"></div>
+                        <div class="schematic-card" data-index="4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-actions">
+                <button id="print-btn-main" class="btn-primary" data-i18n="printStart">Nyomtatás indítása</button>
+                <button id="clear-queue" class="btn-danger" data-i18n="clearQueue">Lista ürítése</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-settings" class="floating-panel">
+        <div class="panel-header">
+            <span data-i18n="settingsTab">Beállítások</span>
+            <button class="close-panel">×</button>
+        </div>
+        <div class="panel-content">
+            <div class="setting-item">
+                <label style="cursor: pointer; display: block; margin-bottom: 10px;">
+                    <input type="checkbox" id="glass-effect-toggle"> <span data-i18n="glassEffect">Üveg hatás</span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <label style="cursor: pointer; display: block; margin-bottom: 10px;">
+                    <input type="checkbox" id="printer-friendly-global"> <span data-i18n="printerFriendly">Nyomtatóbarát mód (lista)</span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <label style="cursor: pointer; display: block; margin-bottom: 10px;">
+                    <input type="checkbox" id="rounded-corners"> <span data-i18n="roundedCorners">Lekerekített sarkok (5mm)</span>
+                </label>
+            </div>
+
+            <!-- Minta generátor szekció -->
+            <div class="generator-section" style="border-top: 1px solid var(--panel-border); padding-top: 15px; margin-top: 15px;">
+                <h4 data-i18n="generatorTitle" style="margin-bottom: 10px; font-family: 'Uncial Antiqua', serif; color: var(--accent-color);">Minta generátor</h4>
+                
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label data-i18n="genColorCount" style="font-size: 13px;">Színes mezők:</label>
+                    <input type="number" id="gen-color-count" min="0" max="20" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label data-i18n="genUniqueColors" style="font-size: 13px;">Hányféle szín:</label>
+                    <input type="number" id="gen-unique-colors" min="1" max="5" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label data-i18n="genValueCount" style="font-size: 13px;">Számos mezők:</label>
+                    <input type="number" id="gen-value-count" min="0" max="20" value="5" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
+                </div>
+                <div class="gen-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <label data-i18n="genUniqueValues" style="font-size: 13px;">Hányféle szám:</label>
+                    <input type="number" id="gen-unique-values" min="1" max="6" value="6" style="width: 50px; padding: 4px; border: 1px solid var(--panel-border); background: var(--panel-bg); color: var(--text-color);">
+                </div>
+                
+                <button id="generate-pattern-btn" class="btn-primary" style="width: 100%; padding: 10px; font-family: 'Uncial Antiqua', serif; cursor: pointer;" data-i18n="generate">Generálás</button>
+            </div>
+        </div>
+    </div>
 
     <main id="editor-area">
         <div class="main-layout">
@@ -181,38 +228,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Fixed Cell Picker -->
-                <div id="fixed-picker" class="fixed-picker">
-                    <div class="picker-section">
-                        <h4 data-i18n="colors">Színek</h4>
-                        <div class="picker-grid">
-                            <button class="picker-btn color-r" data-val="R" data-type="color"></button>
-                            <button class="picker-btn color-g" data-val="G" data-type="color"></button>
-                            <button class="picker-btn color-b" data-val="B" data-type="color"></button>
-                            <button class="picker-btn color-y" data-val="Y" data-type="color"></button>
-                            <button class="picker-btn color-p" data-val="P" data-type="color"></button>
-                            <button class="picker-btn color-w" data-val="W" data-type="color"></button>
-                        </div>
-                    </div>
-                    <div class="picker-section">
-                        <h4 data-i18n="numbers">Számok</h4>
-                        <div class="picker-grid">
-                            <button class="picker-btn val-btn" data-val="1" data-type="value">1</button>
-                            <button class="picker-btn val-btn" data-val="2" data-type="value">2</button>
-                            <button class="picker-btn val-btn" data-val="3" data-type="value">3</button>
-                            <button class="picker-btn val-btn" data-val="4" data-type="value">4</button>
-                            <button class="picker-btn val-btn" data-val="5" data-type="value">5</button>
-                            <button class="picker-btn val-btn" data-val="6" data-type="value">6</button>
-                        </div>
-                    </div>
-                    <div class="picker-section">
-                        <div class="picker-grid">
-                            <button class="picker-btn val-btn" data-val="X" data-type="value" title="Tiltott mező">X</button>
-                            <button class="picker-btn clear-btn" data-val="." data-type="clear" title="Mező törlése">🗑️</button>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -221,7 +236,7 @@
 
     <footer class="no-print">
         <div class="footer-content">
-            <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.1.9</p>
+            <p data-i18n="copyright">© 2026 Sagrada Pattern Designer. Minden jog fenntartva. | v0.0.2.0</p>
         </div>
     </footer>
 
