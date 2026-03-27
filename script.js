@@ -70,9 +70,43 @@ async function generateCardImage(cardData) {
     cardData.cells.forEach(cell => {
         const cellDiv = document.createElement('div');
         cellDiv.className = 'cell';
-        // Apply cell appearance (simplified)
-        if (cell.color !== '.') cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
-        if (cell.value !== '.') cellDiv.textContent = cell.value;
+        
+        // Apply cell appearance (same logic as ui.js)
+        if (cell.color !== '.') {
+            cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
+            cellDiv.classList.add('has-color');
+            if (state.glassEffect) cellDiv.classList.add('glass-on');
+        }
+
+        if (cell.value === 'X') {
+            cellDiv.classList.add('v-x', 'has-value');
+            cellDiv.textContent = 'X';
+            cellDiv.style.color = '#fff';
+            cellDiv.style.fontSize = '80px';
+            cellDiv.style.fontFamily = 'Arial, sans-serif';
+            cellDiv.style.fontWeight = 'bold';
+        } else if (cell.value !== '.' && !isNaN(cell.value)) {
+            cellDiv.classList.add('v-num', 'has-value');
+            const diceFace = document.createElement('div');
+            diceFace.className = 'dice-face';
+            diceFace.dataset.val = cell.value;
+            if (cell.color !== '.') diceFace.classList.add('overlay');
+            
+            const img = document.createElement('img');
+            img.src = `Cells/${cell.value}.png`;
+            img.className = 'dice-img';
+            
+            // Filter logic to match ui.js
+            img.style.filter = (cell.color === '.') ? 
+                'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))' : 
+                'brightness(0) invert(1) drop-shadow(0 0 1px rgba(0,0,0,0.8))';
+            
+            diceFace.appendChild(img);
+            cellDiv.appendChild(diceFace);
+        } else if (cell.color === '.' && cell.value === '.') {
+            cellDiv.classList.add('empty-cell');
+        }
+
         grid.appendChild(cellDiv);
     });
 
