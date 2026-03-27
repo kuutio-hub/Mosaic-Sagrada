@@ -354,6 +354,9 @@ function setupEventListeners() {
                     const titleInput = document.querySelector(`.card-title-input[data-side="${side}"]`);
                     if (titleInput) titleInput.value = card.title;
                     updateTitleScaling(side);
+                    
+                    // Close the promo panel
+                    togglePanel('panel-promo', false);
                 }
             }
         });
