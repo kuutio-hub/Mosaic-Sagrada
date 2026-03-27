@@ -14,9 +14,13 @@ export function renderGrid(side) {
         updateCellAppearance(cell, cellData);
 
         cell.addEventListener('click', (e) => {
-            // Need to import openPicker here, but it's in script.js.
-            // I'll need to move openPicker to a module too.
-            window.openPicker(e, side, index);
+            // X érték beállítása tiltott mezőként
+            if (e.shiftKey) {
+                state[side].cells[index] = { color: '.', value: 'X' };
+                renderGrid(side);
+            } else {
+                window.openPicker(e, side, index);
+            }
         });
 
         gridContainer.appendChild(cell);

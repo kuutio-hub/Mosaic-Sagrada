@@ -506,15 +506,15 @@ function updateCardScaling() {
     const card = document.getElementById('card-container');
     if (!container || !card) return;
 
-    const containerWidth = container.clientWidth - 40;
-    const containerHeight = container.clientHeight - 40;
+    const containerWidth = container.clientWidth - 20;
+    const containerHeight = container.clientHeight - 20;
     
     const cardBaseWidth = 900;
     const cardBaseHeight = 800;
     
     const scaleX = containerWidth / cardBaseWidth;
     const scaleY = containerHeight / cardBaseHeight;
-    const scale = Math.min(scaleX, scaleY, 1);
+    const scale = Math.min(scaleX, scaleY, 1.2); // Növelve a maximum skálázást
     
     card.style.transform = `scale(${scale})`;
     

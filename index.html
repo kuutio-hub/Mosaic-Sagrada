@@ -182,12 +182,14 @@
             </div>
             <div class="setting-item">
                 <h4 data-i18n="bgPatterns">Háttér minták</h4>
-                <select id="bg-pattern-select" style="width: 100%; background: #222; color: #fff; padding: 5px; border-radius: 4px;">
-                    <option value="none" data-i18n="none">Nincs</option>
-                    <option value="marble" data-i18n="marble">Márvány</option>
-                    <option value="glass" data-i18n="glass">Üveg</option>
-                    <option value="stained" data-i18n="stained">Ólomüveg</option>
-                </select>
+                <div class="radio-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <label><input type="radio" name="bg-pattern" value="none" checked> Nincs</label>
+                    <label><input type="radio" name="bg-pattern" value="marble"> Márvány</label>
+                    <label><input type="radio" name="bg-pattern" value="glass"> Üveg</label>
+                    <label><input type="radio" name="bg-pattern" value="stained"> Ólomüveg</label>
+                    <label><input type="radio" name="bg-pattern" value="wood"> Fa</label>
+                    <label><input type="radio" name="bg-pattern" value="metal"> Fém</label>
+                </div>
             </div>
         </div>
     </div>
