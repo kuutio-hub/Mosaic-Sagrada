@@ -13,10 +13,13 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const APP_VERSION = "0.0.2.1";
+const APP_VERSION = "0.0.2.4";
 
-// Aktuálisan szerkesztett cella
-let activeCell = null;
+// Zoom state
+let currentScale = 1.0;
+const SCALE_STEP = 0.1;
+const MIN_SCALE = 0.5;
+const MAX_SCALE = 2.0;
 
 // Promo kártyák adatai
 let promoCards = [];
@@ -392,22 +395,21 @@ function setupEventListeners() {
         });
     }
 
-    // Zoom toggle
-    const zoomToggle = document.getElementById('zoom-toggle');
-    if (zoomToggle) {
-        zoomToggle.addEventListener('click', () => {
-            const container = document.getElementById('card-container');
-            container.classList.toggle('zoomed');
-            
-            const icon = zoomToggle.querySelector('i') || zoomToggle.querySelector('span');
-            if (container.classList.contains('zoomed')) {
-                zoomToggle.innerHTML = '🔍 <span data-i18n="zoomOut">Kicsinyítés</span>';
-            } else {
-                zoomToggle.innerHTML = '🔍 <span data-i18n="zoomIn">Nagyítás</span>';
-            }
-            // Re-apply translations for the new content
-            const lang = document.documentElement.lang || 'hu';
-            applyTranslations(lang);
+    // Zoom in
+    const zoomInBtn = document.getElementById('zoom-in');
+    if (zoomInBtn) {
+        zoomInBtn.addEventListener('click', () => {
+            currentScale = Math.min(currentScale + SCALE_STEP, MAX_SCALE);
+            updateCardScaling();
+        });
+    }
+
+    // Zoom out
+    const zoomOutBtn = document.getElementById('zoom-out');
+    if (zoomOutBtn) {
+        zoomOutBtn.addEventListener('click', () => {
+            currentScale = Math.max(currentScale - SCALE_STEP, MIN_SCALE);
+            updateCardScaling();
         });
     }
     // Apply saved card
@@ -514,7 +516,9 @@ function updateCardScaling() {
     
     const scaleX = containerWidth / cardBaseWidth;
     const scaleY = containerHeight / cardBaseHeight;
-    const scale = Math.min(scaleX, scaleY, 1.2); // Növelve a maximum skálázást
+    // Az alap skálázás az ablakhoz, amit a felhasználói zoom-al módosítunk
+    const baseScale = Math.min(scaleX, scaleY, 1.0);
+    const scale = baseScale * currentScale;
     
     card.style.transform = `scale(${scale})`;
     

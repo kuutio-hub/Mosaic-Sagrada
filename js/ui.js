@@ -14,13 +14,7 @@ export function renderGrid(side) {
         updateCellAppearance(cell, cellData);
 
         cell.addEventListener('click', (e) => {
-            // X érték beállítása tiltott mezőként
-            if (e.shiftKey) {
-                state[side].cells[index] = { color: '.', value: 'X' };
-                renderGrid(side);
-            } else {
-                window.openPicker(e, side, index);
-            }
+            window.openPicker(e, side, index);
         });
 
         gridContainer.appendChild(cell);

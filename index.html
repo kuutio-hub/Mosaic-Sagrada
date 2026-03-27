@@ -44,8 +44,9 @@
         <button class="toolbar-tab" data-target="panel-palette" data-i18n="pickerTab">🎨 Paletta</button>
         <button class="toolbar-tab" data-target="panel-promo" data-i18n="promoTab">🃏 Minta tár</button>
         <button class="toolbar-tab" data-target="panel-queue" data-i18n="queueTab">🖨️ Lista</button>
+        <button class="toolbar-tab" id="zoom-in">➕ <span data-i18n="zoomIn">Nagyítás</span></button>
+        <button class="toolbar-tab" id="zoom-out">➖ <span data-i18n="zoomOut">Kicsinyítés</span></button>
         <button class="toolbar-tab" data-target="panel-settings" data-i18n="settingsTab">⚙️ Beállítások</button>
-        <button class="toolbar-tab" id="zoom-toggle">🔍 <span data-i18n="zoom">Nagyítás</span></button>
     </div>
 
     <div id="panel-palette" class="floating-panel active">
@@ -63,7 +64,8 @@
                     <button class="picker-btn color-y" data-type="color" data-val="Y"></button>
                     <button class="picker-btn color-p" data-type="color" data-val="P"></button>
                     <button class="picker-btn color-w" data-type="color" data-val="W"></button>
-                    <button class="picker-btn" data-type="clear">×</button>
+                    <button class="picker-btn" id="picker-x" data-type="value" data-val="X">X</button>
+                    <button class="picker-btn" data-type="clear">🗑️</button>
                 </div>
             </div>
             <div class="picker-section" style="margin-top: 15px;">
