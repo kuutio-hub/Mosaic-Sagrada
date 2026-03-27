@@ -13,7 +13,15 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const APP_VERSION = "0.0.2.4";
+const APP_VERSION = "0.0.2.5";
+
+// A verziószám rögzítése a footerben
+document.addEventListener('DOMContentLoaded', () => {
+    const versionEl = document.querySelector('[data-i18n="copyright"]');
+    if (versionEl) {
+        versionEl.textContent = versionEl.textContent.replace(/v\d+\.\d+\.\d+\.\d+/, `v${APP_VERSION}`);
+    }
+});
 
 // Zoom state
 let currentScale = 1.0;
@@ -181,26 +189,36 @@ function setupEventListeners() {
     // Picker elemek kattintása
     document.querySelectorAll('.picker-btn').forEach(item => {
         item.addEventListener('click', () => {
-            if (activeCell) {
-                const { side, index } = activeCell;
-                const type = item.dataset.type;
-                const val = item.dataset.val;
-
-                if (type === 'color') {
-                    state[side].cells[index].color = val;
-                } else if (type === 'value') {
-                    state[side].cells[index].value = val;
-                } else if (type === 'clear') {
-                    state[side].cells[index].color = '.';
-                    state[side].cells[index].value = '.';
-                }
-
-                renderGrid(side);
-                
-                // Keep cell active after edit
-                const cell = document.querySelector(`.cell[data-side="${side}"][data-index="${index}"]`);
+            if (!activeCell) {
+                // Ha nincs aktív cella, válasszuk ki az elsőt (0-ás index)
+                const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
+                activeCell = { side, index: 0 };
+                const cell = document.querySelector(`.cell[data-side="${side}"][data-index="0"]`);
                 if(cell) cell.classList.add('active');
             }
+            
+            const { side, index } = activeCell;
+            const type = item.dataset.type;
+            const val = item.dataset.val;
+
+            if (type === 'color') {
+                state[side].cells[index].color = val;
+            } else if (type === 'value') {
+                // Ha X, akkor ne legyen szín
+                if (val === 'X') {
+                    state[side].cells[index].color = '.';
+                }
+                state[side].cells[index].value = val;
+            } else if (type === 'clear') {
+                state[side].cells[index].color = '.';
+                state[side].cells[index].value = '.';
+            }
+
+            renderGrid(side);
+            
+            // Keep cell active after edit
+            const cell = document.querySelector(`.cell[data-side="${side}"][data-index="${index}"]`);
+            if(cell) cell.classList.add('active');
         });
     });
 
@@ -328,6 +346,8 @@ function setupEventListeners() {
             const time = new Date().toLocaleTimeString('hu-HU', { hour: '2-digit', minute: '2-digit' }).replace(':', '');
             const fileName = `Sagrada_${date}_${time}.pdf`;
 
+            const printContainer = document.getElementById('print-container');
+            printContainer.style.display = 'block'; // Megjelenítés
             preparePrintLayout();
             const pages = document.querySelectorAll('.print-page');
             
@@ -338,6 +358,7 @@ function setupEventListeners() {
                 doc.addImage(imgData, 'PNG', 10, 10, 190, 277);
             }
             
+            printContainer.style.display = 'none'; // Elrejtés
             doc.save(fileName);
         });
     }
@@ -514,8 +535,8 @@ function updateCardScaling() {
     const cardBaseWidth = 900;
     const cardBaseHeight = 800;
     
-    const scaleX = containerWidth / cardBaseWidth;
-    const scaleY = containerHeight / cardBaseHeight;
+    const scaleX = (containerWidth / cardBaseWidth) * 0.8;
+    const scaleY = (containerHeight / cardBaseHeight) * 0.8;
     // Az alap skálázás az ablakhoz, amit a felhasználói zoom-al módosítunk
     const baseScale = Math.min(scaleX, scaleY, 1.0);
     const scale = baseScale * currentScale;
