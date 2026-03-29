@@ -1,0 +1,282 @@
+{
+  "Vitraux": {
+    "difficulty": 5,
+    "pattern": ["3wrw2", "wg6pw", "yw1wb", "w5w4w"],
+    "code": "1A"
+  },
+  "Balboa Bay": {
+    "difficulty": 4,
+    "pattern": ["12www", "gb41w", "wgb61", "63www"],
+    "code": "1B"
+  },
+  "AlpenGlow": {
+    "difficulty": 6,
+    "pattern": ["1b2y5", "r3p6g", "2y1b3", "g4r5p"],
+    "code": "2A"
+  },
+  "Komorebi": {
+    "difficulty": 6,
+    "pattern": ["12343", "21654", "32165", "43456"],
+    "code": "2B"
+  },
+  "International Tabletop Day": {
+    "difficulty": 3,
+    "pattern": ["rwgyw", "wrygw", "wyrwg", "ywwrw"],
+    "code": "3B"
+  },
+  "Floodgate.Games": {
+    "difficulty": 5,
+    "pattern": ["6wgw1", "w3ygw", "wr2yw", "1wrw6"],
+    "code": "3A"
+  },
+  "Board Game Geek": {
+    "difficulty": 3,
+    "pattern": ["ywyw6", "wy2ww", "www4b", "15wbw"],
+    "code": "4B"
+  },
+  "Board Game Geek (4A)": {
+    "difficulty": 6,
+    "pattern": ["6wyw1", "wywyw", "wb2bw", "14b36"],
+    "code": "4A"
+  },
+  "Watch it Played": {
+    "difficulty": 6,
+    "pattern": ["wwwgw", "2rw6b", "w54g6", "1rw2b"],
+    "code": "5A"
+  },
+  "Watch it Played (5B)": {
+    "difficulty": 3,
+    "pattern": ["wwwww", "5r4g6", "6352b", "wwww1"],
+    "code": "5B"
+  },
+  "Man vs Meeple": {
+    "difficulty": 3,
+    "pattern": ["wbwpw", "bw6wp", "w2w3w", "ww5w1"],
+    "code": "6B"
+  },
+  "Floodgate.Games (6A)": {
+    "difficulty": 6,
+    "pattern": ["wbwpw", "b263p", "ww5ww", "p431b"],
+    "code": "6A"
+  },
+  "Game Boy Geek": {
+    "difficulty": 3,
+    "pattern": ["w3w4w", "5w6w1", "w2r3w", "wwwwr"],
+    "code": "7B"
+  },
+  "Floodgate.Games (7A)": {
+    "difficulty": 6,
+    "pattern": ["w3w4w", "5w6w1", "w2w3w", "1w5r5"],
+    "code": "7A"
+  },
+  "Apollo": {
+    "difficulty": 4,
+    "pattern": ["2w1ww", "wpy1g", "b6gww", "w5b6w"],
+    "code": "8A"
+  },
+  "Godfather": {
+    "difficulty": 3,
+    "pattern": ["2wyww", "wy1gp", "wg5bw", "wb62w"],
+    "code": "8B"
+  },
+  "Man vs Meeple - Season 3": {
+    "difficulty": 3,
+    "pattern": ["wbwpw", "pw6wb", "w2w3w", "ww5w1"],
+    "code": "9B"
+  },
+  "Floodgate.Games (9A)": {
+    "difficulty": 6,
+    "pattern": ["wbwpw", "b263p", "wp5bw", "4w3w1"],
+    "code": "9A"
+  },
+  "The Dice Tower": {
+    "difficulty": 3,
+    "pattern": ["wrwbw", "bw6wr", "w2w3w", "ww5w1"],
+    "code": "10B"
+  },
+  "Floodgate.Games (10A)": {
+    "difficulty": 6,
+    "pattern": ["wrwbw", "r263b", "wb5rw", "4w3w1"],
+    "code": "10A"
+  },
+  "Floodgate.Games (11A)": {
+    "difficulty": 6,
+    "pattern": ["yww3w", "wb5ww", "w43pr", "w31gp"],
+    "code": "11A"
+  },
+  "We <3 our FLGS": {
+    "difficulty": 3,
+    "pattern": ["yww3w", "wb5ww", "w43pr", "w3wwp"],
+    "code": "11B"
+  },
+  "Tantrum House": {
+    "difficulty": 3,
+    "pattern": ["wb1ww", "wwbw6", "w5wr1", "ww3w2"],
+    "code": "12B"
+  },
+  "Floodgate.Games (12A)": {
+    "difficulty": 6,
+    "pattern": ["wb1ww", "4wbw6", "w5wr1", "bw3w2"],
+    "code": "12A"
+  },
+  "Galápagos Jogos": {
+    "difficulty": 3,
+    "pattern": ["6www4", "yw6ww", "wyw6w", "w4wwy"],
+    "code": "13A"
+  },
+  "Galapagosjogos.com.br": {
+    "difficulty": 5,
+    "pattern": ["6www4", "yw6w5", "wyw6w", "w45wy"],
+    "code": "13B"
+  },
+  "Game Boy Geek 2021": {
+    "difficulty": 3,
+    "pattern": ["w3w2w", "5w6w1", "w4r3w", "wwwwr"],
+    "code": "14A"
+  },
+  "Game Boy Geek 2021 (14B)": {
+    "difficulty": 6,
+    "pattern": ["w3w4w", "2w6w1", "w5w3w", "1w5r4"],
+    "code": "14B"
+  },
+  "Geekach Games": {
+    "difficulty": 3,
+    "pattern": ["rw423", "6rwww", "w4w3w", "w2rww"],
+    "code": "15A"
+  },
+  "Geekach Games (15B)": {
+    "difficulty": 6,
+    "pattern": ["rw423", "6rw5w", "w4w3r", "w2rw1"],
+    "code": "15B"
+  },
+  "CuseCon": {
+    "difficulty": 3,
+    "pattern": ["5wrw3", "w315w", "www1b", "ww6w4"],
+    "code": "16A"
+  },
+  "CuseCon (16B)": {
+    "difficulty": 6,
+    "pattern": ["5wrw3", "w315w", "bww1b", "ww6w4"],
+    "code": "16B"
+  },
+  "Gathering of Friends": {
+    "difficulty": 4,
+    "pattern": ["w3ww2", "5wp1w", "6yrbg", "w21w6"],
+    "code": "17A"
+  },
+  "Gathering of Friends (17B)": {
+    "difficulty": 3,
+    "pattern": ["w3www", "5wp1w", "6yrbg", "w21ww"],
+    "code": "17B"
+  },
+  "Tantrum House (19A)": {
+    "difficulty": 3,
+    "pattern": ["46ww1", "2rwwb", "wwbw5", "wwwr4"],
+    "code": "19A"
+  },
+  "Floodgate.Games (19B)": {
+    "difficulty": 6,
+    "pattern": ["46ww1", "2rwwb", "wwbw5", "b3wr4"],
+    "code": "19B"
+  },
+  "Fog of Love": {
+    "difficulty": 3,
+    "pattern": ["w6p4w", "65wwb", "wpbw3", "www1w"],
+    "code": "20A"
+  },
+  "Floodgate.Games (20B)": {
+    "difficulty": 5,
+    "pattern": ["b6p4w", "65wwb", "wpbw3", "ww21p"],
+    "code": "20B"
+  },
+  "Game Boy Geek 2022": {
+    "difficulty": 3,
+    "pattern": ["w3w4w", "3r6w5", "w2w5w", "wwwww"],
+    "code": "21A"
+  },
+  "Game Boy Geek 2022 (21B)": {
+    "difficulty": 6,
+    "pattern": ["w3w4r", "3r6w5", "w2w5w", "2w6r1"],
+    "code": "21B"
+  },
+  "Game Boy Geek 2023": {
+    "difficulty": 6,
+    "pattern": ["w5r4w", "6w3r5", "w2w3w", "2r6w1"],
+    "code": "22A"
+  },
+  "Game Boy Geek 2023 (22B)": {
+    "difficulty": 3,
+    "pattern": ["w5w4w", "6r3w5", "w2w3w", "wwwww"],
+    "code": "22B"
+  },
+  "2023 Gen Con Promo A": {
+    "difficulty": 6,
+    "pattern": ["wyrw6", "wrwyw", "w53w1", "w1pwy"],
+    "code": "2023GenConPromoA"
+  },
+  "2023 Gen Con Promo B": {
+    "difficulty": 6,
+    "pattern": ["w3wgw", "wpww6", "rgw4y", "w4w5g"],
+    "code": "2023GenConPromoB"
+  },
+  "Tantrum House (24A)": {
+    "difficulty": 4,
+    "pattern": ["2w4B3", "wBw32", "w3w26", "w12ww"],
+    "code": "24A"
+  },
+  "Floodgate games (24B)": {
+    "difficulty": 4,
+    "pattern": ["Rww64", "wB4w2", "w4wR5", "ww61w"],
+    "code": "24B"
+  },
+  "2024 Gen Con Promo A": {
+    "difficulty": 4,
+    "pattern": ["ww6p3", "rwwg6", "4pww2", "5ywww"],
+    "code": "2024GenConPromoA"
+  },
+  "2024 Gen Con Promo B": {
+    "difficulty": 4,
+    "pattern": ["w1ww5", "ywbww", "w5w3g", "b2ww3"],
+    "code": "2024GenConPromoB"
+  },
+  "2022 Promo Pack Exclusive": {
+    "difficulty": 5,
+    "pattern": ["2www4", "pw3wr", "wy6bw", "w1g5w"],
+    "code": "2022PromoPackExclusive"
+  },
+  "2020 Promo Pack Exclusive": {
+    "difficulty": 5,
+    "pattern": ["4www5", "rw1wb", "wp6gw", "w2y3w"],
+    "code": "2020PromoPackExclusive"
+  },
+  "2022 Glory": {
+    "difficulty": 6,
+    "pattern": ["2grw1", "bw1ww", "ww6wg", "ww5p4"],
+    "code": "2022Glory"
+  },
+  "2022 Passion": {
+    "difficulty": 6,
+    "pattern": ["pw2w6", "www1w", "42wb3", "2ww4y"],
+    "code": "2022Passion"
+  },
+  "2022 Life": {
+    "difficulty": 6,
+    "pattern": ["26gwr", "1wwww", "ww6yb", "4y3w6"],
+    "code": "2022Life"
+  },
+  "2023 Glory": {
+    "difficulty": 6,
+    "pattern": ["2GRw1", "Bw1ww", "ww6wG", "ww5P4"],
+    "code": "2023Glory"
+  },
+  "2023 Passion": {
+    "difficulty": 6,
+    "pattern": ["BwPww", "p5wwY", "3BwYG", "w2Rww"],
+    "code": "2023Passion"
+  },
+  "2023 Life": {
+    "difficulty": 6,
+    "pattern": ["B32Gw", "YRwAw", "wA5wR", "w2G3w"],
+    "code": "2023Life"
+  }
+}
