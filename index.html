@@ -1,16 +1,287 @@
 <!DOCTYPE html>
 <html lang="hu">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sagrada Window Pattern Designer</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sagrada Pattern Designer</title>
+    
+    <!-- Tailwind CSS Play CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Uncial+Antiqua&family=Cinzel:wght@400;700&family=MedievalSharp&family=Almendra:wght@400;700&family=Pirata+One&family=Great+Vibes&family=Playfair+Display:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- PDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        display: ['Uncial Antiqua', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-zinc-900 border-b border-zinc-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-black font-display text-xl">S</div>
+            <h1 class="font-display text-xl hidden sm:block text-white">Sagrada Designer</h1>
+        </div>
+
+        <nav class="flex items-center gap-1 sm:gap-2">
+            <button id="nav-editor" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors bg-white text-black">
+                <i data-lucide="plus" class="w-[18px] h-[18px]"></i>
+                <span class="hidden md:inline">Szerkesztő</span>
+            </button>
+            <button id="nav-queue" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-zinc-400 hover:bg-zinc-800 hover:text-white relative">
+                <i data-lucide="layers" class="w-[18px] h-[18px]"></i>
+                <span class="hidden md:inline">Nyomtatási lista</span>
+                <span id="queue-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-zinc-900">0</span>
+            </button>
+            <button id="nav-settings" class="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors text-zinc-400 hover:bg-zinc-800 hover:text-white">
+                <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
+                <span class="hidden md:inline">Beállítások</span>
+            </button>
+        </nav>
+
+        <div class="flex items-center gap-2">
+            <select id="promo-select" class="w-32 sm:w-40 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white">
+                <option value="" disabled selected>Minta kártyák</option>
+            </select>
+
+            <div class="flex items-center gap-1">
+                <select id="custom-select" class="w-32 sm:w-40 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white">
+                    <option value="" disabled selected>Saját kártyák</option>
+                </select>
+                <button id="delete-custom" class="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-all hidden">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <button id="header-pdf-btn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-800 disabled:text-zinc-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm ml-2">
+                <i data-lucide="printer" class="w-[18px] h-[18px]"></i>
+                <span class="hidden sm:inline">PDF Export</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-full md:w-64 lg:w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col overflow-y-auto shrink-0">
+            <!-- Editor Panel -->
+            <div id="panel-editor" class="p-6 space-y-8 block">
+                <section class="space-y-4">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-500">Kártya adatok</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-medium text-zinc-500 mb-1 block">Kártya neve</label>
+                            <input id="card-title-input" type="text" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all" placeholder="Minta név">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-500">Paletta</h2>
+                        <div class="flex bg-zinc-800 p-1 rounded-lg">
+                            <button id="side-front" class="px-3 py-1 text-xs font-bold rounded-md transition-all bg-zinc-700 shadow-sm text-white">Előlap</button>
+                            <button id="side-back" class="px-3 py-1 text-xs font-bold rounded-md transition-all text-zinc-500">Hátlap</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                            <button id="toggle-colors" class="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors">
+                                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Színek</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-600 transition-transform rotate-90"></i>
+                            </button>
+                            <div id="colors-palette" class="px-4 pb-4 block">
+                                <div class="palette-grid colors" id="palette-colors"></div>
+                            </div>
+                        </div>
+
+                        <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                            <button id="toggle-values" class="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors">
+                                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Számok</span>
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-600 transition-transform rotate-90"></i>
+                            </button>
+                            <div id="values-palette" class="px-4 pb-4 block">
+                                <div class="palette-grid numbers" id="palette-values"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="pt-4 space-y-4">
+                    <button id="add-to-queue" class="w-full flex items-center justify-center gap-2 bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95">
+                        <i data-lucide="plus" class="w-5 h-5"></i>
+                        Hozzáadás a nyomtatási listához
+                    </button>
+
+                    <button id="clear-grid" class="w-full flex items-center justify-center gap-2 bg-transparent text-zinc-600 py-2 rounded-lg text-[10px] font-bold hover:text-red-500 transition-colors uppercase tracking-widest">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        Rács törlése
+                    </button>
+
+                    <div class="pt-4 border-t border-zinc-800">
+                        <button id="save-custom" class="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg bg-zinc-100 text-black hover:bg-white">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span id="save-btn-text">Mentés sajátként</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Queue Panel -->
+            <div id="panel-queue" class="p-6 flex flex-col h-full hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-500">Nyomtatási lista</h2>
+                    <span id="queue-count" class="text-xs font-bold bg-zinc-800 px-2 py-1 rounded-full text-zinc-500">0 / 6</span>
+                </div>
+
+                <div id="queue-list" class="flex-1 space-y-4 overflow-y-auto pr-2">
+                    <!-- Queue items will be rendered here -->
+                </div>
+
+                <div id="queue-actions" class="pt-6 space-y-3 hidden">
+                    <button id="queue-pdf-btn" class="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                        PDF Generálása
+                    </button>
+                    <button id="clear-queue" class="w-full text-xs font-bold text-zinc-500 hover:text-red-500 transition-colors py-2">
+                        Lista ürítése
+                    </button>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div id="panel-settings" class="p-6 space-y-8 hidden">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-500">Beállítások</h2>
+                
+                <div class="space-y-6">
+                    <div class="space-y-4">
+                        <label class="text-xs font-medium text-zinc-500 uppercase tracking-widest">Adatok kezelése</label>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button id="export-presets" class="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors">
+                                <span class="text-xs font-bold text-white">Minta kártyák exportálása</span>
+                                <i data-lucide="download" class="w-4 h-4 text-zinc-400"></i>
+                            </button>
+                            <button id="export-custom" class="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors">
+                                <span class="text-xs font-bold text-white">Saját kártyák exportálása</span>
+                                <i data-lucide="download" class="w-4 h-4 text-zinc-400"></i>
+                            </button>
+                            <label class="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer">
+                                <span class="text-xs font-bold text-white">Kártyák importálása</span>
+                                <i data-lucide="upload" class="w-4 h-4 text-zinc-400"></i>
+                                <input id="import-input" type="file" accept=".json" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-xs font-medium text-zinc-500 uppercase tracking-widest">Nagyítás</label>
+                        <div class="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
+                            <button id="zoom-out" class="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <span id="zoom-value" class="text-sm font-bold text-white">100%</span>
+                            <button id="zoom-in" class="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 pt-2 border-t border-zinc-800">
+                        <label class="text-xs font-medium text-zinc-500 uppercase tracking-widest">Szöveg beállítások</label>
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-zinc-500 uppercase">Betűtípus</label>
+                            <select id="font-select" class="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-white">
+                                <option value="Uncial Antiqua">Uncial Antiqua</option>
+                                <option value="Cinzel">Cinzel</option>
+                                <option value="MedievalSharp">MedievalSharp</option>
+                                <option value="Almendra">Almendra</option>
+                                <option value="Pirata One">Pirata One</option>
+                                <option value="Great Vibes">Great Vibes</option>
+                                <option value="Playfair Display">Playfair Display</option>
+                                <option value="Cormorant Garamond">Cormorant Garamond</option>
+                                <option value="Montserrat">Montserrat</option>
+                                <option value="Inter">Inter</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] text-zinc-500 uppercase">Betűméret (pt)</label>
+                            <div class="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
+                                <button id="size-decrease" class="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                </button>
+                                <span id="size-value" class="text-sm font-bold text-white">14</span>
+                                <button id="size-increase" class="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-zinc-800">
+                        <label class="text-xs font-medium text-zinc-500 uppercase tracking-widest">Sarok lekerekítés (mm)</label>
+                        <div class="flex items-center gap-4">
+                            <input id="radius-slider" type="range" min="0" max="10" step="0.5" value="0" class="flex-1 accent-white">
+                            <span id="radius-value" class="text-sm font-bold text-white w-8">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Preview Area -->
+        <section id="preview-area" class="flex-1 bg-zinc-950 flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden cursor-default">
+            <!-- Side Indicator -->
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
+                <button id="preview-front-btn" class="px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm bg-white text-black scale-110">ELŐLAP</button>
+                <button id="preview-flip-btn" class="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform text-zinc-400 hover:text-white">
+                    <i data-lucide="flip-horizontal" class="w-5 h-5"></i>
+                </button>
+                <button id="preview-back-btn" class="px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm bg-zinc-800 text-zinc-500 hover:text-white">HÁTLAP</button>
+            </div>
+
+            <!-- Card Preview Container -->
+            <div class="preview-card-wrapper">
+                <div id="card-preview-container" class="preview-card-container group preview-glow">
+                    <!-- Card will be rendered here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-zinc-900 border-t border-zinc-800 px-4 py-2 flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
+        <div>Sagrada Pattern Designer v0.0.3.0</div>
+        <div class="flex items-center gap-4">
+            <span id="status-text">Előlap szerkesztése</span>
+            <span class="w-1 h-1 bg-zinc-700 rounded-full"></span>
+            <span id="queue-status">0 kártya a listán</span>
+        </div>
+    </footer>
+
+    <!-- Notification -->
+    <div id="notification-container" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"></div>
+
+    <script src="script.js"></script>
+</body>
 </html>
