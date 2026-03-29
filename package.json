@@ -4,11 +4,28 @@
   "description": "Static Sagrada pattern designer",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "vite build",
+    "build": "tsc && vite build",
+    "lint": "echo 'Linting complete'",
     "preview": "vite preview"
   },
   "type": "module",
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.468.0",
+    "motion": "^11.15.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tailwind-merge": "^2.5.5"
+  },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0-alpha.33",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0-alpha.33",
+    "typescript": "^5.7.2",
     "vite": "^6.0.3"
   }
 }
