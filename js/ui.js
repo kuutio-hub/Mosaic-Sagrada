@@ -46,12 +46,15 @@ export function updateCellAppearance(cell, cellData) {
         cell.classList.add('v-x');
         cell.classList.add('has-value');
         cell.textContent = 'X';
-        cell.style.color = '#fff';
-        cell.style.fontSize = '80px';
-        cell.style.fontFamily = 'Arial, sans-serif';
-        cell.style.fontWeight = 'bold';
+        cell.style.fontFamily = "'Uncial Antiqua', serif";
+        cell.style.fontSize = '100px';
+        cell.style.lineHeight = '1';
         if (color === '.') {
-            cell.style.color = '#333';
+            cell.style.color = '#888';
+            cell.style.opacity = '0.5';
+        } else {
+            cell.style.color = '#fff';
+            cell.style.opacity = '0.8';
         }
     } else if (value !== '.' && !isNaN(value)) {
         cell.classList.add('v-num');

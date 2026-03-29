@@ -1180,75 +1180,111 @@ button {
     font-size: 14px;
     color: var(--text-main);
 }
-@media print {
-    @page {
-        size: A4 portrait;
-        margin: 10mm;
-    }
-    header, .toolbar, .floating-panel, main, footer {
-        display: none !important;
-    }
-    #print-container {
-        display: flex !important;
-        visibility: visible !important;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        flex-direction: column;
-        gap: 0;
-    }
-    #print-container * {
-        visibility: visible !important;
-    }
-    .print-page {
-        width: 190mm;
-        height: 277mm;
-        display: grid;
-        grid-template-columns: repeat(2, 90mm);
-        grid-template-rows: repeat(3, 64mm);
-        gap: 0;
-        justify-content: center;
-        align-content: center;
-        page-break-after: always;
-        border-top: 0.2mm solid #000;
-        border-left: 0.2mm solid #000;
-        box-sizing: border-box;
-        background: white;
-    }
-    .print-card {
-        width: 90mm;
-        height: 64mm;
-        position: relative;
-        page-break-inside: avoid;
-        border: 0.2mm solid #000;
-        box-sizing: border-box;
-        background: white;
-    }
-    .print-card img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        object-fit: contain;
-    }
-    .print-card-info {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(255, 255, 255, 0.9);
-        color: #000;
-        font-size: 8pt;
-        padding: 1mm 2mm;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-top: 0.1mm solid #eee;
-        font-family: sans-serif;
-        z-index: 10;
-    }
+/* --- Print Styles --- */
+.print-page {
+    width: 210mm;
+    height: 297mm;
+    padding: 10mm;
+    background: white;
+    display: grid;
+    grid-template-columns: repeat(2, 90mm);
+    grid-template-rows: repeat(3, 80mm);
+    gap: 10mm 5mm;
+    justify-content: center;
+    align-content: start;
+    box-sizing: border-box;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
 }
 
-#print-container {
-    display: none;
+.print-card {
+    width: 90mm;
+    height: 80mm;
+    background: black;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 2.5mm;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+}
+
+.print-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 15mm);
+    grid-template-rows: repeat(4, 15mm);
+    gap: 2.5mm;
+    width: 85mm; /* 5 * 15 + 4 * 2.5 */
+    height: 67.5mm; /* 4 * 15 + 3 * 2.5 */
+    margin-bottom: auto;
+}
+
+.print-cell {
+    width: 15mm;
+    height: 15mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-sizing: border-box;
+    border-radius: 1mm;
+}
+
+.print-cell.glass {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(2px);
+    border: 0.2mm solid rgba(255, 255, 255, 0.2);
+}
+
+.print-cell img {
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+}
+
+.print-cell .print-number {
+    font-size: 10mm;
+    font-weight: bold;
+    color: white;
+    line-height: 1;
+}
+
+.print-footer {
+    height: 7.5mm; /* 80 - 67.5 - 2.5 - 2.5 */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1mm;
+    box-sizing: border-box;
+}
+
+.print-title {
+    font-size: 4mm;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 60mm;
+}
+
+.print-difficulty {
+    display: flex;
+    gap: 1mm;
+}
+
+.print-dot {
+    width: 2mm;
+    height: 2mm;
+    background: white;
+    border-radius: 50%;
+}
+
+/* Hide print root from screen */
+#print-root {
+    position: absolute;
+    left: -9999px;
+    top: -9999px;
+    width: 210mm;
 }

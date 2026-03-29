@@ -45,75 +45,253 @@ const frameSVG = `
 `;
 
 /**
- * Kártya kép generálása (PNG)
+ * PDF exportálás: Milliméter-pontos HTML renderelés és PDF generálás (300 DPI)
  */
-async function generateCardImage(cardData) {
-    const container = document.createElement('div');
-    container.style.width = '900px';
-    container.style.height = '800px';
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.background = 'white';
-    document.body.appendChild(container);
+window.generatePDF = async function() {
+    const { jsPDF } = window.jspdf;
+    const isDoubleSided = document.getElementById('double-sided').checked;
+    const itemsPerPage = 6;
+    const queue = state.patternQueue;
+    
+    if (queue.length === 0) {
+        const lang = document.documentElement.lang || 'hu';
+        alert(translations[lang]?.emptyQueue || "A nyomtatási lista üres!");
+        return;
+    }
 
-    // Render card structure
-    container.innerHTML = `
-        <div class="sagrada-card" style="width: 900px; height: 800px; position: relative;">
-            <div class="svg-layer">${frameSVG}</div>
-            <div class="grid-layer" id="temp-grid"></div>
-        </div>
-    `;
+    // Create temporary container for rendering
+    const printRoot = document.createElement('div');
+    printRoot.id = 'print-root';
+    printRoot.style.position = 'fixed';
+    printRoot.style.left = '-5000mm';
+    printRoot.style.top = '0';
+    printRoot.style.width = '210mm';
+    printRoot.style.zIndex = '-1000';
+    document.body.appendChild(printRoot);
 
-    // Render grid
-    const grid = container.querySelector('#temp-grid');
-    // Simplified grid rendering for the temporary container
-    cardData.cells.forEach(cell => {
-        const cellDiv = document.createElement('div');
-        cellDiv.className = 'cell';
+    // Add print-specific styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
         
-        // Apply cell appearance (same logic as ui.js)
-        if (cell.color !== '.') {
-            cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
-            cellDiv.classList.add('has-color');
-            if (state.glassEffect) cellDiv.classList.add('glass-on');
+        .print-page { 
+            width: 210mm; 
+            height: 297mm; 
+            background: white; 
+            position: relative; 
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 90mm 90mm;
+            grid-template-rows: 80mm 80mm 80mm;
+            padding: 28.5mm 15mm;
+            gap: 0;
+            box-sizing: border-box;
         }
-
-        if (cell.value === 'X') {
-            cellDiv.classList.add('v-x', 'has-value');
-            cellDiv.textContent = 'X';
-            cellDiv.style.color = '#fff';
-            cellDiv.style.fontSize = '80px';
-            cellDiv.style.fontFamily = 'Arial, sans-serif';
-            cellDiv.style.fontWeight = 'bold';
-        } else if (cell.value !== '.' && !isNaN(cell.value)) {
-            cellDiv.classList.add('v-num', 'has-value');
-            const diceFace = document.createElement('div');
-            diceFace.className = 'dice-face';
-            diceFace.dataset.val = cell.value;
-            if (cell.color !== '.') diceFace.classList.add('overlay');
-            
-            const img = document.createElement('img');
-            img.src = `Cells/${cell.value}.png`;
-            img.className = 'dice-img';
-            
-            // Filter logic to match ui.js
-            img.style.filter = (cell.color === '.') ? 
-                'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))' : 
-                'brightness(0) invert(1) drop-shadow(0 0 1px rgba(0,0,0,0.8))';
-            
-            diceFace.appendChild(img);
-            cellDiv.appendChild(diceFace);
-        } else if (cell.color === '.' && cell.value === '.') {
-            cellDiv.classList.add('empty-cell');
+        .print-card {
+            width: 90mm;
+            height: 80mm;
+            background: black;
+            position: relative;
+            box-sizing: border-box;
+            border: 0.05mm solid #222;
+            overflow: hidden;
         }
+        .print-grid {
+            position: absolute;
+            top: 2.5mm;
+            left: 2.5mm;
+            display: grid;
+            grid-template-columns: repeat(5, 15mm);
+            grid-template-rows: repeat(4, 15mm);
+            gap: 2.5mm;
+        }
+        .print-cell {
+            width: 15mm;
+            height: 15mm;
+            background: #f0f0f0;
+            border-radius: 1.2mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 9mm;
+            color: #000;
+            position: relative;
+            box-sizing: border-box;
+            border: 0.3mm solid rgba(255,255,255,0.3);
+        }
+        .print-cell.c-r { background-color: #DC3232; }
+        .print-cell.c-g { background-color: #32A050; }
+        .print-cell.c-b { background-color: #3264C8; }
+        .print-cell.c-y { background-color: #F0C828; }
+        .print-cell.c-p { background-color: #8C3CA0; }
+        .print-cell.c-w { background-color: #f0f0f0; }
+        
+        .print-cell.v-x { font-family: Arial, sans-serif; font-weight: bold; font-size: 8mm; color: #fff; }
+        .print-cell.c-w.v-x { color: #333; }
+        
+        .print-dice-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .print-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 10mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 4.5mm;
+            box-sizing: border-box;
+        }
+        .print-title {
+            font-family: 'Uncial Antiqua', serif;
+            font-size: 4.2mm;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 60mm;
+        }
+        .print-difficulty {
+            display: flex;
+            gap: 1.2mm;
+        }
+        .print-dot {
+            width: 2.4mm;
+            height: 2.4mm;
+            background: #333;
+            border-radius: 50%;
+            border: 0.2mm solid #555;
+        }
+        .print-dot.active {
+            background: white;
+            border-color: white;
+        }
+        
+        .print-cell.glass-on::after {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%);
+            pointer-events: none;
+        }
+    `;
+    printRoot.appendChild(style);
 
-        grid.appendChild(cellDiv);
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const numPages = Math.ceil(queue.length / itemsPerPage);
+
+    for (let p = 0; p < numPages; p++) {
+        const pageQueue = queue.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
+        
+        // Render Front Page
+        const frontPage = createPrintPage(pageQueue, 'front');
+        printRoot.appendChild(frontPage);
+        
+        // Wait for images and fonts
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const frontCanvas = await html2canvas(frontPage, { 
+            scale: 3.125, // 300 DPI
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+        const frontImg = frontCanvas.toDataURL('image/jpeg', 0.95);
+        if (p > 0) doc.addPage();
+        doc.addImage(frontImg, 'JPEG', 0, 0, 210, 297);
+        printRoot.removeChild(frontPage);
+
+        // Render Back Page (if double sided)
+        if (isDoubleSided) {
+            const backPage = createPrintPage(pageQueue, 'back');
+            printRoot.appendChild(backPage);
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const backCanvas = await html2canvas(backPage, { 
+                scale: 3.125, // 300 DPI
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+            const backImg = backCanvas.toDataURL('image/jpeg', 0.95);
+            doc.addPage();
+            doc.addImage(backImg, 'JPEG', 0, 0, 210, 297);
+            printRoot.removeChild(backPage);
+        }
+    }
+
+    const timestamp = new Date().getTime();
+    doc.save(`Sagrada_Cards_${timestamp}.pdf`);
+    document.body.removeChild(printRoot);
+};
+
+function createPrintPage(items, side) {
+    const page = document.createElement('div');
+    page.className = 'print-page';
+    
+    items.forEach(item => {
+        const cardData = side === 'front' ? item.frontState : (item.backState || item.frontState);
+        const card = document.createElement('div');
+        card.className = 'print-card';
+        
+        // Grid
+        const grid = document.createElement('div');
+        grid.className = 'print-grid';
+        cardData.cells.forEach(cell => {
+            const cellDiv = document.createElement('div');
+            cellDiv.className = 'print-cell';
+            if (cell.color !== '.') {
+                cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
+                if (state.glassEffect) cellDiv.classList.add('glass-on');
+            }
+            
+            if (cell.value === 'X') {
+                cellDiv.classList.add('v-x');
+                cellDiv.textContent = 'X';
+            } else if (cell.value !== '.' && !isNaN(cell.value)) {
+                const img = document.createElement('img');
+                img.src = `Cells/${cell.value}.png`;
+                img.className = 'print-dice-img';
+                
+                // Filter logic to match preview
+                if (cell.color === '.') {
+                    img.style.filter = 'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))';
+                } else {
+                    img.style.filter = 'brightness(0) invert(1) drop-shadow(0 0 1px rgba(0,0,0,0.8))';
+                }
+                cellDiv.appendChild(img);
+            }
+            grid.appendChild(cellDiv);
+        });
+        card.appendChild(grid);
+        
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'print-footer';
+        
+        const title = document.createElement('div');
+        title.className = 'print-title';
+        title.textContent = cardData.title || "";
+        footer.appendChild(title);
+        
+        const diff = document.createElement('div');
+        diff.className = 'print-difficulty';
+        for (let i = 1; i <= 6; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'print-dot' + (i <= (cardData.difficulty || 3) ? ' active' : '');
+            diff.appendChild(dot);
+        }
+        footer.appendChild(diff);
+        
+        card.appendChild(footer);
+        page.appendChild(card);
     });
-
-    const canvas = await html2canvas(container, { scale: 1 });
-    const imgData = canvas.toDataURL('image/png');
-    document.body.removeChild(container);
-    return imgData;
+    
+    return page;
 }
 
 /**
@@ -275,9 +453,11 @@ function setupEventListeners() {
             const val = item.dataset.val;
 
             if (type === 'color') {
+                // Ha X van a mezőben, ne lehessen színt rárakni
+                if (state[side].cells[index].value === 'X') return;
                 state[side].cells[index].color = val;
             } else if (type === 'value') {
-                // Ha X, akkor ne legyen szín
+                // Ha X-et választunk, töröljük a színt
                 if (val === 'X') {
                     state[side].cells[index].color = '.';
                 }
@@ -604,11 +784,115 @@ function updateCardScaling() {
 }
 
 /**
- * Print layout előkészítése duplex nyomtatáshoz
+ * Milliméter-pontos HTML oldal létrehozása a nyomtatáshoz
  */
-function preparePrintLayout() {
-    const printContainer = document.getElementById('print-container');
-    printContainer.innerHTML = '';
+function createPrintPage(items, side = 'front') {
+    const page = document.createElement('div');
+    page.className = 'print-page';
+    
+    const isDoubleSided = document.getElementById('double-sided').checked;
+    
+    // Duplex nyomtatáshoz a hátlapokat tükrözni kell vízszintesen
+    let displayItems = [...items];
+    if (side === 'back' && isDoubleSided) {
+        // 3 sor, soronként 2 elem tükrözése
+        const rows = [
+            displayItems.slice(0, 2).reverse(),
+            displayItems.slice(2, 4).reverse(),
+            displayItems.slice(4, 6).reverse()
+        ];
+        displayItems = rows.flat();
+    }
+
+    displayItems.forEach(item => {
+        if (!item) {
+            const empty = document.createElement('div');
+            page.appendChild(empty);
+            return;
+        }
+
+        const card = document.createElement('div');
+        card.className = 'print-card';
+        
+        const grid = document.createElement('div');
+        grid.className = 'print-grid';
+        
+        const currentState = side === 'front' ? item.frontState : (item.backState || item.frontState);
+        const glassEffect = state.glassEffect; // Globális beállítás használata
+
+        currentState.cells.forEach(cellData => {
+            const cell = document.createElement('div');
+            cell.className = 'print-cell' + (glassEffect ? ' glass' : '');
+            
+            if (cellData.color && cellData.color !== 'w') {
+                const colorMap = {
+                    'r': '#DC3232',
+                    'g': '#32A050',
+                    'b': '#3264C8',
+                    'y': '#F0C828',
+                    'p': '#8C3CA0'
+                };
+                cell.style.backgroundColor = colorMap[cellData.color];
+            } else {
+                cell.style.backgroundColor = '#f0f0f0';
+            }
+
+            if (cellData.value) {
+                const num = document.createElement('div');
+                num.className = 'print-number';
+                num.textContent = cellData.value;
+                cell.appendChild(num);
+            } else if (cellData.isX) {
+                const x = document.createElement('div');
+                x.className = 'print-number';
+                x.style.opacity = '0.3';
+                x.style.color = '#000';
+                x.textContent = 'X';
+                cell.appendChild(x);
+            }
+
+            grid.appendChild(cell);
+        });
+
+        card.appendChild(grid);
+        
+        // Footer
+        const footer = document.createElement('div');
+        footer.className = 'print-footer';
+        
+        const title = document.createElement('div');
+        title.className = 'print-title';
+        title.textContent = item.title;
+        footer.appendChild(title);
+        
+        const difficulty = document.createElement('div');
+        difficulty.className = 'print-difficulty';
+        for (let i = 1; i <= 6; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'print-dot';
+            if (i <= item.difficulty) {
+                dot.style.backgroundColor = 'white';
+            } else {
+                dot.style.backgroundColor = '#333';
+                dot.style.border = '0.1mm solid #555';
+            }
+            difficulty.appendChild(dot);
+        }
+        footer.appendChild(difficulty);
+        
+        card.appendChild(footer);
+        page.appendChild(card);
+    });
+
+    return page;
+}
+
+/**
+ * PDF exportálás: milliméter-pontos HTML renderelés 300 DPI-vel
+ */
+window.generatePDF = async function() {
+    const { jsPDF } = window.jspdf;
+    const isDoubleSided = document.getElementById('double-sided').checked;
     
     if (state.patternQueue.length === 0) {
         const lang = document.documentElement.lang || 'hu';
@@ -616,137 +900,57 @@ function preparePrintLayout() {
         alert(t.alertQueueEmpty);
         return;
     }
-    
-    const isDoubleSided = document.getElementById('double-sided').checked;
-    const isRounded = document.getElementById('rounded-corners').checked;
-    
-    // Handle multiple pages (6 cards per page)
+
+    // Ideiglenes konténer a rendereléshez
+    let printRoot = document.getElementById('print-root');
+    if (!printRoot) {
+        printRoot = document.createElement('div');
+        printRoot.id = 'print-root';
+        document.body.appendChild(printRoot);
+    }
+    printRoot.innerHTML = '';
+
+    const doc = new jsPDF('p', 'mm', 'a4');
     const itemsPerPage = 6;
     const numPages = Math.ceil(state.patternQueue.length / itemsPerPage);
 
     for (let p = 0; p < numPages; p++) {
         const pageItems = state.patternQueue.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
         
-        // Front page
-        const frontPage = document.createElement('div');
-        frontPage.className = 'print-page';
+        // 1. Előlap generálása
+        const frontPageHtml = createPrintPage(pageItems, 'front');
+        printRoot.appendChild(frontPageHtml);
         
-        pageItems.forEach(item => {
-            const cardWrapper = document.createElement('div');
-            cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
-            
-            const img = document.createElement('img');
-            img.src = item.frontImg;
-            cardWrapper.appendChild(img);
-            
-            // Info bar at bottom
-            const infoBar = document.createElement('div');
-            infoBar.className = 'print-card-info';
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = item.title;
-            infoBar.appendChild(nameSpan);
-            
-            const dotsSpan = document.createElement('span');
-            dotsSpan.textContent = '●'.repeat(item.difficulty);
-            infoBar.appendChild(dotsSpan);
-            
-            cardWrapper.appendChild(infoBar);
-            frontPage.appendChild(cardWrapper);
+        const frontCanvas = await html2canvas(frontPageHtml, {
+            scale: 3.125, // 300 DPI (96 * 3.125 = 300)
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false
         });
-        printContainer.appendChild(frontPage);
-
-        // Back page if double sided
-        if (isDoubleSided) {
-            const backPage = document.createElement('div');
-            backPage.className = 'print-page';
-            
-            const rows = [
-                pageItems.slice(0, 2),
-                pageItems.slice(2, 4),
-                pageItems.slice(4, 6)
-            ];
-            
-            rows.forEach(row => {
-                const reversedRow = [...row].reverse();
-                
-                if (row.length === 1) {
-                    const emptyWrapper = document.createElement('div');
-                    emptyWrapper.className = 'print-card';
-                    backPage.appendChild(emptyWrapper);
-                    
-                    const cardWrapper = document.createElement('div');
-                    cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
-                    const img = document.createElement('img');
-                    img.src = reversedRow[0].backImg || reversedRow[0].frontImg;
-                    cardWrapper.appendChild(img);
-                    backPage.appendChild(cardWrapper);
-                } else {
-                    reversedRow.forEach(item => {
-                        const cardWrapper = document.createElement('div');
-                        cardWrapper.className = 'print-card' + (isRounded ? ' rounded' : '');
-                        const img = document.createElement('img');
-                        img.src = item.backImg || item.frontImg;
-                        cardWrapper.appendChild(img);
-                        backPage.appendChild(cardWrapper);
-                    });
-                }
-            });
-            
-            printContainer.appendChild(backPage);
-        }
-    }
-}
-
-/**
- * PDF exportálás: kártyák képként mentése és A4-re helyezése
- */
-window.generatePDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const isDoubleSided = document.getElementById('double-sided').checked;
-    
-    // 1. Kártyák képként generálása
-    const cardImages = [];
-    for (const item of state.patternQueue) {
-        const frontImg = await generateCardImage(item.frontState);
-        const backImg = isDoubleSided ? await generateCardImage(item.backState || item.frontState) : null;
-        cardImages.push({ frontImg, backImg });
-    }
-
-    // 2. A4 oldalakra helyezés (6 kártya/oldal)
-    const itemsPerPage = 6;
-    const numPages = Math.ceil(cardImages.length / itemsPerPage);
-
-    for (let p = 0; p < numPages; p++) {
+        
         if (p > 0) doc.addPage();
-        const pageItems = cardImages.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
-        
-        // Előlap elrendezése (3x2 grid)
-        pageItems.forEach((item, idx) => {
-            const x = (idx % 2) * 90 + 15;
-            const y = Math.floor(idx / 2) * 64 + 20;
-            doc.addImage(item.frontImg, 'PNG', x, y, 90, 64);
-        });
-    }
+        doc.addImage(frontCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
+        printRoot.removeChild(frontPageHtml);
 
-    // 3. Hátlapok (ha szükséges)
-    if (isDoubleSided) {
-        for (let p = 0; p < numPages; p++) {
-            doc.addPage();
-            const pageItems = cardImages.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
+        // 2. Hátlap generálása (ha szükséges)
+        if (isDoubleSided) {
+            const backPageHtml = createPrintPage(pageItems, 'back');
+            printRoot.appendChild(backPageHtml);
             
-            // Hátlapok elrendezése (tükrözve)
-            const reversedItems = [...pageItems].reverse();
-            reversedItems.forEach((item, idx) => {
-                const x = (idx % 2) * 90 + 15;
-                const y = Math.floor(idx / 2) * 64 + 20;
-                doc.addImage(item.backImg || item.frontImg, 'PNG', x, y, 90, 64);
+            const backCanvas = await html2canvas(backPageHtml, {
+                scale: 3.125,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
             });
+            
+            doc.addPage();
+            doc.addImage(backCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
+            printRoot.removeChild(backPageHtml);
         }
     }
 
-    doc.save(`Sagrada_${new Date().getTime()}.pdf`);
+    doc.save(`Sagrada_Cards_${new Date().getTime()}.pdf`);
 }
 function updateTitleScaling(side) {
     const titleEl = document.querySelector(`.card-title[data-side="${side}"]`);
@@ -787,6 +991,9 @@ window.toggleSide = function() {
     if (toggle) {
         toggle.textContent = t.flipSide;
     }
+
+    // Clear active cell when toggling side
+    closePicker();
 }
 
 function updateLanguage(lang) {
