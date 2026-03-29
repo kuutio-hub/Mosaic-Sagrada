@@ -1,9 +1,7 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { PatternQueueItem } from '../types';
-import { PHYSICAL_DIMENSIONS } from '../constants';
 
-export async function generatePDF(queue: PatternQueueItem[], cornerRadius: number = 0) {
+export async function generatePDF(queue, cornerRadius = 0) {
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -39,12 +37,12 @@ export async function generatePDF(queue: PatternQueueItem[], cornerRadius: numbe
 }
 
 async function renderBatchPage(
-  pdf: jsPDF, 
-  batch: PatternQueueItem[], 
-  side: 'front' | 'back', 
-  container: HTMLElement,
-  addNewPage: boolean,
-  cornerRadius: number = 0
+  pdf, 
+  batch, 
+  side, 
+  container,
+  addNewPage,
+  cornerRadius = 0
 ) {
   if (addNewPage) {
     pdf.addPage();
@@ -89,12 +87,12 @@ async function renderBatchPage(
             '4': [[25, 25], [25, 75], [75, 25], [75, 75]], '5': [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
             '6': [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]]
           };
-          const circles = (dots[cell.value as keyof typeof dots] || []).map(([cx, cy]) => 
+          const circles = (dots[cell.value] || []).map(([cx, cy]) => 
             `<circle cx="${cx}" cy="${cy}" r="10" fill="${dotColor}" />`
           ).join('');
           const diceSvg = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${circles}</svg>`)}`;
 
-          const colorMap: Record<string, string> = {
+          const colorMap = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
           };
           const bgColor = colorMap[cell.color] || '#ffffff';

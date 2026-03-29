@@ -16,15 +16,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  CardData, 
-  CellData, 
-  PatternQueueItem, 
-  Color, 
-  Value,
-  PromoCards,
-  PromoCard
-} from './types';
-import { 
   DEFAULT_FRONT, 
   DEFAULT_BACK, 
   COLORS, 
@@ -34,8 +25,8 @@ import {
 import { cn, generateId } from './lib/utils';
 import { generatePDF } from './services/pdfService';
 
-const getDiceSvgDataUrl = (value: string, color: string) => {
-  const dots: Record<string, number[][]> = {
+const getDiceSvgDataUrl = (value, color) => {
+  const dots = {
     '1': [[50, 50]],
     '2': [[25, 25], [75, 75]],
     '3': [[25, 25], [50, 50], [75, 75]],
@@ -55,24 +46,24 @@ const getDiceSvgDataUrl = (value: string, color: string) => {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
-const App: React.FC = () => {
-  const [front, setFront] = useState<CardData>(JSON.parse(JSON.stringify(DEFAULT_FRONT)));
-  const [back, setBack] = useState<CardData>(JSON.parse(JSON.stringify(DEFAULT_BACK)));
-  const [queue, setQueue] = useState<PatternQueueItem[]>([]);
-  const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
+const App = () => {
+  const [front, setFront] = useState(JSON.parse(JSON.stringify(DEFAULT_FRONT)));
+  const [back, setBack] = useState(JSON.parse(JSON.stringify(DEFAULT_BACK)));
+  const [queue, setQueue] = useState([]);
+  const [activeSide, setActiveSide] = useState('front');
   const [isDoubleSided, setIsDoubleSided] = useState(true);
-  const [activeCell, setActiveCell] = useState<{ side: 'front' | 'back', index: number } | null>(null);
-  const [activePanel, setActivePanel] = useState<'editor' | 'queue' | 'settings'>('editor');
+  const [activeCell, setActiveCell] = useState(null);
+  const [activePanel, setActivePanel] = useState('editor');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [promos, setPromos] = useState<PromoCards>({});
-  const [customCards, setCustomCards] = useState<CardData[]>([]);
-  const [editingCustomCardIndex, setEditingCustomCardIndex] = useState<number | null>(null);
+  const [promos, setPromos] = useState({});
+  const [customCards, setCustomCards] = useState([]);
+  const [editingCustomCardIndex, setEditingCustomCardIndex] = useState(null);
   const [cornerRadius, setCornerRadius] = useState(0);
   const [previewScale, setPreviewScale] = useState(1);
   const [isColorsExpanded, setIsColorsExpanded] = useState(true);
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
-  const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notification, setNotification] = useState(null);
+  const fileInputRef = useRef(null);
 
   const currentCard = activeSide === 'front' ? front : back;
   const setCurrentCard = activeSide === 'front' ? setFront : setBack;
@@ -85,7 +76,7 @@ const App: React.FC = () => {
     }
   }, [notification]);
 
-  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
   };
 
@@ -107,15 +98,15 @@ const App: React.FC = () => {
   }, []);
 
   // Helper to parse pattern string
-  const parsePattern = (pattern: string[]): CellData[] => {
-    const cells: CellData[] = [];
+  const parsePattern = (pattern) => {
+    const cells = [];
     pattern.forEach(row => {
       for (let i = 0; i < row.length; i++) {
         const char = row[i].toLowerCase();
-        const cell: CellData = { color: '.', value: '.' };
+        const cell = { color: '.', value: '.' };
         
         if (char >= '1' && char <= '6') {
-          cell.value = char as Value;
+          cell.value = char;
         } else if (char === 'r') {
           cell.color = 'R';
         } else if (char === 'g') {
@@ -138,8 +129,8 @@ const App: React.FC = () => {
     return cells;
   };
 
-  const serializePattern = (cells: CellData[]): string[] => {
-    const pattern: string[] = [];
+  const serializePattern = (cells) => {
+    const pattern = [];
     for (let r = 0; r < 4; r++) {
       let row = "";
       for (let c = 0; c < 5; c++) {
@@ -158,11 +149,11 @@ const App: React.FC = () => {
   };
 
   // Load a promo card
-  const loadPromo = (name: string) => {
+  const loadPromo = (name) => {
     const promo = promos[name];
     if (!promo) return;
 
-    const newCard: CardData = {
+    const newCard = {
       title: name,
       difficulty: promo.difficulty,
       cells: parsePattern(promo.pattern),
@@ -191,14 +182,14 @@ const App: React.FC = () => {
   };
 
   // Load a custom card
-  const loadCustomCard = (idx: number) => {
+  const loadCustomCard = (idx) => {
     const card = customCards[idx];
     if (!card) return;
     setCurrentCard(JSON.parse(JSON.stringify(card)));
     setEditingCustomCardIndex(idx);
   };
 
-  const deleteCustomCard = (idx: number) => {
+  const deleteCustomCard = (idx) => {
     const newCustomCards = customCards.filter((_, i) => i !== idx);
     setCustomCards(newCustomCards);
     localStorage.setItem('customCards', JSON.stringify(newCustomCards));
@@ -206,7 +197,7 @@ const App: React.FC = () => {
   };
 
   // Export JSON
-  const handleExport = (cards: CardData[], filename: string) => {
+  const handleExport = (cards, filename) => {
     const simplified = cards.map(c => ({
       title: c.title,
       difficulty: c.difficulty,
@@ -227,17 +218,17 @@ const App: React.FC = () => {
   };
 
   // Import JSON
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const imported = JSON.parse(event.target?.result as string);
+        const imported = JSON.parse(event.target?.result);
         const items = Array.isArray(imported) ? imported : [imported];
         
-        const validCards: CardData[] = items.map(item => {
+        const validCards = items.map(item => {
           // Simplified format
           if (item.pattern && Array.isArray(item.pattern)) {
             return {
@@ -255,10 +246,10 @@ const App: React.FC = () => {
             return {
               ...item,
               cells: item.cells
-            } as CardData;
+            };
           }
           return null;
-        }).filter((c): c is CardData => c !== null && c.cells.length === 20);
+        }).filter(c => c !== null && c.cells.length === 20);
         
         if (validCards.length > 0) {
           const merged = [...customCards, ...validCards];
@@ -277,12 +268,12 @@ const App: React.FC = () => {
   };
 
   // Handle cell click
-  const handleCellClick = (side: 'front' | 'back', index: number) => {
+  const handleCellClick = (side, index) => {
     setActiveCell({ side, index });
   };
 
   // Handle picker selection
-  const handlePickerSelect = (color?: Color, value?: Value) => {
+  const handlePickerSelect = (color, value) => {
     if (!activeCell) return;
 
     const { side, index } = activeCell;
@@ -328,7 +319,7 @@ const App: React.FC = () => {
 
   // Add to queue
   const addToQueue = () => {
-    const newItem: PatternQueueItem = {
+    const newItem = {
       id: generateId(),
       front: JSON.parse(JSON.stringify(front)),
       back: isDoubleSided ? JSON.parse(JSON.stringify(back)) : null,
@@ -339,12 +330,12 @@ const App: React.FC = () => {
   };
 
   // Remove from queue
-  const removeFromQueue = (id: string) => {
+  const removeFromQueue = (id) => {
     setQueue(prev => prev.filter(item => item.id !== id));
   };
 
   // Load from queue
-  const loadFromQueue = (item: PatternQueueItem) => {
+  const loadFromQueue = (item) => {
     setFront(JSON.parse(JSON.stringify(item.front)));
     if (item.back) {
       setBack(JSON.parse(JSON.stringify(item.back)));
@@ -371,6 +362,8 @@ const App: React.FC = () => {
       setIsGenerating(false);
     }
   };
+
+  const sideData = (side) => side === 'front' ? front : back;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -551,7 +544,7 @@ const App: React.FC = () => {
                                   key={color.id}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePickerSelect(color.id as Color);
+                                    handlePickerSelect(color.id);
                                   }}
                                   className={cn(
                                     "rounded-md border-2 transition-all flex items-center justify-center",
@@ -593,7 +586,7 @@ const App: React.FC = () => {
                                   key={val}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handlePickerSelect(undefined, val as Value);
+                                    handlePickerSelect(undefined, val);
                                   }}
                                   className={cn(
                                     "rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all overflow-hidden",
@@ -612,7 +605,7 @@ const App: React.FC = () => {
                                       alt={val}
                                       className="w-full h-full object-contain opacity-100 block scale-[1.02]"
                                       onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
+                                        const target = e.target;
                                         if (!target.src.includes('raw.githubusercontent.com')) {
                                           target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
                                         } else if (!target.src.startsWith('data:image/svg+xml')) {
@@ -872,127 +865,44 @@ const App: React.FC = () => {
                         </button>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <label className="text-[10px] text-zinc-500 uppercase">Sarok lekerekítés (mm)</label>
-                      <div className="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
-                        <button 
-                          onClick={() => setCornerRadius(prev => Math.max(0, prev - 1))}
-                          className="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg"
-                        >
-                          <ChevronLeft size={16} />
-                        </button>
-                        <span className="text-sm font-bold text-white">{cornerRadius}</span>
-                        <button 
-                          onClick={() => setCornerRadius(prev => Math.min(20, prev + 1))}
-                          className="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-700 rounded-lg"
-                        >
-                          <ChevronRight size={16} />
-                        </button>
-                      </div>
+                  {/* Corner Radius */}
+                  <div className="space-y-4 pt-2 border-t border-zinc-800">
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Sarok lekerekítés</label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="10" 
+                        value={cornerRadius}
+                        onChange={(e) => setCornerRadius(parseInt(e.target.value))}
+                        className="flex-1 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-white"
+                      />
+                      <span className="text-sm font-bold text-white w-8 text-right">{cornerRadius}mm</span>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-                    <div>
-                      <p className="text-sm font-bold text-white">Kétoldalas mód</p>
-                      <p className="text-xs text-zinc-500">Hátlap generálása a kártyákhoz</p>
-                    </div>
-                    <button 
-                      onClick={() => setIsDoubleSided(!isDoubleSided)}
-                      className={cn(
-                        "w-12 h-6 rounded-full p-1 transition-colors",
-                        isDoubleSided ? "bg-green-600" : "bg-zinc-700"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-4 h-4 bg-white rounded-full transition-transform",
-                        isDoubleSided ? "translate-x-6" : "translate-x-0"
-                      )} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-zinc-500">
-                    <Info size={16} />
-                    <p className="text-xs font-bold uppercase">Információ</p>
-                  </div>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    A kártyák fizikai mérete 90x80mm. A PDF exportálás 300 DPI felbontással készül, A4-es lapra optimalizálva (6 kártya/oldal).
-                  </p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </aside>
 
-        {/* Right Area: Preview */}
-        <section 
-          className="flex-1 bg-zinc-950 flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden cursor-default"
-          onClick={() => setActiveCell(null)}
-        >
-          {/* Side Indicator */}
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
-            <button 
-              onClick={() => setActiveSide('front')}
-              className={cn(
-                "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                activeSide === 'front' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
-              )}
-            >
-              ELŐLAP
-            </button>
-            <button 
-              onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-              className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform text-zinc-400 hover:text-white"
-            >
-              <FlipHorizontal size={20} />
-            </button>
-            <button 
-              onClick={() => setActiveSide('back')}
-              className={cn(
-                "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                activeSide === 'back' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
-              )}
-            >
-              HÁTLAP
-            </button>
-          </div>
-
-          {/* Card Preview Container */}
-          <div className="preview-card-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className={cn("preview-card-container group preview-glow")}>
+        {/* Right Panel: Preview */}
+        <section className="flex-1 bg-zinc-950 flex items-center justify-center p-4 md:p-12 overflow-auto">
+          <div className="preview-card-wrapper">
+            <div className="preview-card-container preview-glow">
               <Card 
                 data={currentCard} 
-                activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
-                onCellClick={(index) => handleCellClick(activeSide, index)}
-                onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
-                scale={previewScale}
+                scale={previewScale} 
                 cornerRadius={cornerRadius}
-                editable
+                activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
+                onCellClick={(idx) => handleCellClick(activeSide, idx)}
               />
-              
-              {/* Scale Info */}
-              <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                  Fizikai méret: 90mm × 80mm
-                </p>
-              </div>
             </div>
           </div>
         </section>
       </main>
-
-      {/* Footer / Status Bar */}
-      <footer className="bg-zinc-900 border-t border-zinc-800 px-4 py-2 flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-        <div>Sagrada Pattern Designer v0.0.3.0</div>
-        <div className="flex items-center gap-4">
-          <span>{activeSide === 'front' ? 'Előlap szerkesztése' : 'Hátlap szerkesztése'}</span>
-          <span className="w-1 h-1 bg-zinc-700 rounded-full" />
-          <span>{queue.length} kártya a listán</span>
-        </div>
-      </footer>
 
       {/* Notification */}
       <AnimatePresence>
@@ -1015,43 +925,25 @@ const App: React.FC = () => {
       </AnimatePresence>
     </div>
   );
-
-  function sideData(side: 'front' | 'back') {
-    return side === 'front' ? front : back;
-  }
 };
 
-interface CardProps {
-  data: CardData;
-  activeCellIndex: number | null;
-  onCellClick?: (index: number) => void;
-  onDifficultyChange?: (difficulty: number) => void;
-  scale?: number;
-  cornerRadius?: number;
-  className?: string;
-  id?: string;
-  editable?: boolean;
-  hideShadow?: boolean;
-}
-
-const Card: React.FC<CardProps> = ({ 
+const Card = ({ 
   data, 
-  activeCellIndex, 
-  onCellClick, 
-  onDifficultyChange,
   scale = 1, 
+  activeCellIndex, 
+  onCellClick,
   cornerRadius = 0, 
   className, 
   id,
   editable = false,
   hideShadow = false
 }) => {
-  const titleRef = React.useRef<HTMLSpanElement>(null);
-  const codeRef = React.useRef<HTMLSpanElement>(null);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [adjustedFontSize, setAdjustedFontSize] = React.useState<number | null>(null);
+  const titleRef = useRef(null);
+  const codeRef = useRef(null);
+  const containerRef = useRef(null);
+  const [adjustedFontSize, setAdjustedFontSize] = useState(null);
 
-  React.useLayoutEffect(() => {
+  useEffect(() => {
     if (titleRef.current && containerRef.current) {
       const codeWidth = codeRef.current ? codeRef.current.offsetWidth + 8 : 0;
       const containerWidth = Math.max(50, containerRef.current.clientWidth - 12 - codeWidth);
@@ -1081,79 +973,70 @@ const Card: React.FC<CardProps> = ({
       }}
     >
       <div className="card-grid">
-        {data.cells.map((cell, idx) => (
-          <div 
-            key={idx}
-            onClick={(e) => {
-              e.stopPropagation();
-              onCellClick?.(idx);
-            }}
-            className={cn(
-              "card-cell cursor-pointer transition-all",
-              cell.color !== '.' && "has-color",
-              cell.value === 'X' && "val-x",
-              activeCellIndex === idx && "ring-2 ring-white ring-offset-2 ring-offset-black z-10 scale-105"
-            )}
-          >
-            {cell.color !== '.' && (
-              <div 
-                className={cn("color-overlay", `c-${cell.color.toLowerCase()}`)} 
-              />
-            )}
-            {cell.value !== '.' && (
-              <>
-                {cell.value === 'X' ? (
-                  <span className="x-mark">X</span>
-                ) : (
-                  <img 
-                    src={`/Cells/${cell.value}.png`}
-                    alt={cell.value}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (!target.src.includes('raw.githubusercontent.com')) {
-                        target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${cell.value}.png`;
-                      } else if (!target.src.startsWith('data:image/svg+xml')) {
-                        target.src = getDiceSvgDataUrl(cell.value, cell.color);
-                      }
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        ))}
+        {data.cells.map((cell, idx) => {
+          const isActive = activeCellIndex === idx;
+          return (
+            <div 
+              key={idx}
+              onClick={() => onCellClick?.(idx)}
+              className={cn(
+                "card-cell",
+                cell.color !== '.' && `c-${cell.color.toLowerCase()}`,
+                cell.value === 'X' && "val-x",
+                isActive && "ring-2 ring-white ring-inset"
+              )}
+            >
+              {cell.color !== '.' && <div className="color-overlay" />}
+              {cell.value !== '.' && (
+                <div className="z-10 w-full h-full flex items-center justify-center">
+                  {cell.value === 'X' ? (
+                    <span className="font-display text-2xl text-zinc-400">X</span>
+                  ) : (
+                    <img 
+                      src={`/Cells/${cell.value}.png`}
+                      alt={cell.value}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        const target = e.target;
+                        if (!target.src.includes('raw.githubusercontent.com')) {
+                          target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${cell.value}.png`;
+                        } else if (!target.src.startsWith('data:image/svg+xml')) {
+                          target.src = getDiceSvgDataUrl(cell.value, cell.color);
+                        }
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-
-      <div className="card-footer">
-        <div className="card-title-container" ref={containerRef}>
+      <div className="card-footer" ref={containerRef}>
+        <div className="card-title-container">
           <span 
-            ref={titleRef}
             className="card-title" 
+            ref={titleRef}
             style={{ 
-              fontFamily: data.titleFont || '"Uncial Antiqua", serif',
+              fontFamily: data.titleFont || "'Uncial Antiqua', serif",
               fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 14}pt`
             }}
           >
             {data.title}
           </span>
-          {data.code && <span ref={codeRef} className="card-code">({data.code})</span>}
+          {data.code && (
+            <span className="card-code" ref={codeRef}>
+              ({data.code})
+            </span>
+          )}
         </div>
-        <div className={cn("card-difficulty", editable && "editable")}>
+        <div className="card-difficulty">
           {Array.from({ length: 6 }).map((_, i) => {
-            // Fill from right: if difficulty is 3, dots at index 3, 4, 5 are active
-            const dotIndex = i; // 0 to 5
-            const isActive = dotIndex >= (6 - data.difficulty);
+            const isActive = i >= (6 - data.difficulty);
             return (
               <div 
                 key={i} 
                 className={cn("difficulty-dot", isActive && "active")}
-                onClick={(e) => {
-                  if (editable && onDifficultyChange) {
-                    e.stopPropagation();
-                    // If we click dot at index i, difficulty becomes 6 - i
-                    onDifficultyChange(6 - i);
-                  }
-                }}
               />
             );
           })}

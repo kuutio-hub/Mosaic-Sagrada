@@ -1,1045 +1,752 @@
-import { state } from './js/state.js';
-import { renderGrid, renderDifficulty, updateQueueUI } from './js/ui.js';
-import { addToQueue, removeFromQueue, loadFromQueue, loadPromoCards, loadSavedCardsList, applyCardToState, applySavedCard, deleteSavedCard } from './js/cardManager.js';
-import { translations } from './js/i18n.js';
-import { generateRandomPattern } from './js/generator.js';
+// Sagrada Pattern Designer v0.0.3.0 - Vanilla JS Version
+const APP_VERSION = "0.0.3.0";
 
-// Service worker eltávolítása, ha van (megoldás a "gura" oldal frissítésre)
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let registration of registrations) {
-            registration.unregister();
+// --- Constants ---
+const COLORS = [
+    { id: 'R', name: 'Piros', hex: '#ef4444' },
+    { id: 'G', name: 'Zöld', hex: '#22c55e' },
+    { id: 'B', name: 'Kék', hex: '#3b82f6' },
+    { id: 'Y', name: 'Sárga', hex: '#eab308' },
+    { id: 'P', name: 'Lila', hex: '#a855f7' },
+    { id: 'W', name: 'Fehér', hex: '#ffffff' },
+    { id: '.', name: 'Üres', hex: 'transparent' }
+];
+
+const VALUES = ['1', '2', '3', '4', '5', '6', '.', 'X'];
+
+const DEFAULT_FRONT = {
+    title: "Minta kártya",
+    difficulty: 3,
+    cells: Array(20).fill(null).map(() => ({ color: '.', value: '.' })),
+    code: "FRONT-001",
+    titleFont: "Uncial Antiqua",
+    titleSize: 14,
+    cornerRadius: 0
+};
+
+const DEFAULT_BACK = {
+    title: "Minta kártya (hátlap)",
+    difficulty: 4,
+    cells: Array(20).fill(null).map(() => ({ color: '.', value: '.' })),
+    code: "BACK-001",
+    titleFont: "Uncial Antiqua",
+    titleSize: 14,
+    cornerRadius: 0
+};
+
+// --- State ---
+let state = {
+    front: JSON.parse(JSON.stringify(DEFAULT_FRONT)),
+    back: JSON.parse(JSON.stringify(DEFAULT_BACK)),
+    queue: [],
+    activeSide: 'front',
+    isDoubleSided: true,
+    activeCell: null, // { side: 'front'|'back', index: number }
+    activePanel: 'editor',
+    promos: {},
+    customCards: [],
+    editingCustomCardIndex: null,
+    cornerRadius: 0,
+    previewScale: 1,
+    isColorsExpanded: true,
+    isValuesExpanded: true,
+    selectedColor: null,
+    selectedValue: null
+};
+
+// --- Helpers ---
+const generateId = () => Math.random().toString(36).substr(2, 9).toUpperCase();
+
+const getDiceSvgDataUrl = (value, color) => {
+    const dots = {
+        '1': [[50, 50]],
+        '2': [[25, 25], [75, 75]],
+        '3': [[25, 25], [50, 50], [75, 75]],
+        '4': [[25, 25], [25, 75], [75, 25], [75, 75]],
+        '5': [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
+        '6': [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]],
+    };
+    
+    if (!dots[value]) return '';
+    
+    const dotColor = (color === 'W' || color === '.') ? 'black' : 'white';
+    const circles = dots[value].map(([cx, cy]) => 
+        `<circle cx="${cx}" cy="${cy}" r="10" fill="${dotColor}" />`
+    ).join('');
+    
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${circles}</svg>`;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
+};
+
+const parsePattern = (pattern) => {
+    const cells = [];
+    pattern.forEach(row => {
+        for (let i = 0; i < row.length; i++) {
+            const char = row[i].toLowerCase();
+            const cell = { color: '.', value: '.' };
+            
+            if (char >= '1' && char <= '6') {
+                cell.value = char;
+            } else if (char === 'r') {
+                cell.color = 'R';
+            } else if (char === 'g') {
+                cell.color = 'G';
+            } else if (char === 'b') {
+                cell.color = 'B';
+            } else if (char === 'y') {
+                cell.color = 'Y';
+            } else if (char === 'p') {
+                cell.color = 'P';
+            } else if (char === 'w') {
+                cell.color = 'W';
+            } else if (char === 'x') {
+                cell.value = 'X';
+            }
+            cells.push(cell);
         }
     });
-}
+    return cells;
+};
 
-const APP_VERSION = "0.0.2.5";
-
-// A verziószám rögzítése a footerben
-document.addEventListener('DOMContentLoaded', () => {
-    const versionEl = document.querySelector('[data-i18n="copyright"]');
-    if (versionEl) {
-        versionEl.textContent = versionEl.textContent.replace(/v\d+\.\d+\.\d+\.\d+/, `v${APP_VERSION}`);
+const serializePattern = (cells) => {
+    const pattern = [];
+    for (let r = 0; r < 4; r++) {
+        let row = "";
+        for (let c = 0; c < 5; c++) {
+            const cell = cells[r * 5 + c];
+            if (cell.value !== '.') {
+                row += cell.value;
+            } else if (cell.color !== '.') {
+                row += cell.color.toLowerCase();
+            } else {
+                row += ".";
+            }
+        }
+        pattern.push(row);
     }
-});
+    return pattern;
+};
 
-// Zoom state
-let currentScale = 1.0;
-let activeCell = null;
-const SCALE_STEP = 0.1;
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 2.0;
+// --- UI Logic ---
+const shrinkTitleToFit = (cardEl) => {
+    const container = cardEl.querySelector('.card-title-container');
+    const title = cardEl.querySelector('.card-title');
+    if (!container || !title) return;
 
-// Promo kártyák adatai
-let promoCards = [];
-
-// SVG Sablonok
-const frameSVG = `
-<svg width="900" height="800" viewBox="0 0 900 800" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- Csak a keret és a díszítés, a kártya alapja a CSS background -->
-    <rect x="2" y="2" width="896" height="796" stroke="#333" stroke-width="1" fill="none"/>
+    let fontSize = parseFloat(title.style.fontSize);
+    const minFontSize = 6;
     
-    <!-- Rács keret -->
-    <rect x="15" y="15" width="870" height="670" rx="5" stroke="#222" stroke-width="2" fill="none" class="grid-frame"/>
-</svg>
-`;
+    // Reset to original size first to measure
+    title.style.fontSize = `${fontSize}pt`;
 
-/**
- * PDF exportálás: Milliméter-pontos HTML renderelés és PDF generálás (300 DPI)
- */
-window.generatePDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const isDoubleSided = document.getElementById('double-sided').checked;
-    const itemsPerPage = 6;
-    const queue = state.patternQueue;
+    while (title.scrollWidth > container.clientWidth && fontSize > minFontSize) {
+        fontSize -= 0.5;
+        title.style.fontSize = `${fontSize}pt`;
+    }
+};
+
+const showNotification = (message, type = 'success') => {
+    const container = document.getElementById('notification-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    container.appendChild(notification);
     
-    if (queue.length === 0) {
-        const lang = document.documentElement.lang || 'hu';
-        alert(translations[lang]?.emptyQueue || "A nyomtatási lista üres!");
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+};
+
+const updateBadge = () => {
+    const badge = document.getElementById('queue-badge');
+    const count = state.queue.length;
+    if (count > 0) {
+        badge.textContent = count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+    document.getElementById('queue-count').textContent = `${count} / 6`;
+    document.getElementById('queue-status').textContent = `${count} kártya a listán`;
+    
+    const actions = document.getElementById('queue-actions');
+    if (count > 0) {
+        actions.classList.remove('hidden');
+    } else {
+        actions.classList.add('hidden');
+    }
+};
+
+const renderCard = (cardData, containerId, isMini = false) => {
+    const container = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
+    if (!container) return;
+
+    const radius = state.cornerRadius;
+    const side = state.activeSide;
+
+    container.innerHTML = `
+        <div class="sagrada-card ${isMini ? 'mini' : ''}" style="border-radius: ${radius}mm; font-family: '${cardData.titleFont || 'Uncial Antiqua'}';">
+            <div class="card-header">
+                <div class="card-title-container">
+                    <span class="card-title" style="font-size: ${cardData.titleSize || 14}pt;">${cardData.title}</span>
+                </div>
+                <div class="card-difficulty">
+                    ${[1,2,3,4,5,6].map(d => `
+                        <div class="difficulty-dot ${d <= cardData.difficulty ? 'active' : ''}" data-difficulty="${d}"></div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="card-grid">
+                ${cardData.cells.map((cell, idx) => {
+                    const isActive = state.activeCell && state.activeCell.side === side && state.activeCell.index === idx;
+                    const diceUrl = (cell.value >= '1' && cell.value <= '6') ? getDiceSvgDataUrl(cell.value, cell.color) : '';
+                    return `
+                        <div class="card-cell color-${cell.color} ${isActive ? 'active' : ''}" data-index="${idx}">
+                            ${diceUrl ? `<img src="${diceUrl}" alt="${cell.value}" referrerPolicy="no-referrer">` : ''}
+                            ${cell.value === 'X' ? '<span class="text-zinc-500 font-bold">X</span>' : ''}
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+            <div class="card-footer">
+                <span class="card-code">${cardData.code}</span>
+            </div>
+        </div>
+    `;
+
+    const cardEl = container.querySelector('.sagrada-card');
+    shrinkTitleToFit(cardEl);
+
+    // Add event listeners to cells
+    if (!isMini) {
+        container.querySelectorAll('.card-cell').forEach(cell => {
+            cell.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                state.activeCell = { side: state.activeSide, index };
+                updateUI();
+            });
+        });
+
+        // Add event listeners to difficulty dots
+        container.querySelectorAll('.difficulty-dot').forEach(dot => {
+            dot.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const d = parseInt(e.currentTarget.dataset.difficulty);
+                const current = state.activeSide === 'front' ? state.front : state.back;
+                current.difficulty = d;
+                updateUI();
+            });
+        });
+    }
+};
+
+const renderPalette = () => {
+    const colorsContainer = document.getElementById('palette-colors');
+    const valuesContainer = document.getElementById('palette-values');
+
+    colorsContainer.innerHTML = COLORS.map(c => `
+        <div class="palette-item color-${c.id} ${state.selectedColor === c.id ? 'active' : ''}" data-color="${c.id}" title="${c.name}">
+            ${c.id === '.' ? '<i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>' : ''}
+        </div>
+    `).join('');
+
+    valuesContainer.innerHTML = VALUES.map(v => `
+        <div class="palette-item ${state.selectedValue === v ? 'active' : ''} ${v === 'X' ? 'special-X' : ''} ${v === '.' ? 'special-clear' : ''}" data-value="${v}">
+            ${v === '.' ? '<i data-lucide="trash-2" class="w-5 h-5 text-red-500"></i>' : (v === 'X' ? 'X' : v)}
+        </div>
+    `).join('');
+
+    lucide.createIcons();
+
+    // Add event listeners
+    colorsContainer.querySelectorAll('.palette-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const color = e.currentTarget.dataset.color;
+            state.selectedColor = state.selectedColor === color ? null : color;
+            state.selectedValue = null;
+            applyToActiveCell();
+            updateUI();
+        });
+    });
+
+    valuesContainer.querySelectorAll('.palette-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const value = e.currentTarget.dataset.value;
+            state.selectedValue = state.selectedValue === value ? null : value;
+            state.selectedColor = null;
+            applyToActiveCell();
+            updateUI();
+        });
+    });
+};
+
+const applyToActiveCell = () => {
+    if (!state.activeCell) return;
+    const { side, index } = state.activeCell;
+    const card = side === 'front' ? state.front : state.back;
+    const cell = card.cells[index];
+
+    if (state.selectedColor) {
+        cell.color = state.selectedColor;
+    } else if (state.selectedValue) {
+        cell.value = state.selectedValue;
+    }
+};
+
+const renderQueue = () => {
+    const list = document.getElementById('queue-list');
+    list.innerHTML = state.queue.map((item, idx) => `
+        <div class="queue-item">
+            <div class="queue-mini-preview">
+                <div id="mini-preview-${idx}"></div>
+            </div>
+            <div class="queue-info">
+                <div class="queue-title">${item.front.title}</div>
+                <div class="queue-meta">
+                    ${item.isDoubleSided ? '<i data-lucide="flip-horizontal" class="w-3 h-3"></i> 2-oldalas' : '1-oldalas'}
+                    <span class="mx-1">•</span>
+                    <div class="flex gap-0.5">
+                        ${Array(item.front.difficulty).fill(0).map(() => '<div class="w-1.5 h-1.5 rounded-full bg-white"></div>').join('')}
+                    </div>
+                </div>
+            </div>
+            <button class="remove-from-queue p-2 text-zinc-600 hover:text-red-500" data-index="${idx}">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+        </div>
+    `).join('');
+
+    state.queue.forEach((item, idx) => {
+        renderCard(item.front, `mini-preview-${idx}`, true);
+    });
+
+    lucide.createIcons();
+
+    list.querySelectorAll('.remove-from-queue').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = parseInt(e.currentTarget.dataset.index);
+            state.queue.splice(idx, 1);
+            updateUI();
+        });
+    });
+};
+
+const renderDropdowns = () => {
+    const promoSelect = document.getElementById('promo-select');
+    const customSelect = document.getElementById('custom-select');
+
+    // Promos
+    const promoOptions = Object.keys(state.promos).map(name => `<option value="${name}">${name}</option>`).join('');
+    promoSelect.innerHTML = '<option value="" disabled selected>Minta kártyák</option>' + promoOptions;
+
+    // Custom
+    const customOptions = state.customCards.map((c, idx) => `<option value="${idx}">${c.title}</option>`).join('');
+    customSelect.innerHTML = '<option value="" disabled selected>Saját kártyák</option>' + customOptions;
+
+    const deleteBtn = document.getElementById('delete-custom');
+    if (state.editingCustomCardIndex !== null) {
+        deleteBtn.classList.remove('hidden');
+    } else {
+        deleteBtn.classList.add('hidden');
+    }
+};
+
+const updateUI = () => {
+    // Panels
+    ['editor', 'queue', 'settings'].forEach(p => {
+        const panel = document.getElementById(`panel-${p}`);
+        const nav = document.getElementById(`nav-${p}`);
+        if (state.activePanel === p) {
+            panel.classList.remove('hidden');
+            nav.classList.add('bg-white', 'text-black');
+            nav.classList.remove('text-zinc-400');
+        } else {
+            panel.classList.add('hidden');
+            nav.classList.remove('bg-white', 'text-black');
+            nav.classList.add('text-zinc-400');
+        }
+    });
+
+    // Preview Side
+    const frontBtn = document.getElementById('preview-front-btn');
+    const backBtn = document.getElementById('preview-back-btn');
+    if (state.activeSide === 'front') {
+        frontBtn.classList.add('bg-white', 'text-black', 'scale-110');
+        frontBtn.classList.remove('bg-zinc-800', 'text-zinc-500');
+        backBtn.classList.remove('bg-white', 'text-black', 'scale-110');
+        backBtn.classList.add('bg-zinc-800', 'text-zinc-500');
+        document.getElementById('side-front').classList.add('bg-zinc-700', 'text-white');
+        document.getElementById('side-back').classList.remove('bg-zinc-700', 'text-white');
+        document.getElementById('status-text').textContent = "Előlap szerkesztése";
+    } else {
+        backBtn.classList.add('bg-white', 'text-black', 'scale-110');
+        backBtn.classList.remove('bg-zinc-800', 'text-zinc-500');
+        frontBtn.classList.remove('bg-white', 'text-black', 'scale-110');
+        frontBtn.classList.add('bg-zinc-800', 'text-zinc-500');
+        document.getElementById('side-back').classList.add('bg-zinc-700', 'text-white');
+        document.getElementById('side-front').classList.remove('bg-zinc-700', 'text-white');
+        document.getElementById('status-text').textContent = "Hátlap szerkesztése";
+    }
+
+    // Inputs
+    const current = state.activeSide === 'front' ? state.front : state.back;
+    document.getElementById('card-title-input').value = current.title;
+    document.getElementById('font-select').value = current.titleFont || "Uncial Antiqua";
+    document.getElementById('size-value').textContent = current.titleSize || 14;
+    document.getElementById('radius-value').textContent = state.cornerRadius;
+    document.getElementById('radius-slider').value = state.cornerRadius;
+    document.getElementById('zoom-value').textContent = `${Math.round(state.previewScale * 100)}%`;
+    document.getElementById('card-preview-container').style.transform = `scale(${state.previewScale})`;
+
+    // Render components
+    renderCard(current, 'card-preview-container');
+    renderPalette();
+    renderQueue();
+    renderDropdowns();
+    updateBadge();
+    lucide.createIcons();
+};
+
+// --- PDF Generation ---
+const generatePDF = async () => {
+    if (state.queue.length === 0) {
+        showNotification("A nyomtatási lista üres!", "error");
         return;
     }
 
-    // Create temporary container for rendering
-    const printRoot = document.createElement('div');
-    printRoot.id = 'print-root';
-    printRoot.style.position = 'fixed';
-    printRoot.style.left = '-5000mm';
-    printRoot.style.top = '0';
-    printRoot.style.width = '210mm';
-    printRoot.style.zIndex = '-1000';
-    document.body.appendChild(printRoot);
-
-    // Add print-specific styles
-    const style = document.createElement('style');
-    style.textContent = `
-        @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
-        
-        .print-page { 
-            width: 210mm; 
-            height: 297mm; 
-            background: white; 
-            position: relative; 
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 90mm 90mm;
-            grid-template-rows: 80mm 80mm 80mm;
-            padding: 28.5mm 15mm;
-            gap: 0;
-            box-sizing: border-box;
-        }
-        .print-card {
-            width: 90mm;
-            height: 80mm;
-            background: black;
-            position: relative;
-            box-sizing: border-box;
-            border: 0.05mm solid #222;
-            overflow: hidden;
-        }
-        .print-grid {
-            position: absolute;
-            top: 2.5mm;
-            left: 2.5mm;
-            display: grid;
-            grid-template-columns: repeat(5, 15mm);
-            grid-template-rows: repeat(4, 15mm);
-            gap: 2.5mm;
-        }
-        .print-cell {
-            width: 15mm;
-            height: 15mm;
-            background: #f0f0f0;
-            border-radius: 1.2mm;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Uncial Antiqua', serif;
-            font-size: 9mm;
-            color: #000;
-            position: relative;
-            box-sizing: border-box;
-            border: 0.3mm solid rgba(255,255,255,0.3);
-        }
-        .print-cell.c-r { background-color: #DC3232; }
-        .print-cell.c-g { background-color: #32A050; }
-        .print-cell.c-b { background-color: #3264C8; }
-        .print-cell.c-y { background-color: #F0C828; }
-        .print-cell.c-p { background-color: #8C3CA0; }
-        .print-cell.c-w { background-color: #f0f0f0; }
-        
-        .print-cell.v-x { font-family: Arial, sans-serif; font-weight: bold; font-size: 8mm; color: #fff; }
-        .print-cell.c-w.v-x { color: #333; }
-        
-        .print-dice-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-        
-        .print-footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 10mm;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 4.5mm;
-            box-sizing: border-box;
-        }
-        .print-title {
-            font-family: 'Uncial Antiqua', serif;
-            font-size: 4.2mm;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            max-width: 60mm;
-        }
-        .print-difficulty {
-            display: flex;
-            gap: 1.2mm;
-        }
-        .print-dot {
-            width: 2.4mm;
-            height: 2.4mm;
-            background: #333;
-            border-radius: 50%;
-            border: 0.2mm solid #555;
-        }
-        .print-dot.active {
-            background: white;
-            border-color: white;
-        }
-        
-        .print-cell.glass-on::after {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 50%, rgba(255,255,255,0.1) 100%);
-            pointer-events: none;
-        }
-    `;
-    printRoot.appendChild(style);
-
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'mm', 'a4');
-    const numPages = Math.ceil(queue.length / itemsPerPage);
+    const pageWidth = 210;
+    const pageHeight = 297;
+    const cardWidth = 64;
+    const cardHeight = 51;
+    const marginX = (pageWidth - (cardWidth * 2 + 10)) / 2;
+    const marginY = 20;
+    const gapX = 10;
+    const gapY = 10;
 
-    for (let p = 0; p < numPages; p++) {
-        const pageQueue = queue.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
-        
-        // Render Front Page
-        const frontPage = createPrintPage(pageQueue, 'front');
-        printRoot.appendChild(frontPage);
-        
-        // Wait for images and fonts
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const frontCanvas = await html2canvas(frontPage, { 
-            scale: 3.125, // 300 DPI
+    showNotification("PDF generálása folyamatban...");
+
+    const renderBatchPage = async (batch, side) => {
+        const container = document.createElement('div');
+        container.id = 'print-container';
+        container.style.width = '210mm';
+        container.style.background = 'white';
+        container.style.position = 'fixed';
+        container.style.top = '-5000px';
+        container.style.left = '0';
+        document.body.appendChild(container);
+
+        batch.forEach((item, idx) => {
+            const cardData = side === 'front' ? item.front : item.back;
+            const col = side === 'back' ? (1 - (idx % 2)) : (idx % 2);
+            const row = Math.floor(idx / 2);
+            
+            const cardEl = document.createElement('div');
+            cardEl.className = 'sagrada-card';
+            cardEl.style.position = 'absolute';
+            cardEl.style.left = `${marginX + col * (cardWidth + gapX)}mm`;
+            cardEl.style.top = `${marginY + row * (cardHeight + gapY)}mm`;
+            cardEl.style.width = `${cardWidth}mm`;
+            cardEl.style.height = `${cardHeight}mm`;
+            cardEl.style.borderRadius = `${state.cornerRadius}mm`;
+            cardEl.style.fontFamily = `'${cardData.titleFont || 'Uncial Antiqua'}'`;
+            cardEl.style.background = 'black';
+            cardEl.style.border = '1px solid #333';
+            cardEl.style.padding = '2mm';
+
+            cardEl.innerHTML = `
+                <div class="card-header" style="height: 6mm; margin-bottom: 2mm;">
+                    <div class="card-title-container">
+                        <span class="card-title" style="font-size: ${cardData.titleSize || 14}pt; color: white;">${cardData.title}</span>
+                    </div>
+                    <div class="card-difficulty" style="gap: 1mm;">
+                        ${[1,2,3,4,5,6].map(d => `
+                            <div class="difficulty-dot ${d <= cardData.difficulty ? 'active' : ''}" style="width: 1.5mm; height: 1.5mm; background: ${d <= cardData.difficulty ? 'white' : '#333'}; border-radius: 50%;"></div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1mm; flex: 1;">
+                    ${cardData.cells.map(cell => {
+                        const diceUrl = (cell.value >= '1' && cell.value <= '6') ? getDiceSvgDataUrl(cell.value, cell.color) : '';
+                        const colorHex = COLORS.find(c => c.id === cell.color)?.hex || 'transparent';
+                        return `
+                            <div class="card-cell" style="aspect-ratio: 1; background: ${colorHex}; border-radius: 1mm; display: flex; items-center; justify-content: center;">
+                                ${diceUrl ? `<img src="${diceUrl}" style="width: 80%; height: 80%;">` : ''}
+                                ${cell.value === 'X' ? '<span style="color: #666; font-weight: bold; font-size: 8pt;">X</span>' : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div class="card-footer" style="margin-top: 1mm; text-align: right;">
+                    <span class="card-code" style="font-size: 6pt; color: #444;">${cardData.code}</span>
+                </div>
+            `;
+            container.appendChild(cardEl);
+            shrinkTitleToFit(cardEl);
+        });
+
+        const canvas = await html2canvas(container, {
+            scale: 3,
             useCORS: true,
             backgroundColor: '#ffffff'
         });
-        const frontImg = frontCanvas.toDataURL('image/jpeg', 0.95);
-        if (p > 0) doc.addPage();
-        doc.addImage(frontImg, 'JPEG', 0, 0, 210, 297);
-        printRoot.removeChild(frontPage);
+        
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        doc.addImage(imgData, 'JPEG', 0, 0, pageWidth, pageHeight);
+        document.body.removeChild(container);
+    };
 
-        // Render Back Page (if double sided)
-        if (isDoubleSided) {
-            const backPage = createPrintPage(pageQueue, 'back');
-            printRoot.appendChild(backPage);
-            
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            const backCanvas = await html2canvas(backPage, { 
-                scale: 3.125, // 300 DPI
-                useCORS: true,
-                backgroundColor: '#ffffff'
-            });
-            const backImg = backCanvas.toDataURL('image/jpeg', 0.95);
+    for (let i = 0; i < state.queue.length; i += 6) {
+        const batch = state.queue.slice(i, i + 6);
+        
+        // Front side
+        if (i > 0) doc.addPage();
+        await renderBatchPage(batch, 'front');
+        
+        // Back side if any card is double sided
+        const hasDouble = batch.some(item => item.isDoubleSided);
+        if (hasDouble) {
             doc.addPage();
-            doc.addImage(backImg, 'JPEG', 0, 0, 210, 297);
-            printRoot.removeChild(backPage);
+            await renderBatchPage(batch, 'back');
         }
     }
 
-    const timestamp = new Date().getTime();
-    doc.save(`Sagrada_Cards_${timestamp}.pdf`);
-    document.body.removeChild(printRoot);
+    doc.save(`sagrada-patterns-${new Date().getTime()}.pdf`);
+    showNotification("PDF sikeresen letöltve!");
 };
 
-function createPrintPage(items, side) {
-    const page = document.createElement('div');
-    page.className = 'print-page';
+// --- Initialization & Events ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Load Promos
+    fetch('data/promos.json')
+        .then(res => res.json())
+        .then(data => {
+            state.promos = data;
+            updateUI();
+        })
+        .catch(err => console.error("Failed to load promos:", err));
+
+    // Load Custom
+    const saved = localStorage.getItem('customCards');
+    if (saved) {
+        try {
+            state.customCards = JSON.parse(saved);
+        } catch (e) {
+            console.error("Failed to parse customCards:", e);
+        }
+    }
+
+    // Navigation
+    document.getElementById('nav-editor').addEventListener('click', () => { state.activePanel = 'editor'; updateUI(); });
+    document.getElementById('nav-queue').addEventListener('click', () => { state.activePanel = 'queue'; updateUI(); });
+    document.getElementById('nav-settings').addEventListener('click', () => { state.activePanel = 'settings'; updateUI(); });
+
+    // Editor Events
+    document.getElementById('card-title-input').addEventListener('input', (e) => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        current.title = e.target.value;
+        updateUI();
+    });
+
+    document.getElementById('side-front').addEventListener('click', () => { state.activeSide = 'front'; updateUI(); });
+    document.getElementById('side-back').addEventListener('click', () => { state.activeSide = 'back'; updateUI(); });
+    document.getElementById('preview-front-btn').addEventListener('click', () => { state.activeSide = 'front'; updateUI(); });
+    document.getElementById('preview-back-btn').addEventListener('click', () => { state.activeSide = 'back'; updateUI(); });
+    document.getElementById('preview-flip-btn').addEventListener('click', () => {
+        state.activeSide = state.activeSide === 'front' ? 'back' : 'front';
+        updateUI();
+    });
+
+    document.getElementById('toggle-colors').addEventListener('click', () => {
+        state.isColorsExpanded = !state.isColorsExpanded;
+        document.getElementById('colors-palette').classList.toggle('hidden');
+        document.getElementById('toggle-colors').querySelector('i').classList.toggle('rotate-90');
+    });
+
+    document.getElementById('toggle-values').addEventListener('click', () => {
+        state.isValuesExpanded = !state.isValuesExpanded;
+        document.getElementById('values-palette').classList.toggle('hidden');
+        document.getElementById('toggle-values').querySelector('i').classList.toggle('rotate-90');
+    });
+
+    document.getElementById('clear-grid').addEventListener('click', () => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        current.cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
+        updateUI();
+    });
+
+    document.getElementById('add-to-queue').addEventListener('click', () => {
+        state.queue.push({
+            id: generateId(),
+            front: JSON.parse(JSON.stringify(state.front)),
+            back: JSON.parse(JSON.stringify(state.back)),
+            isDoubleSided: true // Default to double sided
+        });
+        showNotification("Kártya hozzáadva a listához!");
+        updateUI();
+    });
+
+    document.getElementById('save-custom').addEventListener('click', () => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        if (state.editingCustomCardIndex !== null) {
+            state.customCards[state.editingCustomCardIndex] = JSON.parse(JSON.stringify(current));
+            showNotification("Kártya frissítve!");
+        } else {
+            state.customCards.push(JSON.parse(JSON.stringify(current)));
+            state.editingCustomCardIndex = state.customCards.length - 1;
+            showNotification("Kártya elmentve!");
+        }
+        localStorage.setItem('customCards', JSON.stringify(state.customCards));
+        updateUI();
+    });
+
+    // Dropdowns
+    document.getElementById('promo-select').addEventListener('change', (e) => {
+        const name = e.target.value;
+        const promo = state.promos[name];
+        if (promo) {
+            const current = state.activeSide === 'front' ? state.front : state.back;
+            current.title = name;
+            current.difficulty = promo.difficulty;
+            current.cells = parsePattern(promo.pattern);
+            current.code = promo.code;
+            state.editingCustomCardIndex = null;
+            updateUI();
+        }
+    });
+
+    document.getElementById('custom-select').addEventListener('change', (e) => {
+        const idx = parseInt(e.target.value);
+        const card = state.customCards[idx];
+        if (card) {
+            const current = state.activeSide === 'front' ? state.front : state.back;
+            Object.assign(current, JSON.parse(JSON.stringify(card)));
+            state.editingCustomCardIndex = idx;
+            updateUI();
+        }
+    });
+
+    document.getElementById('delete-custom').addEventListener('click', () => {
+        if (state.editingCustomCardIndex !== null) {
+            state.customCards.splice(state.editingCustomCardIndex, 1);
+            state.editingCustomCardIndex = null;
+            localStorage.setItem('customCards', JSON.stringify(state.customCards));
+            showNotification("Kártya törölve!");
+            updateUI();
+        }
+    });
+
+    // Settings
+    document.getElementById('zoom-in').addEventListener('click', () => { state.previewScale = Math.min(2, state.previewScale + 0.1); updateUI(); });
+    document.getElementById('zoom-out').addEventListener('click', () => { state.previewScale = Math.max(0.5, state.previewScale - 0.1); updateUI(); });
     
-    items.forEach(item => {
-        const cardData = side === 'front' ? item.frontState : (item.backState || item.frontState);
-        const card = document.createElement('div');
-        card.className = 'print-card';
-        
-        // Grid
-        const grid = document.createElement('div');
-        grid.className = 'print-grid';
-        cardData.cells.forEach(cell => {
-            const cellDiv = document.createElement('div');
-            cellDiv.className = 'print-cell';
-            if (cell.color !== '.') {
-                cellDiv.classList.add(`c-${cell.color.toLowerCase()}`);
-                if (state.glassEffect) cellDiv.classList.add('glass-on');
-            }
-            
-            if (cell.value === 'X') {
-                cellDiv.classList.add('v-x');
-                cellDiv.textContent = 'X';
-            } else if (cell.value !== '.' && !isNaN(cell.value)) {
-                const img = document.createElement('img');
-                img.src = `Cells/${cell.value}.png`;
-                img.className = 'print-dice-img';
+    document.getElementById('font-select').addEventListener('change', (e) => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        current.titleFont = e.target.value;
+        updateUI();
+    });
+
+    document.getElementById('size-increase').addEventListener('click', () => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        current.titleSize = (current.titleSize || 14) + 1;
+        updateUI();
+    });
+
+    document.getElementById('size-decrease').addEventListener('click', () => {
+        const current = state.activeSide === 'front' ? state.front : state.back;
+        current.titleSize = Math.max(6, (current.titleSize || 14) - 1);
+        updateUI();
+    });
+
+    document.getElementById('radius-slider').addEventListener('input', (e) => {
+        state.cornerRadius = parseFloat(e.target.value);
+        updateUI();
+    });
+
+    // Export/Import
+    document.getElementById('export-presets').addEventListener('click', () => {
+        const cards = Object.entries(state.promos).map(([name, p]) => ({
+            title: name,
+            difficulty: p.difficulty,
+            cells: parsePattern(p.pattern),
+            code: p.code
+        }));
+        handleExport(cards, 'sagrada-presets');
+    });
+
+    document.getElementById('export-custom').addEventListener('click', () => {
+        handleExport(state.customCards, 'sagrada-custom');
+    });
+
+    document.getElementById('import-input').addEventListener('change', handleImport);
+
+    const handleExport = (cards, filename) => {
+        const simplified = cards.map(c => ({
+            title: c.title,
+            difficulty: c.difficulty,
+            pattern: serializePattern(c.cells),
+            code: c.code,
+            titleFont: c.titleFont,
+            titleSize: c.titleSize,
+            cornerRadius: c.cornerRadius
+        }));
+        const blob = new Blob([JSON.stringify(simplified, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${filename}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    function handleImport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                const items = Array.isArray(imported) ? imported : [imported];
+                const validCards = items.map(item => {
+                    if (item.pattern && Array.isArray(item.pattern)) {
+                        return {
+                            title: item.title || "Névtelen",
+                            difficulty: item.difficulty || 1,
+                            cells: parsePattern(item.pattern),
+                            code: item.code,
+                            titleFont: item.titleFont,
+                            titleSize: item.titleSize,
+                            cornerRadius: item.cornerRadius
+                        };
+                    }
+                    return null;
+                }).filter(c => c !== null);
                 
-                // Filter logic to match preview
-                if (cell.color === '.') {
-                    img.style.filter = 'brightness(0) drop-shadow(0 0 1px rgba(255,255,255,0.8))';
-                } else {
-                    img.style.filter = 'brightness(0) invert(1) drop-shadow(0 0 1px rgba(0,0,0,0.8))';
+                if (validCards.length > 0) {
+                    state.customCards = [...state.customCards, ...validCards];
+                    localStorage.setItem('customCards', JSON.stringify(state.customCards));
+                    showNotification(`${validCards.length} kártya importálva!`);
+                    updateUI();
                 }
-                cellDiv.appendChild(img);
+            } catch (err) {
+                showNotification("Hiba az importálás során!", "error");
             }
-            grid.appendChild(cellDiv);
-        });
-        card.appendChild(grid);
-        
-        // Footer
-        const footer = document.createElement('div');
-        footer.className = 'print-footer';
-        
-        const title = document.createElement('div');
-        title.className = 'print-title';
-        title.textContent = cardData.title || "";
-        footer.appendChild(title);
-        
-        const diff = document.createElement('div');
-        diff.className = 'print-difficulty';
-        for (let i = 1; i <= 6; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'print-dot' + (i <= (cardData.difficulty || 3) ? ' active' : '');
-            diff.appendChild(dot);
-        }
-        footer.appendChild(diff);
-        
-        card.appendChild(footer);
-        page.appendChild(card);
-    });
-    
-    return page;
-}
-
-/**
- * Inicializálás
- */
-async function init() {
-    // Verziószám beállítása
-    const versionEl = document.getElementById('app-version');
-    if (versionEl) versionEl.textContent = `v${APP_VERSION}`;
-
-    // SVG-k behelyezése
-    const frameFront = document.getElementById('frame-front-svg');
-    const frameBack = document.getElementById('frame-back-svg');
-    if (frameFront) frameFront.innerHTML = frameSVG;
-    if (frameBack) frameBack.innerHTML = frameSVG;
-
-    // Rácsok generálása
-    renderGrid('front');
-    renderGrid('back');
-
-    // Promo kártyák betöltése
-    promoCards = await loadPromoCards();
-
-    // Mentett kártyák betöltése
-    loadSavedCardsList();
-
-    // Eseménykezelők
-    setupEventListeners();
-    
-    // Set initial language
-    updateLanguage('hu');
-
-    // Initial title scaling
-    updateTitleScaling('front');
-    updateTitleScaling('back');
-
-    // Initial card scaling
-    updateCardScaling();
-
-    // Glass effect initial state
-    const glassToggle = document.getElementById('glass-effect-toggle');
-    if (glassToggle) {
-        glassToggle.checked = state.glassEffect || false;
+        };
+        reader.readAsText(file);
     }
-}
 
-/**
- * Picker megnyitása
- */
-window.openPicker = function(e, side, index) {
-    e.stopPropagation();
-    
-    // Open the palette panel if it's not open
-    togglePanel('panel-palette', true);
-
-    // Remove active class from all cells
-    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-    
-    // Add active class to clicked cell
-    const cell = e.currentTarget;
-    cell.classList.add('active');
-    
-    activeCell = { side, index };
-}
-
-/**
- * Picker bezárása
- */
-function closePicker() {
-    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-    activeCell = null;
-}
-
-/**
- * Panel kezelése
- */
-function togglePanel(panelId, forceOpen = false) {
-    const panels = document.querySelectorAll('.floating-panel');
-    const tabs = document.querySelectorAll('.toolbar-tab');
-    const targetPanel = document.getElementById(panelId);
-    
-    if (!targetPanel) return;
-
-    const isOpen = targetPanel.classList.contains('active');
-
-    if (isOpen && !forceOpen) {
-        // Close it
-        targetPanel.classList.remove('active');
-        document.querySelector(`.toolbar-tab[data-target="${panelId}"]`)?.classList.remove('active');
-        if (panelId === 'panel-palette') closePicker();
-    } else {
-        // Close others
-        panels.forEach(p => p.classList.remove('active'));
-        tabs.forEach(t => t.classList.remove('active'));
-
-        // Open target
-        targetPanel.classList.add('active');
-        document.querySelector(`.toolbar-tab[data-target="${panelId}"]`)?.classList.add('active');
-    }
-}
-
-/**
- * Eseménykezelők beállítása
- */
-function setupEventListeners() {
-    // Toolbar tabs
-    document.querySelectorAll('.toolbar-tab').forEach(tab => {
-        tab.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const panelId = tab.dataset.target;
-            togglePanel(panelId);
-        });
+    // PDF Buttons
+    document.getElementById('header-pdf-btn').addEventListener('click', generatePDF);
+    document.getElementById('queue-pdf-btn').addEventListener('click', generatePDF);
+    document.getElementById('clear-queue').addEventListener('click', () => {
+        state.queue = [];
+        updateUI();
     });
 
-    // Panel close buttons
-    document.querySelectorAll('.close-panel').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const panel = btn.closest('.floating-panel');
-            if (panel) togglePanel(panel.id);
-        });
-    });
-
-    // Double-sided mode toggle
-    const doubleSidedToggle = document.getElementById('double-sided');
-    if (doubleSidedToggle) {
-        doubleSidedToggle.addEventListener('change', (e) => {
-            const backCard = document.getElementById('card-back');
-            const toggle = document.getElementById('side-toggle');
-            const backSchematic = document.getElementById('schematic-back');
-            
-            if (e.target.checked) {
-                backCard.style.display = 'none'; // Default to front
-                toggle.style.display = 'block';
-                if(backSchematic) backSchematic.style.display = 'grid';
-            } else {
-                backCard.style.display = 'none';
-                document.getElementById('card-front').style.display = 'block';
-                toggle.style.display = 'none';
-                if(backSchematic) backSchematic.style.display = 'none';
-            }
-            updateQueueUI();
-        });
-    }
-
-    // Picker elemek kattintása
-    document.querySelectorAll('.picker-btn').forEach(item => {
-        item.addEventListener('click', () => {
-            if (!activeCell) {
-                // Ha nincs aktív cella, válasszuk ki az elsőt (0-ás index)
-                const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-                activeCell = { side, index: 0 };
-                const cell = document.querySelector(`.cell[data-side="${side}"][data-index="0"]`);
-                if(cell) cell.classList.add('active');
-            }
-            
-            const { side, index } = activeCell;
-            const type = item.dataset.type;
-            const val = item.dataset.val;
-
-            if (type === 'color') {
-                // Ha X van a mezőben, ne lehessen színt rárakni
-                if (state[side].cells[index].value === 'X') return;
-                state[side].cells[index].color = val;
-            } else if (type === 'value') {
-                // Ha X-et választunk, töröljük a színt
-                if (val === 'X') {
-                    state[side].cells[index].color = '.';
-                }
-                state[side].cells[index].value = val;
-            } else if (type === 'clear') {
-                state[side].cells[index].color = '.';
-                state[side].cells[index].value = '.';
-            }
-
-            renderGrid(side);
-            
-            // Keep cell active after edit
-            const cell = document.querySelector(`.cell[data-side="${side}"][data-index="${index}"]`);
-            if(cell) cell.classList.add('active');
-        });
-    });
-
-    // Clear card button
-    const clearCardBtn = document.getElementById('clear-card-btn');
-    if (clearCardBtn) {
-        clearCardBtn.addEventListener('click', () => {
-            const lang = document.documentElement.lang || 'hu';
-            const t = translations[lang] || translations['hu'];
-            if (confirm(t.confirmDelete || 'Biztosan törlöd a kártya tartalmát?')) {
-                const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-                state[side].cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
-                renderGrid(side);
-            }
-        });
-    }
-
-    // Language switcher
-    const currentLangBtn = document.getElementById('current-lang');
-    if (currentLangBtn) {
-        currentLangBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.querySelector('.lang-content').classList.toggle('show');
-        });
-    }
-
-    document.querySelectorAll('.lang-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const lang = btn.dataset.lang;
-            updateLanguage(lang);
-            document.querySelector('.lang-content').classList.remove('show');
-        });
-    });
-
-    // Reset card
-    const resetBtn = document.getElementById('reset-card');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-            const lang = document.documentElement.lang || 'hu';
-            const t = translations[lang] || translations['hu'];
-            
-            if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
-                state[side].title = side === 'front' ? "MINTA NÉV" : "MINTA NÉV (HÁT)";
-                state[side].difficulty = side === 'front' ? 3 : 4;
-                state[side].cells = Array(20).fill(null).map(() => ({ color: '.', value: '.' }));
-                
-                renderGrid(side);
-                const titleInput = document.querySelector(`.card-title-input[data-side="${side}"]`);
-                if (titleInput) titleInput.value = state[side].title;
-                updateTitleScaling(side);
-            }
-        });
-    }
-
-    // Glass effect toggle
-    const glassToggle = document.getElementById('glass-effect-toggle');
-    if (glassToggle) {
-        glassToggle.addEventListener('change', (e) => {
-            state.glassEffect = e.target.checked;
-            renderGrid('front');
-            renderGrid('back');
-        });
-    }
-
-    // Kattintás bárhova máshova -> picker/dropdown bezárása
-    document.addEventListener('click', (e) => {
-        // Close panels if clicking outside
-        const toolbar = document.querySelector('.toolbar');
-        const panels = document.querySelectorAll('.floating-panel');
-        let clickedOnPanel = false;
-        panels.forEach(p => { if(p.contains(e.target)) clickedOnPanel = true; });
-
-        if (toolbar && !toolbar.contains(e.target) && !clickedOnPanel) {
-            panels.forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.toolbar-tab').forEach(t => t.classList.remove('active'));
-            closePicker();
-        }
-        
-        // Lang menu bezárása
-        const langContent = document.querySelector('.lang-content');
-        const langBtn = document.getElementById('current-lang');
-        if (langContent && langContent.classList.contains('show') && e.target !== langBtn && !langContent.contains(e.target)) {
-            langContent.classList.remove('show');
-        }
-    });
-
-    // Címek frissítése
-    document.querySelectorAll('.card-title-input').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const side = e.target.dataset.side;
-            state[side].title = e.target.value;
-            updateTitleScaling(side);
-        });
-    });
-
-    // Hozzáadás a listához
-    const addToQueueBtn = document.getElementById('add-to-queue');
-    if (addToQueueBtn) addToQueueBtn.addEventListener('click', addToQueue);
-
-    // Lista törlése
-    const clearQueueBtn = document.getElementById('clear-queue');
-    if (clearQueueBtn) {
-        clearQueueBtn.addEventListener('click', () => {
-            const lang = document.documentElement.lang || 'hu';
-            const t = translations[lang] || translations['hu'];
-            if (confirm(t.confirmClearQueue || 'Biztosan üríted a nyomtatási listát?')) {
-                state.patternQueue = [];
-                updateQueueUI();
-            }
-        });
-    }
-
-    // Nyomtatás gomb a fő panelen
-    const printBtnMain = document.getElementById('print-btn-main');
-    if (printBtnMain) {
-        printBtnMain.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            await generatePDF();
-        });
-    }
-
-    // Printer friendly toggle (global)
-    const printerFriendlyGlobal = document.getElementById('printer-friendly-global');
-    if (printerFriendlyGlobal) {
-        printerFriendlyGlobal.addEventListener('change', (e) => {
-            // This will affect the print layout generation
-            state.printerFriendly = e.target.checked;
-        });
-    }
-
-    // Side toggle
-    const sideToggle = document.getElementById('side-toggle');
-    if (sideToggle) {
-        sideToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleSide();
-        });
-    }
-
-    // Promo kártya alkalmazása
-    const applyPromoBtn = document.getElementById('apply-promo');
-    if (applyPromoBtn) {
-        applyPromoBtn.addEventListener('click', () => {
-            const cardId = document.getElementById('promo-select').value;
-            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-            if (cardId) {
-                const card = promoCards.find(c => c.id === cardId);
-                if (card) {
-                    applyCardToState(card, side);
-                    renderGrid(side);
-                    const titleInput = document.querySelector(`.card-title-input[data-side="${side}"]`);
-                    if (titleInput) titleInput.value = card.title;
-                    updateTitleScaling(side);
-                    
-                    // Close the promo panel
-                    togglePanel('panel-promo', false);
-                }
-            }
-        });
-    }
-
-    // Saját kártya választás
-    const savedSelect = document.getElementById('saved-select');
-    if (savedSelect) {
-        savedSelect.addEventListener('change', (e) => {
-            const cardTitle = e.target.value;
-            if (cardTitle) {
-                applySavedCard(cardTitle);
-                updateTitleScaling('front');
-                updateTitleScaling('back');
-            }
-        });
-    }
-
-    // Zoom in
-    const zoomInBtn = document.getElementById('zoom-in');
-    if (zoomInBtn) {
-        zoomInBtn.addEventListener('click', () => {
-            currentScale = Math.min(currentScale + SCALE_STEP, MAX_SCALE);
-            updateCardScaling();
-        });
-    }
-
-    // Zoom out
-    const zoomOutBtn = document.getElementById('zoom-out');
-    if (zoomOutBtn) {
-        zoomOutBtn.addEventListener('click', () => {
-            currentScale = Math.max(currentScale - SCALE_STEP, MIN_SCALE);
-            updateCardScaling();
-        });
-    }
-    // Apply saved card
-    const applySavedBtn = document.getElementById('apply-saved');
-    if (applySavedBtn) {
-        applySavedBtn.addEventListener('click', () => {
-            const title = document.getElementById('saved-select').value;
-            if (title) {
-                applySavedCard(title);
-                updateTitleScaling('front');
-                updateTitleScaling('back');
-            }
-        });
-    }
-
-    // Delete saved card
-    const deleteSavedBtn = document.getElementById('delete-saved-btn');
-    if (deleteSavedBtn) {
-        deleteSavedBtn.addEventListener('click', () => {
-            const title = document.getElementById('saved-select').value;
-            if (title) {
-                const lang = document.documentElement.lang || 'hu';
-                const t = translations[lang] || translations['hu'];
-                if (confirm(t.confirmDelete || 'Biztosan törlöd?')) {
-                    deleteSavedCard(title);
-                }
-            }
-        });
-    }
-
-    // Mentés gomb
-    const saveCardBtn = document.getElementById('save-card');
-    if (saveCardBtn) {
-        saveCardBtn.addEventListener('click', () => {
-            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-            const savedCards = JSON.parse(localStorage.getItem('sagrada_saved_cards') || '[]');
-            const currentCard = JSON.parse(JSON.stringify(state[side]));
-            
-            const existingIdx = savedCards.findIndex(c => c.title === currentCard.title);
-            if (existingIdx >= 0) {
-                savedCards[existingIdx] = currentCard;
-            } else {
-                savedCards.push(currentCard);
-            }
-            
-            localStorage.setItem('sagrada_saved_cards', JSON.stringify(savedCards));
-            loadSavedCardsList();
-            
-            const lang = document.documentElement.lang || 'hu';
-            const t = translations[lang] || translations['hu'];
-            alert(t.alertSaved);
-        });
-    }
-
-    // Generate pattern button
-    const generateBtn = document.getElementById('generate-pattern-btn');
-    if (generateBtn) {
-        generateBtn.addEventListener('click', () => {
-            const side = document.getElementById('card-front').style.display !== 'none' ? 'front' : 'back';
-            
-            // Biztonságos érték lekérés, ha a mezők nincsenek a DOM-ban
-            const getColorCount = () => document.getElementById('gen-color-count') ? parseInt(document.getElementById('gen-color-count').value) : 7;
-            const getUniqueColors = () => document.getElementById('gen-unique-colors') ? parseInt(document.getElementById('gen-unique-colors').value) : 5;
-            const getValueCount = () => document.getElementById('gen-value-count') ? parseInt(document.getElementById('gen-value-count').value) : 7;
-            const getUniqueValues = () => document.getElementById('gen-unique-values') ? parseInt(document.getElementById('gen-unique-values').value) : 6;
-            const getSeed = () => document.getElementById('gen-seed') ? document.getElementById('gen-seed').value : null;
-
-            const config = {
-                colorCount: getColorCount(),
-                uniqueColorsCount: getUniqueColors(),
-                valueCount: getValueCount(),
-                uniqueValuesCount: getUniqueValues(),
-                seed: getSeed()
-            };
-            generateRandomPattern(side, config);
-        });
-    }
-
-    // Resize observer for card container
-    const editorContainer = document.getElementById('editor-container');
-    if (editorContainer) {
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                updateCardScaling();
-            }
-        });
-        resizeObserver.observe(editorContainer);
-    }
-}
-
-/**
- * Kártya méretezése az ablakhoz
- */
-function updateCardScaling() {
-    const container = document.getElementById('editor-container');
-    const card = document.getElementById('card-container');
-    if (!container || !card) return;
-
-    const containerWidth = container.clientWidth - 20;
-    const containerHeight = container.clientHeight - 20;
-    
-    const cardBaseWidth = 900;
-    const cardBaseHeight = 800;
-    
-    const scaleX = (containerWidth / cardBaseWidth) * 0.8;
-    const scaleY = (containerHeight / cardBaseHeight) * 0.8;
-    // Az alap skálázás az ablakhoz, amit a felhasználói zoom-al módosítunk
-    const baseScale = Math.min(scaleX, scaleY, 1.0);
-    const scale = baseScale * currentScale;
-    
-    card.style.transform = `scale(${scale})`;
-    
-    // Update wrapper height to match scaled card
-    const wrapper = document.querySelector('.card-wrapper');
-    if (wrapper) {
-        wrapper.style.width = (cardBaseWidth * scale) + 'px';
-        wrapper.style.height = (cardBaseHeight * scale) + 'px';
-    }
-}
-
-/**
- * Milliméter-pontos HTML oldal létrehozása a nyomtatáshoz
- */
-function createPrintPage(items, side = 'front') {
-    const page = document.createElement('div');
-    page.className = 'print-page';
-    
-    const isDoubleSided = document.getElementById('double-sided').checked;
-    
-    // Duplex nyomtatáshoz a hátlapokat tükrözni kell vízszintesen
-    let displayItems = [...items];
-    if (side === 'back' && isDoubleSided) {
-        // 3 sor, soronként 2 elem tükrözése
-        const rows = [
-            displayItems.slice(0, 2).reverse(),
-            displayItems.slice(2, 4).reverse(),
-            displayItems.slice(4, 6).reverse()
-        ];
-        displayItems = rows.flat();
-    }
-
-    displayItems.forEach(item => {
-        if (!item) {
-            const empty = document.createElement('div');
-            page.appendChild(empty);
-            return;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'print-card';
-        
-        const grid = document.createElement('div');
-        grid.className = 'print-grid';
-        
-        const currentState = side === 'front' ? item.frontState : (item.backState || item.frontState);
-        const glassEffect = state.glassEffect; // Globális beállítás használata
-
-        currentState.cells.forEach(cellData => {
-            const cell = document.createElement('div');
-            cell.className = 'print-cell' + (glassEffect ? ' glass' : '');
-            
-            if (cellData.color && cellData.color !== 'w') {
-                const colorMap = {
-                    'r': '#DC3232',
-                    'g': '#32A050',
-                    'b': '#3264C8',
-                    'y': '#F0C828',
-                    'p': '#8C3CA0'
-                };
-                cell.style.backgroundColor = colorMap[cellData.color];
-            } else {
-                cell.style.backgroundColor = '#f0f0f0';
-            }
-
-            if (cellData.value) {
-                const num = document.createElement('div');
-                num.className = 'print-number';
-                num.textContent = cellData.value;
-                cell.appendChild(num);
-            } else if (cellData.isX) {
-                const x = document.createElement('div');
-                x.className = 'print-number';
-                x.style.opacity = '0.3';
-                x.style.color = '#000';
-                x.textContent = 'X';
-                cell.appendChild(x);
-            }
-
-            grid.appendChild(cell);
-        });
-
-        card.appendChild(grid);
-        
-        // Footer
-        const footer = document.createElement('div');
-        footer.className = 'print-footer';
-        
-        const title = document.createElement('div');
-        title.className = 'print-title';
-        title.textContent = item.title;
-        footer.appendChild(title);
-        
-        const difficulty = document.createElement('div');
-        difficulty.className = 'print-difficulty';
-        for (let i = 1; i <= 6; i++) {
-            const dot = document.createElement('div');
-            dot.className = 'print-dot';
-            if (i <= item.difficulty) {
-                dot.style.backgroundColor = 'white';
-            } else {
-                dot.style.backgroundColor = '#333';
-                dot.style.border = '0.1mm solid #555';
-            }
-            difficulty.appendChild(dot);
-        }
-        footer.appendChild(difficulty);
-        
-        card.appendChild(footer);
-        page.appendChild(card);
-    });
-
-    return page;
-}
-
-/**
- * PDF exportálás: milliméter-pontos HTML renderelés 300 DPI-vel
- */
-window.generatePDF = async function() {
-    const { jsPDF } = window.jspdf;
-    const isDoubleSided = document.getElementById('double-sided').checked;
-    
-    if (state.patternQueue.length === 0) {
-        const lang = document.documentElement.lang || 'hu';
-        const t = translations[lang] || translations['hu'];
-        alert(t.alertQueueEmpty);
-        return;
-    }
-
-    // Ideiglenes konténer a rendereléshez
-    let printRoot = document.getElementById('print-root');
-    if (!printRoot) {
-        printRoot = document.createElement('div');
-        printRoot.id = 'print-root';
-        document.body.appendChild(printRoot);
-    }
-    printRoot.innerHTML = '';
-
-    const doc = new jsPDF('p', 'mm', 'a4');
-    const itemsPerPage = 6;
-    const numPages = Math.ceil(state.patternQueue.length / itemsPerPage);
-
-    for (let p = 0; p < numPages; p++) {
-        const pageItems = state.patternQueue.slice(p * itemsPerPage, (p + 1) * itemsPerPage);
-        
-        // 1. Előlap generálása
-        const frontPageHtml = createPrintPage(pageItems, 'front');
-        printRoot.appendChild(frontPageHtml);
-        
-        const frontCanvas = await html2canvas(frontPageHtml, {
-            scale: 3.125, // 300 DPI (96 * 3.125 = 300)
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false
-        });
-        
-        if (p > 0) doc.addPage();
-        doc.addImage(frontCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-        printRoot.removeChild(frontPageHtml);
-
-        // 2. Hátlap generálása (ha szükséges)
-        if (isDoubleSided) {
-            const backPageHtml = createPrintPage(pageItems, 'back');
-            printRoot.appendChild(backPageHtml);
-            
-            const backCanvas = await html2canvas(backPageHtml, {
-                scale: 3.125,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false
-            });
-            
-            doc.addPage();
-            doc.addImage(backCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-            printRoot.removeChild(backPageHtml);
-        }
-    }
-
-    doc.save(`Sagrada_Cards_${new Date().getTime()}.pdf`);
-}
-function updateTitleScaling(side) {
-    const titleEl = document.querySelector(`.card-title[data-side="${side}"]`);
-    if (!titleEl) return;
-    
-    const text = state[side].title || "";
-    titleEl.textContent = text;
-    
-    // Alapértelmezett méret
-    titleEl.style.fontSize = '42px';
-    
-    // Ha túl hosszú, csökkentsük a betűméretet
-    let fontSize = 42;
-    while (titleEl.scrollWidth > titleEl.offsetWidth && fontSize > 12) {
-        fontSize -= 2;
-        titleEl.style.fontSize = fontSize + 'px';
-    }
-}
-
-/**
- * Kártya oldal váltása
- */
-window.toggleSide = function() {
-    const front = document.getElementById('card-front');
-    const back = document.getElementById('card-back');
-    const toggle = document.getElementById('side-toggle');
-    const lang = document.documentElement.lang || 'hu';
-    const t = translations[lang];
-    
-    if (front.style.display === 'none') {
-        front.style.display = 'block';
-        back.style.display = 'none';
-    } else {
-        front.style.display = 'none';
-        back.style.display = 'block';
-    }
-    
-    if (toggle) {
-        toggle.textContent = t.flipSide;
-    }
-
-    // Clear active cell when toggling side
-    closePicker();
-}
-
-function updateLanguage(lang) {
-    document.documentElement.lang = lang;
-    const t = translations[lang];
-    if (!t) return;
-    
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.dataset.i18n;
-        if (t[key]) {
-            el.textContent = t[key];
-        }
-    });
-
-    // Update side toggle text
-    const toggle = document.getElementById('side-toggle');
-    if (toggle) {
-        toggle.textContent = t.flipSide;
-    }
-
-    // Update current lang button
-    const currentLangBtn = document.getElementById('current-lang');
-    if (currentLangBtn) {
-        const activeLangBtn = document.querySelector(`.lang-btn[data-lang="${lang}"]`);
-        if (activeLangBtn) {
-            currentLangBtn.textContent = activeLangBtn.querySelector('span').textContent;
-        }
-    }
-
-    // Update queue UI to reflect language change
-    updateQueueUI();
-}
-
-// Expose functions to window for onclick handlers
-window.loadFromQueue = loadFromQueue;
-window.removeFromQueue = removeFromQueue;
-window.openPicker = openPicker;
-window.applySavedCard = applySavedCard;
-window.deleteSavedCard = deleteSavedCard;
-
-// Start
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await init();
-    } catch (err) {
-        console.error("Initialization error:", err);
-        document.body.innerHTML = `<div style="color:red; padding:20px;">Hiba történt az alkalmazás betöltésekor: ${err.message}</div>`;
-    }
+    // Initial Render
+    updateUI();
+    lucide.createIcons();
 });
