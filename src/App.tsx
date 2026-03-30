@@ -75,21 +75,21 @@ const App: React.FC = () => {
   const [showWiki, setShowWiki] = useState(false);
   const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: Color | Value } | null>(null);
   const [printerFriendly, setPrinterFriendly] = useState(false);
+  const [showBackground, setShowBackground] = useState(true);
   const [printerOpacity, setPrinterOpacity] = useState(100);
   const [showCropMarks, setShowCropMarks] = useState(false);
-  const [showBackground, setShowBackground] = useState(true);
   const [genOptions, setGenOptions] = useState({
     colorCount: 5,
     coloredCells: 6,
     valueCount: 6,
-    valuedCells: 6
+    valuedCells: 6,
+    symmetric: false
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [language, setLanguage] = useState<Language>('hu');
   const [history, setHistory] = useState<{ front: CardData, back: CardData }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const [texture, setTexture] = useState<'none' | 'glass' | 'marble' | 'stained'>('none');
 
   const saveToHistory = (f: CardData, b: CardData) => {
     const newState = { 
@@ -925,7 +925,6 @@ const App: React.FC = () => {
                 cornerRadius={cornerRadius}
                 hideShadow
                 className="pointer-events-none"
-                texture={texture}
               />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -960,7 +959,6 @@ const App: React.FC = () => {
                   cornerRadius={cornerRadius}
                   hideShadow
                   className="pointer-events-none"
-                  texture={texture}
                 />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1098,33 +1096,27 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
-                  {/* Texture Selection */}
-                  <div className="space-y-4 pt-2 border-t border-zinc-800">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('texture')}</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['none', 'glass', 'marble', 'stained'] as const).map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => setTexture(t)}
-                          className={cn(
-                            "px-3 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl border transition-all",
-                            texture === t 
-                              ? "bg-white text-black border-white shadow-lg" 
-                              : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500"
-                          )}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Visual Section */}
                   <div className="space-y-4">
                     <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('display')}</label>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white">{t('backgroundPattern')}</span>
+                        <span className="text-xs font-bold text-white">{t('printerFriendly')}</span>
+                        <button 
+                          onClick={() => setPrinterFriendly(!printerFriendly)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            printerFriendly ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            printerFriendly ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white">{t('showBackground')}</span>
                         <button 
                           onClick={() => setShowBackground(!showBackground)}
                           className={cn(
@@ -1324,7 +1316,6 @@ const App: React.FC = () => {
                 onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
                 cornerRadius={cornerRadius}
                 editable
-                texture={texture}
               />
               
               {/* Scale Info */}
@@ -1586,7 +1577,6 @@ interface CardProps {
   printerFriendly?: boolean;
   printerOpacity?: number;
   showCropMarks?: boolean;
-  texture?: 'none' | 'glass' | 'marble' | 'stained';
 }
 
 const Card: React.FC<CardProps> = ({ 
@@ -1602,8 +1592,7 @@ const Card: React.FC<CardProps> = ({
   hideShadow = false,
   printerFriendly = false,
   printerOpacity = 1,
-  showCropMarks = false,
-  texture = 'none'
+  showCropMarks = false
 }) => {
   const titleRef = React.useRef<HTMLSpanElement>(null);
   const codeRef = React.useRef<HTMLSpanElement>(null);
@@ -1662,12 +1651,11 @@ const Card: React.FC<CardProps> = ({
               activeCellIndex === idx && "ring-2 ring-white ring-offset-2 ring-offset-black z-10 scale-105"
             )}
           >
-            {cell.color !== '.' && (
+            {cell.color !== '.' && cell.color !== 'W' && (
               <div 
                 className={cn(
                   "color-overlay", 
-                  `c-${cell.color.toLowerCase()}`,
-                  texture !== 'none' && `texture-${texture}`
+                  `c-${cell.color.toLowerCase()}`
                 )} 
               />
             )}

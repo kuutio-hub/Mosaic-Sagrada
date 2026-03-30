@@ -29,7 +29,6 @@ export const translations = {
     generatePdf: "PDF Generálása",
     clearQueue: "Lista ürítése",
     visualSettings: "Megjelenítés",
-    bgPattern: "Háttér minta",
     language: "Nyelv",
     exportImport: "Adatok kezelése",
     exportData: "Adatok exportálása",
@@ -100,7 +99,6 @@ export const translations = {
     queueEmpty: "A lista üres",
     generatePDF: "PDF Generálása",
     display: "Megjelenítés",
-    backgroundPattern: "Háttér minta",
     dataManagement: "Adatok kezelése",
     exportPatterns: "Minták exportálása",
     exportOwn: "Saját kártyák exportálása",
@@ -120,7 +118,12 @@ export const translations = {
     cropMarksDesc: "Segédvonalak a vágáshoz.",
     printerFriendlyDesc: "Takarékos nyomtatási mód.",
     save: "Mentés",
-    saveDesc: "A beállítások automatikusan mentődnek."
+    saveDesc: "A beállítások automatikusan mentődnek.",
+    showBackground: "Háttér rács",
+    undo: "Visszavonás",
+    redo: "Újra",
+    symmetric: "Szimmetrikus",
+    symmetricDesc: "Szimmetrikus mintázat generálása"
   },
   en: {
     title: "Sagrada Pattern Designer",
@@ -150,7 +153,6 @@ export const translations = {
     generatePdf: "Generate PDF",
     clearQueue: "Clear Queue",
     visualSettings: "Visual Settings",
-    bgPattern: "Background Pattern",
     language: "Language",
     exportImport: "Data Management",
     exportData: "Export Data",
@@ -221,7 +223,6 @@ export const translations = {
     queueEmpty: "Queue is empty",
     generatePDF: "Generate PDF",
     display: "Display",
-    backgroundPattern: "Background Pattern",
     dataManagement: "Data Management",
     exportPatterns: "Export Patterns",
     exportOwn: "Export Own Cards",
@@ -241,7 +242,12 @@ export const translations = {
     cropMarksDesc: "Guide lines for cutting.",
     printerFriendlyDesc: "Ink-saving print mode.",
     save: "Save",
-    saveDesc: "Settings are automatically saved."
+    saveDesc: "Settings are automatically saved.",
+    showBackground: "Background Grid",
+    undo: "Undo",
+    redo: "Redo",
+    symmetric: "Symmetric",
+    symmetricDesc: "Generate symmetric pattern"
   },
   de: {
     title: "Sagrada Muster Designer",
@@ -271,7 +277,6 @@ export const translations = {
     generatePdf: "PDF generieren",
     clearQueue: "Liste leeren",
     visualSettings: "Visuelle Einstellungen",
-    bgPattern: "Hintergrundmuster",
     language: "Sprache",
     exportImport: "Datenverwaltung",
     exportData: "Daten exportieren",
@@ -342,7 +347,6 @@ export const translations = {
     queueEmpty: "Warteschlange ist leer",
     generatePDF: "PDF generieren",
     display: "Anzeige",
-    backgroundPattern: "Hintergrundmuster",
     dataManagement: "Datenverwaltung",
     exportPatterns: "Muster exportieren",
     exportOwn: "Eigene Karten exportieren",
@@ -362,6 +366,11 @@ export const translations = {
     cropMarksDesc: "Führungslinien zum Schneiden.",
     printerFriendlyDesc: "Tintensparender Druckmodus.",
     save: "Speichern",
-    saveDesc: "Einstellungen werden automatisch gespeichert."
+    saveDesc: "Einstellungen werden automatisch gespeichert.",
+    showBackground: "Hintergrundgitter",
+    undo: "Rückgängig",
+    redo: "Wiederholen",
+    symmetric: "Symmetrisch",
+    symmetricDesc: "Symmetrisches Muster generieren"
   }
 };

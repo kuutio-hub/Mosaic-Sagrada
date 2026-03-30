@@ -146,7 +146,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  z-index: 1; /* Under the glass color layer */
+  z-index: 5; /* Above the color layer */
 }
 
 .card-cell .x-mark {
@@ -154,7 +154,7 @@ body {
   font-size: 32pt;
   color: #9ca3af;
   opacity: 1;
-  z-index: 1;
+  z-index: 5;
 }
 
 .card-footer {
@@ -167,21 +167,7 @@ body {
   background: black;
 }
 
-/* Textures */
-.texture-glass {
-  background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.1) 100%);
-  box-shadow: inset 0 0 15px rgba(255,255,255,0.2);
-}
-
-.texture-marble {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.01' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)' opacity='.2'/%3E%3C/svg%3E");
-  background-blend-mode: overlay;
-}
-
-.texture-stained {
-  background-image: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 70%);
-  border: 1px solid rgba(0,0,0,0.3);
-}
+/* Textures removed */
 
 .card-title-container {
   display: flex;

@@ -73,7 +73,8 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   const shuffledIndices = [...indices].sort(() => Math.random() - 0.5);
   for (const idx of shuffledIndices) {
     if (valuesPlaced >= valuedCells) break;
-    if (cells[idx].color === 'W' && cells[idx].value === '.') {
+    // Allow placing a value even if the cell already has a color
+    if (cells[idx].value === '.') {
       const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
       if (isValid(idx, 'value', val)) {
         cells[idx].value = val;
@@ -81,7 +82,7 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
 
         if (symmetric && valuesPlaced < valuedCells) {
           const symIdx = getSymmetricIndex(idx);
-          if (symIdx !== idx && cells[symIdx].color === 'W' && cells[symIdx].value === '.' && isValid(symIdx, 'value', val)) {
+          if (symIdx !== idx && cells[symIdx].value === '.' && isValid(symIdx, 'value', val)) {
             cells[symIdx].value = val;
             valuesPlaced++;
           }
