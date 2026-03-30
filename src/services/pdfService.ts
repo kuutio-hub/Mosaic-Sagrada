@@ -1,8 +1,9 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
-import { PatternQueueItem, CardData } from '../types';
+import { PatternQueueItem } from '../types';
+import { PHYSICAL_DIMENSIONS } from '../constants';
 
-export async function generatePDF(queue: PatternQueueItem[], cornerRadius: number = 0): Promise<void> {
+export async function generatePDF(queue: PatternQueueItem[], cornerRadius: number = 0) {
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -41,10 +42,10 @@ async function renderBatchPage(
   pdf: jsPDF, 
   batch: PatternQueueItem[], 
   side: 'front' | 'back', 
-  container: HTMLDivElement,
+  container: HTMLElement,
   addNewPage: boolean,
   cornerRadius: number = 0
-): Promise<void> {
+) {
   if (addNewPage) {
     pdf.addPage();
   }
@@ -62,7 +63,7 @@ async function renderBatchPage(
 
   for (let idx = 0; idx < batch.length; idx++) {
     const item = batch[idx];
-    const cardData: CardData = side === 'front' ? item.front : (item.back || item.front);
+    const cardData = side === 'front' ? item.front : (item.back || item.front);
     
     const cardDiv = document.createElement('div');
     cardDiv.className = 'card-container';
@@ -83,12 +84,12 @@ async function renderBatchPage(
       <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
         ${cardData.cells.map(cell => {
           const dotColor = (cell.color === 'W' || cell.color === '.') ? 'black' : 'white';
-          const dots: Record<string, number[][]> = {
+          const dots = {
             '1': [[50, 50]], '2': [[25, 25], [75, 75]], '3': [[25, 25], [50, 50], [75, 75]],
             '4': [[25, 25], [25, 75], [75, 25], [75, 75]], '5': [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
             '6': [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]]
           };
-          const circles = (dots[cell.value] || []).map(([cx, cy]) => 
+          const circles = (dots[cell.value as keyof typeof dots] || []).map(([cx, cy]) => 
             `<circle cx="${cx}" cy="${cy}" r="10" fill="${dotColor}" />`
           ).join('');
           const diceSvg = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${circles}</svg>`)}`;
@@ -151,7 +152,10 @@ async function renderBatchPage(
     useCORS: true,
     backgroundColor: '#ffffff',
     width: 210 * 3.7795, // mm to px approx
-    height: 297 * 3.7795
+    height: 297 * 3.7795,
+    ignoreElements: (element) => {
+      return element.tagName === 'STYLE' && element.innerHTML.includes('oklch');
+    }
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 0.95);
