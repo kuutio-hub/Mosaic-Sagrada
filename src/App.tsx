@@ -15,7 +15,8 @@ import {
   Check,
   Layout,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -37,25 +38,17 @@ import {
 import { cn, generateId } from './lib/utils';
 import { generatePDF } from './services/pdfService';
 import { generateSagradaCard } from './services/cardGenerator';
+import { translations, Language } from './i18n';
 
-const getDiceSvgDataUrl = (value: string, color: string) => {
-  const dots: Record<string, number[][]> = {
-    '1': [[50, 50]],
-    '2': [[25, 25], [75, 75]],
-    '3': [[25, 25], [50, 50], [75, 75]],
-    '4': [[25, 25], [25, 75], [75, 25], [75, 75]],
-    '5': [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
-    '6': [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]],
-  };
+const getValueSvgDataUrl = (value: string, color: string = 'W') => {
+  if (value === '.' || value === 'X') return '';
   
-  if (!dots[value]) return '';
-  
-  const dotColor = (color === 'W' || color === '.') ? 'black' : 'white';
-  const circles = dots[value].map(([cx, cy]) => 
-    `<circle cx="${cx}" cy="${cy}" r="10" fill="${dotColor}" />`
-  ).join('');
-  
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${circles}</svg>`;
+  const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="65" fill="${textColor}">${value}</text>
+    </svg>
+  `;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
@@ -91,6 +84,18 @@ const App: React.FC = () => {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [language, setLanguage] = useState<Language>('hu');
+
+  const t = (key: keyof typeof translations['hu'], params?: Record<string, string | number>) => {
+    let text = translations[language][key] || translations['hu'][key] || key;
+    if (params) {
+      Object.entries(params).forEach(([k, v]) => {
+        text = text.replace(`{{${k}}}`, String(v));
+      });
+    }
+    return text;
+  };
+
   const currentCard = activeSide === 'front' ? front : back;
   const setCurrentCard = activeSide === 'front' ? setFront : setBack;
 
@@ -115,6 +120,9 @@ const App: React.FC = () => {
 
     const savedBg = localStorage.getItem('sagrada_showBackground');
     if (savedBg) setShowBackground(savedBg === 'true');
+
+    const savedLang = localStorage.getItem('sagrada_language');
+    if (savedLang) setLanguage(savedLang as Language);
   }, []);
 
   useEffect(() => {
@@ -132,6 +140,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('sagrada_showBackground', showBackground.toString());
   }, [showBackground]);
+
+  useEffect(() => {
+    localStorage.setItem('sagrada_language', language);
+  }, [language]);
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -228,13 +240,13 @@ const App: React.FC = () => {
       newCustomCards[editingCustomCardIndex] = { ...currentCard };
       setCustomCards(newCustomCards);
       localStorage.setItem('customCards', JSON.stringify(newCustomCards));
-      showNotification("Kártya frissítve!");
+      showNotification(t('cardUpdated'));
     } else {
       const newCustomCards = [...customCards, { ...currentCard }];
       setCustomCards(newCustomCards);
       setEditingCustomCardIndex(newCustomCards.length - 1);
       localStorage.setItem('customCards', JSON.stringify(newCustomCards));
-      showNotification("Kártya elmentve!");
+      showNotification(t('cardSaved'));
     }
   };
 
@@ -312,12 +324,12 @@ const App: React.FC = () => {
           const merged = [...customCards, ...validCards];
           setCustomCards(merged);
           localStorage.setItem('customCards', JSON.stringify(merged));
-          showNotification(`${validCards.length} kártya sikeresen importálva!`);
+          showNotification(t('importSuccessCount', { count: validCards.length }));
         } else {
-          showNotification("Érvénytelen kártya fájl!", 'error');
+          showNotification(t('invalidFile'), 'error');
         }
       } catch (err) {
-        showNotification("Hiba az importálás során!", 'error');
+        showNotification(t('importError'), 'error');
       }
     };
     reader.readAsText(file);
@@ -433,7 +445,7 @@ const App: React.FC = () => {
   // Handle PDF Export
   const handleExportPDF = async () => {
     if (queue.length === 0) {
-      alert("A nyomtatási lista üres!");
+      alert(t('queueEmptyAlert'));
       return;
     }
     setIsGenerating(true);
@@ -441,7 +453,7 @@ const App: React.FC = () => {
       await generatePDF(queue, cornerRadius, printerFriendly, printerOpacity, showCropMarks);
     } catch (err) {
       console.error(err);
-      alert("Hiba történt a PDF generálása közben.");
+      alert(t('pdfError'));
     } finally {
       setIsGenerating(false);
     }
@@ -455,7 +467,7 @@ const App: React.FC = () => {
           <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-black font-display text-xl">
             S
           </div>
-          <h1 className="font-display text-xl hidden sm:block text-white">Sagrada Designer</h1>
+          <h1 className="font-display text-xl hidden sm:block text-white">{t('title')}</h1>
         </div>
 
         <nav className="flex items-center gap-1 sm:gap-2">
@@ -466,7 +478,7 @@ const App: React.FC = () => {
               activePanel === 'editor' ? "bg-white text-black" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}
           >
-            <span className="font-bold">Szerkesztő</span>
+            <span className="font-bold">{t('editor')}</span>
           </button>
           <button 
             onClick={() => setShowGeneratorModal(true)}
@@ -475,7 +487,7 @@ const App: React.FC = () => {
               "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}
           >
-            <span className="font-bold">Generálás</span>
+            <span className="font-bold">{t('generation')}</span>
           </button>
 
           {/* Mentett minták (korábban Kártyatár) */}
@@ -485,19 +497,19 @@ const App: React.FC = () => {
               "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}>
               <Layout size={18} />
-              <span className="font-bold">Mentett minták</span>
+              <span className="font-bold">{t('savedPatterns')}</span>
               <ChevronDown size={14} className="opacity-50" />
             </button>
             
             <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 p-4 space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Minta kártyák</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">{t('patternCards')}</label>
                 <select 
                   onChange={(e) => loadPromo(e.target.value)}
                   className="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
                   defaultValue=""
                 >
-                  <option value="" disabled>Válassz mintát...</option>
+                  <option value="" disabled>{t('choosePattern')}</option>
                   {Object.keys(promos).map(name => (
                     <option key={name} value={name}>{name}</option>
                   ))}
@@ -505,14 +517,14 @@ const App: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Saját kártyák</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">{t('myCards')}</label>
                 <div className="flex items-center gap-1">
                   <select 
                     onChange={(e) => loadCustomCard(parseInt(e.target.value))}
                     className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
                     value={editingCustomCardIndex !== null ? editingCustomCardIndex : ""}
                   >
-                    <option value="" disabled>Válassz sajátot...</option>
+                    <option value="" disabled>{t('chooseOwn')}</option>
                     {customCards.map((card, idx) => (
                       <option key={idx} value={idx}>{card.title}</option>
                     ))}
@@ -521,7 +533,7 @@ const App: React.FC = () => {
                     <button 
                       onClick={() => deleteCustomCard(editingCustomCardIndex)}
                       className="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-all"
-                      title="Saját kártya törlése"
+                      title={t('deleteOwnCard')}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -539,7 +551,7 @@ const App: React.FC = () => {
             )}
           >
             <Printer size={18} />
-            <span className="hidden md:inline">Nyomtatás</span>
+            <span className="hidden md:inline">{t('print')}</span>
             {queue.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-zinc-900">
                 {queue.length}
@@ -554,7 +566,7 @@ const App: React.FC = () => {
             )}
           >
             <Settings size={18} />
-            <span className="hidden md:inline">Beállítások</span>
+            <span className="hidden md:inline">{t('settings')}</span>
           </button>
           <button 
             onClick={() => setShowWiki(true)}
@@ -573,7 +585,10 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <main 
+        className="flex-1 flex flex-col md:flex-row overflow-hidden"
+        onClick={() => setSelectedTool(null)}
+      >
         {/* Left Panel: Editor / Queue / Settings */}
         <aside className="w-full md:w-64 lg:w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col overflow-y-auto shrink-0">
           <AnimatePresence mode="wait">
@@ -586,26 +601,26 @@ const App: React.FC = () => {
                 className="p-6 space-y-8"
               >
                 <section className="space-y-4">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Kártya adatok</h2>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('cardData')}</h2>
                   <div className="space-y-3">
                     <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1 block">Kártya neve</label>
+                      <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('cardName')}</label>
                       <input 
                         type="text" 
                         value={currentCard.title}
                         onChange={(e) => setCurrentCard(prev => ({ ...prev, title: e.target.value }))}
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                        placeholder="Minta név"
+                        placeholder={t('patternName')}
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1 block">Alternatív név (zárójelben)</label>
+                      <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('altTitle')}</label>
                       <input 
                         type="text" 
                         value={currentCard.altTitle || ''}
                         onChange={(e) => setCurrentCard(prev => ({ ...prev, altTitle: e.target.value }))}
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                        placeholder="Alternatív név"
+                        placeholder={t('altTitle')}
                       />
                     </div>
                   </div>
@@ -613,7 +628,7 @@ const App: React.FC = () => {
 
                 <section className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Paletta</h2>
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('palette')}</h2>
                     <div className="flex items-center gap-2">
                       <div className="flex bg-zinc-800 p-1 rounded-lg">
                         <button 
@@ -623,7 +638,7 @@ const App: React.FC = () => {
                             activeSide === 'front' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
                           )}
                         >
-                          Előlap
+                          {t('front')}
                         </button>
                         <button 
                           onClick={() => setActiveSide('back')}
@@ -632,7 +647,7 @@ const App: React.FC = () => {
                             activeSide === 'back' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
                           )}
                         >
-                          Hátlap
+                          {t('back')}
                         </button>
                       </div>
                     </div>
@@ -644,7 +659,7 @@ const App: React.FC = () => {
                         onClick={() => setIsColorsExpanded(!isColorsExpanded)}
                         className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
                       >
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Színek</span>
+                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{t('colors')}</span>
                         <motion.div animate={{ rotate: isColorsExpanded ? 90 : 0 }}>
                           <ChevronRight size={14} className="text-zinc-600" />
                         </motion.div>
@@ -686,7 +701,7 @@ const App: React.FC = () => {
                         onClick={() => setIsValuesExpanded(!isValuesExpanded)}
                         className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
                       >
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Számok</span>
+                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{t('values')}</span>
                         <motion.div animate={{ rotate: isValuesExpanded ? 90 : 0 }}>
                           <ChevronRight size={14} className="text-zinc-600" />
                         </motion.div>
@@ -745,7 +760,7 @@ const App: React.FC = () => {
                                           if (!target.src.includes('raw.githubusercontent.com')) {
                                             target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
                                           } else if (!target.src.startsWith('data:image/svg+xml')) {
-                                            target.src = getDiceSvgDataUrl(val, '.');
+                                            target.src = getValueSvgDataUrl(val);
                                           }
                                         }}
                                       />
@@ -767,7 +782,7 @@ const App: React.FC = () => {
                     className="w-full flex items-center justify-center gap-2 bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg active:scale-95"
                   >
                     <Plus size={20} />
-                    Hozzáadás a nyomtatási listához
+                    {t('addToQueue')}
                   </button>
 
                   <button 
@@ -775,7 +790,7 @@ const App: React.FC = () => {
                     className="w-full flex items-center justify-center gap-2 bg-transparent text-zinc-600 py-2 rounded-lg text-[10px] font-bold hover:text-red-500 transition-colors uppercase tracking-widest"
                   >
                     <Trash2 size={14} />
-                    Rács törlése
+                    {t('clearQueue')}
                   </button>
 
                   <div className="pt-4 border-t border-zinc-800">
@@ -789,7 +804,7 @@ const App: React.FC = () => {
                       )}
                     >
                       <Download size={16} />
-                      {editingCustomCardIndex !== null ? "Változások mentése" : "Mentés sajátként"}
+                      {editingCustomCardIndex !== null ? t('patternSaved') : t('savePattern')}
                     </button>
                   </div>
                 </div>
@@ -805,7 +820,7 @@ const App: React.FC = () => {
                 className="p-6 flex flex-col h-full"
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Nyomtatási lista</h2>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('printQueue')}</h2>
                   <span className="text-xs font-bold bg-zinc-800 px-2 py-1 rounded-full text-zinc-500">
                     {queue.length} / 6
                   </span>
@@ -815,7 +830,7 @@ const App: React.FC = () => {
                   {queue.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-600 space-y-3">
                       <Layers size={48} strokeWidth={1} />
-                      <p className="text-sm">A lista még üres.<br/>Adj hozzá kártyákat a szerkesztőből!</p>
+                      <p className="text-sm">{t('queueEmpty')}</p>
                     </div>
                   ) : (
                     queue.map((item) => (
@@ -827,13 +842,14 @@ const App: React.FC = () => {
                           {/* Front Side */}
                           <div className="flex gap-3 items-center">
                             <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
-                              <Card 
-                                data={item.front} 
-                                activeCellIndex={null} 
-                                scale={0.15} 
-                                cornerRadius={cornerRadius}
-                                hideShadow
-                              />
+              <Card 
+                data={item.front} 
+                activeCellIndex={null} 
+                scale={0.15} 
+                cornerRadius={cornerRadius}
+                hideShadow
+                className="pointer-events-none"
+              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
@@ -860,13 +876,14 @@ const App: React.FC = () => {
                           {item.isDoubleSided && item.back && (
                             <div className="flex gap-3 items-center pt-2 border-t border-zinc-800/50">
                               <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
-                                <Card 
-                                  data={item.back} 
-                                  activeCellIndex={null} 
-                                  scale={0.15} 
-                                  cornerRadius={cornerRadius}
-                                  hideShadow
-                                />
+                <Card 
+                  data={item.back} 
+                  activeCellIndex={null} 
+                  scale={0.15} 
+                  cornerRadius={cornerRadius}
+                  hideShadow
+                  className="pointer-events-none"
+                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
@@ -909,7 +926,7 @@ const App: React.FC = () => {
                   <div className="pt-6 space-y-4 border-t border-zinc-800 mt-4">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Kétoldalas mód</span>
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('doubleSided')}</span>
                         <button 
                           onClick={() => setIsDoubleSided(!isDoubleSided)}
                           className={cn(
@@ -924,7 +941,7 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Vágóélek</span>
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('cropMarks')}</span>
                         <button 
                           onClick={() => setShowCropMarks(!showCropMarks)}
                           className={cn(
@@ -939,7 +956,7 @@ const App: React.FC = () => {
                         </button>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nyomtatóbarát</span>
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('printerFriendly')}</span>
                         <button 
                           onClick={() => setPrinterFriendly(!printerFriendly)}
                           className={cn(
@@ -956,7 +973,7 @@ const App: React.FC = () => {
                       {printerFriendly && (
                         <div className="space-y-2">
                           <div className="flex justify-between text-[10px] font-bold text-zinc-500 uppercase">
-                            <span>Opacitás</span>
+                            <span>{t('opacity')}</span>
                             <span>{Math.round(printerOpacity * 100)}%</span>
                           </div>
                           <input 
@@ -977,13 +994,13 @@ const App: React.FC = () => {
                       className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg active:scale-95"
                     >
                       <Printer size={20} />
-                      PDF Generálása
+                      {t('generatePDF')}
                     </button>
                     <button 
                       onClick={() => setQueue([])}
                       className="w-full text-xs font-bold text-zinc-600 hover:text-red-500 transition-colors py-2 uppercase tracking-widest"
                     >
-                      Lista ürítése
+                      {t('clearQueue')}
                     </button>
                   </div>
                 )}
@@ -999,16 +1016,33 @@ const App: React.FC = () => {
                 className="p-6 space-y-8"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Beállítások</h2>
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('settings')}</h2>
                 </div>
                 
                 <div className="space-y-6">
+                  {/* Language Selection */}
+                  <div className="space-y-4 pt-2 border-t border-zinc-800">
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('language')}</label>
+                    <div className="flex items-center gap-2 bg-zinc-800 p-2 rounded-xl border border-zinc-700">
+                      <Globe size={16} className="text-zinc-500 ml-2" />
+                      <select 
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value as Language)}
+                        className="flex-1 bg-transparent text-white text-xs font-bold outline-none cursor-pointer py-1"
+                      >
+                        <option value="hu">Magyar</option>
+                        <option value="en">English</option>
+                        <option value="de">Deutsch</option>
+                      </select>
+                    </div>
+                  </div>
+
                   {/* Visual Section */}
                   <div className="space-y-4">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Megjelenítés</label>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('display')}</label>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white">Háttér minta</span>
+                        <span className="text-xs font-bold text-white">{t('backgroundPattern')}</span>
                         <button 
                           onClick={() => setShowBackground(!showBackground)}
                           className={cn(
@@ -1027,7 +1061,7 @@ const App: React.FC = () => {
 
                   {/* Export/Import Section */}
                   <div className="space-y-4">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Adatok kezelése</label>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('dataManagement')}</label>
                     <div className="grid grid-cols-1 gap-3">
                       <button 
                         onClick={() => {
@@ -1041,7 +1075,7 @@ const App: React.FC = () => {
                         }}
                         className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
                       >
-                        <span className="text-xs font-bold text-white">Minta kártyák exportálása</span>
+                        <span className="text-xs font-bold text-white">{t('exportPatterns')}</span>
                         <Download size={16} className="text-zinc-400" />
                       </button>
 
@@ -1049,12 +1083,12 @@ const App: React.FC = () => {
                         onClick={() => handleExport(customCards, 'sagrada_sajat_kartyak')}
                         className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
                       >
-                        <span className="text-xs font-bold text-white">Saját kártyák exportálása</span>
+                        <span className="text-xs font-bold text-white">{t('exportOwn')}</span>
                         <Download size={16} className="text-zinc-400" />
                       </button>
 
                       <label className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer">
-                        <span className="text-xs font-bold text-white">Kártyák importálása</span>
+                        <span className="text-xs font-bold text-white">{t('importCards')}</span>
                         <Upload size={16} className="text-zinc-400" />
                         <input 
                           type="file" 
@@ -1069,7 +1103,7 @@ const App: React.FC = () => {
 
                   {/* Zoom Controls */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Nagyítás</label>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('zoom')}</label>
                     <div className="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
                       <button 
                         onClick={() => setPreviewScale(prev => Math.max(0.5, prev - 0.1))}
@@ -1089,10 +1123,10 @@ const App: React.FC = () => {
 
                   {/* Text Settings */}
                   <div className="space-y-4 pt-2 border-t border-zinc-800">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Szöveg beállítások</label>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('textSettings')}</label>
                     
                     <div className="space-y-2">
-                      <label className="text-[10px] text-zinc-500 uppercase">Betűtípus</label>
+                      <label className="text-[10px] text-zinc-500 uppercase">{t('font')}</label>
                       <select 
                         value={currentCard.titleFont || 'Uncial Antiqua'}
                         onChange={(e) => setCurrentCard(prev => ({ ...prev, titleFont: e.target.value }))}
@@ -1105,7 +1139,7 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] text-zinc-500 uppercase">Betűméret (pt)</label>
+                      <label className="text-[10px] text-zinc-500 uppercase">{t('fontSize')}</label>
                       <div className="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
                         <button 
                           onClick={() => setCurrentCard(prev => ({ ...prev, titleSize: Math.max(8, (prev.titleSize || 14) - 1) }))}
@@ -1124,7 +1158,7 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-[10px] text-zinc-500 uppercase">Sarok lekerekítés (mm)</label>
+                      <label className="text-[10px] text-zinc-500 uppercase">{t('cornerRadius')}</label>
                       <div className="flex items-center justify-between bg-zinc-800 p-2 rounded-xl border border-zinc-700">
                         <button 
                           onClick={() => setCornerRadius(prev => Math.max(0, prev - 1))}
@@ -1146,10 +1180,10 @@ const App: React.FC = () => {
                   <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-3">
                     <div className="flex items-center gap-2 text-zinc-500">
                       <Info size={16} />
-                      <p className="text-xs font-bold uppercase">Információ</p>
+                      <p className="text-xs font-bold uppercase">{t('info')}</p>
                     </div>
                     <p className="text-xs text-zinc-500 leading-relaxed">
-                      A kártyák fizikai mérete 90x80mm. A PDF exportálás 300 DPI felbontással készül, A4-es lapra optimalizálva (6 kártya/oldal).
+                      {t('infoDesc')}
                     </p>
                   </div>
                 </div>
@@ -1179,7 +1213,7 @@ const App: React.FC = () => {
                 activeSide === 'front' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
               )}
             >
-              ELŐLAP
+              {t('front')}
             </button>
             <button 
               onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
@@ -1194,7 +1228,7 @@ const App: React.FC = () => {
                 activeSide === 'back' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
               )}
             >
-              HÁTLAP
+              {t('back')}
             </button>
           </div>
 
@@ -1223,7 +1257,7 @@ const App: React.FC = () => {
               {/* Scale Info */}
               <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
                 <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-                  Fizikai méret: 90mm × 80mm
+                  {t('physicalSize')}: 90mm × 80mm
                 </p>
               </div>
             </div>
@@ -1233,9 +1267,9 @@ const App: React.FC = () => {
 
       {/* Website Footer */}
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-        <div>&copy; 2026 Sagrada Pattern Designer. Minden jog fenntartva.</div>
+        <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>Verzió: v0.0.3.1</span>
+          <span>{t('version')}: v1.2.0</span>
         </div>
       </footer>
 
@@ -1257,7 +1291,7 @@ const App: React.FC = () => {
               className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Kártya generálása</h3>
+                <h3 className="text-lg font-bold text-white">{t('generateCard')}</h3>
                 <button onClick={() => setShowGeneratorModal(false)} className="text-zinc-500 hover:text-white">
                   <CloseIcon size={20} />
                 </button>
@@ -1266,7 +1300,7 @@ const App: React.FC = () => {
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Színek száma</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('colorCount')}</label>
                     <input 
                       type="number" 
                       min="1" max="5"
@@ -1276,7 +1310,7 @@ const App: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Színes cellák</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('coloredCells')}</label>
                     <input 
                       type="number" 
                       min="0" max="10"
@@ -1286,7 +1320,7 @@ const App: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Számok száma</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valueCount')}</label>
                     <input 
                       type="number" 
                       min="1" max="6"
@@ -1296,7 +1330,7 @@ const App: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Számos cellák</label>
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valuedCells')}</label>
                     <input 
                       type="number" 
                       min="0" max="10"
@@ -1319,11 +1353,11 @@ const App: React.FC = () => {
                       code: newCard.code
                     }));
                     setShowGeneratorModal(false);
-                    showNotification("Kártya sikeresen generálva!");
+                    showNotification(t('cardGenerated'));
                   }}
                   className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg"
                 >
-                  Generálás indítása
+                  {t('startGeneration')}
                 </button>
               </div>
             </motion.div>
@@ -1351,7 +1385,7 @@ const App: React.FC = () => {
               <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
                 <h2 className="text-xl font-bold flex items-center gap-2 text-white">
                   <BookOpen className="text-white" />
-                  Sagrada Designer Wiki
+                  {t('wikiTitle')}
                 </h2>
                 <button 
                   onClick={() => setShowWiki(false)}
@@ -1362,38 +1396,35 @@ const App: React.FC = () => {
               </div>
               <div className="p-6 overflow-y-auto space-y-8 text-zinc-300 custom-scrollbar">
                 <section className="space-y-3">
-                  <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Szerkesztő használata</h3>
+                  <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">{t('editorUsage')}</h3>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    Kattints egy cellára a kijelöléshez, majd válassz színt vagy értéket az alsó panelen. 
-                    Ha először választasz színt/számot, az <span className="text-white font-bold">folyamatos kijelölési módba</span> vált: 
-                    ilyenkor több cellára kattintva is alkalmazhatod ugyanazt a mintát. A módból a háttérre kattintva léphetsz ki.
+                    {t('editorUsageDesc')}
                   </p>
                 </section>
 
                 <section className="space-y-3">
-                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Generálás</h4>
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">{t('generation')}</h4>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    A "Generálás" gombbal véletlenszerű, de szabályos Sagrada mintákat hozhatsz létre. 
-                    A generált kártyák nehézségi pöttyöi fehérek maradnak, hogy később te magad jelölhesd be őket.
+                    {t('generationDesc')}
                   </p>
                 </section>
 
                 <section className="space-y-3">
-                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Nyomtatás és PDF</h4>
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">{t('printAndPdf')}</h4>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    Add a kártyákat a nyomtatási listához. A "Nyomtatás" panelen beállíthatod:
+                    {t('printAndPdfDesc')}
                   </p>
                   <ul className="text-xs text-zinc-400 space-y-2 list-disc pl-4">
-                    <li><span className="text-white font-bold">Kétoldalas mód:</span> Előlap és hátlap generálása.</li>
-                    <li><span className="text-white font-bold">Vágóélek:</span> Segédvonalak a pontos vágáshoz (ilyenkor a sarkok nem lekerekítettek).</li>
-                    <li><span className="text-white font-bold">Nyomtatóbarát mód:</span> Csökkenti a fekete festék használatát, csak a kereteket hagyja meg.</li>
+                    <li><span className="text-white font-bold">{t('doubleSided')}:</span> {t('doubleSidedDesc')}</li>
+                    <li><span className="text-white font-bold">{t('cropMarks')}:</span> {t('cropMarksDesc')}</li>
+                    <li><span className="text-white font-bold">{t('printerFriendly')}:</span> {t('printerFriendlyDesc')}</li>
                   </ul>
                 </section>
 
                 <section className="space-y-3">
-                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Mentés</h4>
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">{t('save')}</h4>
                   <p className="text-xs text-zinc-400 leading-relaxed">
-                    A beállításaid (zoom, lekerekítés, nyomtató opciók) automatikusan mentődnek a böngésződben.
+                    {t('saveDesc')}
                   </p>
                 </section>
               </div>
@@ -1536,7 +1567,7 @@ const Card: React.FC<CardProps> = ({
                       if (!target.src.includes('raw.githubusercontent.com')) {
                         target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${cell.value}.png`;
                       } else if (!target.src.startsWith('data:image/svg+xml')) {
-                        target.src = getDiceSvgDataUrl(cell.value, cell.color);
+                        target.src = getValueSvgDataUrl(cell.value, cell.color);
                       }
                     }}
                   />
@@ -1560,33 +1591,19 @@ const Card: React.FC<CardProps> = ({
               height: '100%'
             }}
           >
-            {data.title}
+            {data.title} {data.code || ''}
           </span>
-          {data.code && (
-            <span 
-              ref={codeRef} 
-              className="card-code"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                height: '100%'
-              }}
-            >
-              ({data.code})
-            </span>
-          )}
         </div>
         <div className={cn("card-difficulty", editable && "editable")}>
           {Array.from({ length: 6 }).map((_, i) => {
             const isActive = i >= (6 - data.difficulty);
-            const isGeneratedDot = isGenerated && !isActive;
             return (
               <div 
                 key={i} 
                 className={cn(
                   "difficulty-dot", 
                   isActive && "active",
-                  isGeneratedDot && "generated"
+                  isGenerated && "generated"
                 )}
                 onClick={(e) => {
                   if (editable && onDifficultyChange) {

@@ -67,7 +67,8 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   while (valuesPlaced < valuedCells && attempts < 100) {
     for (const idx of indices) {
       // Only place value if cell is empty (no color AND no value)
-      if (cells[idx].color === '.' && cells[idx].value === '.') {
+      // 'W' and '.' are considered empty for color constraints in this context
+      if ((cells[idx].color === 'W' || cells[idx].color === '.') && cells[idx].value === '.') {
         const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
         if (isValid(idx, 'value', val)) {
           cells[idx].value = val;

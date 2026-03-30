@@ -221,8 +221,14 @@ body {
 }
 
 .difficulty-dot.generated {
+  background-color: transparent;
+  border: 1px solid white;
+  opacity: 0.8;
+}
+
+.difficulty-dot.generated.active {
   background-color: white;
-  opacity: 0.3;
+  opacity: 1;
 }
 
 .card-difficulty.editable .difficulty-dot {
