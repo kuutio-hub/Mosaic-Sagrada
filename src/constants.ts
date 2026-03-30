@@ -1,7 +1,9 @@
-export const DEFAULT_CELL = { color: 'W', value: '.' };
+import { CardData, CellData } from './types';
 
-export const createEmptyGrid = () => 
-  Array(20).fill(null).map(() => ({ ...DEFAULT_CELL }));
+export const DEFAULT_CELL: CellData = { color: 'W', value: '.' };
+
+export const createEmptyGrid = (): CellData[] => 
+  Array(20).fill(null).map(() => ({ color: 'W', value: '.' }));
 
 export const FONTS = [
   { id: 'Uncial Antiqua', label: 'Uncial Antiqua' },
@@ -16,7 +18,7 @@ export const FONTS = [
   { id: 'Inter', label: 'Inter' }
 ];
 
-export const DEFAULT_FRONT = {
+export const DEFAULT_FRONT: CardData = {
   title: "MINTA NÉV",
   difficulty: 3,
   cells: createEmptyGrid(),
@@ -25,7 +27,7 @@ export const DEFAULT_FRONT = {
   cornerRadius: 0
 };
 
-export const DEFAULT_BACK = {
+export const DEFAULT_BACK: CardData = {
   title: "MINTA NÉV (HÁT)",
   difficulty: 4,
   cells: createEmptyGrid(),
@@ -42,9 +44,9 @@ export const COLORS = [
   { id: 'P', hex: '#662d91', label: 'Lila' },
   { id: 'W', hex: '#ffffff', label: 'Fehér' },
   { id: '.', hex: '#ffffff', label: 'Nincs' }
-];
+] as const;
 
-export const VALUES = ['1', '2', '3', '4', '5', '6', 'X', '.'];
+export const VALUES = ['1', '2', '3', '4', '5', '6', 'X', '.'] as const;
 
 export const PHYSICAL_DIMENSIONS = {
   cardWidth: 90, // mm
