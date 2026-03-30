@@ -47,7 +47,7 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
 
   while (colorsPlaced < coloredCells && attempts < 100) {
     for (const idx of indices) {
-      if (cells[idx].color === '.' && cells[idx].value === '.') {
+      if ((cells[idx].color === 'W' || cells[idx].color === '.') && cells[idx].value === '.') {
         const color = selectedColors[Math.floor(Math.random() * selectedColors.length)];
         if (isValid(idx, 'color', color)) {
           cells[idx].color = color;
@@ -66,6 +66,7 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
 
   while (valuesPlaced < valuedCells && attempts < 100) {
     for (const idx of indices) {
+      // Only place value if cell is empty (no color AND no value)
       if (cells[idx].color === '.' && cells[idx].value === '.') {
         const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
         if (isValid(idx, 'value', val)) {
@@ -86,10 +87,16 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   else if (totalConstraints <= 12) difficulty = 5;
   else difficulty = 6;
 
+  // Generate a seed-based name
+  const seed = Math.random().toString(36).substring(2, 7).toUpperCase();
+  const date = new Date();
+  const dateStr = `${date.getMonth() + 1}${date.getDate()}`;
+
   return {
-    title: "Generált kártya",
+    title: `Gen-${seed}-${dateStr}`,
     difficulty,
     cells,
-    code: Math.random().toString(36).substring(2, 7).toUpperCase()
+    code: seed,
+    isGenerated: true // Custom flag for UI
   };
 }

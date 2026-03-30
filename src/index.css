@@ -220,6 +220,11 @@ body {
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
 }
 
+.difficulty-dot.generated {
+  background-color: white;
+  opacity: 0.3;
+}
+
 .card-difficulty.editable .difficulty-dot {
   cursor: pointer;
 }

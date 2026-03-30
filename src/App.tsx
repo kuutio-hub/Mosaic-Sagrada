@@ -12,7 +12,10 @@ import {
   ChevronLeft,
   Info,
   X as CloseIcon,
-  Check
+  Check,
+  Layout,
+  ChevronDown,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -74,6 +77,12 @@ const App: React.FC = () => {
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [showGeneratorModal, setShowGeneratorModal] = useState(false);
+  const [showWiki, setShowWiki] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: Color | Value } | null>(null);
+  const [printerFriendly, setPrinterFriendly] = useState(false);
+  const [printerOpacity, setPrinterOpacity] = useState(100);
+  const [showCropMarks, setShowCropMarks] = useState(false);
+  const [showBackground, setShowBackground] = useState(true);
   const [genOptions, setGenOptions] = useState({
     colorCount: 5,
     coloredCells: 6,
@@ -92,6 +101,37 @@ const App: React.FC = () => {
       return () => clearTimeout(timer);
     }
   }, [notification]);
+
+  // Persistence
+  useEffect(() => {
+    const savedScale = localStorage.getItem('sagrada_previewScale');
+    if (savedScale) setPreviewScale(parseFloat(savedScale));
+    
+    const savedCorner = localStorage.getItem('sagrada_cornerRadius');
+    if (savedCorner) setCornerRadius(parseInt(savedCorner));
+
+    const savedPrinter = localStorage.getItem('sagrada_printerFriendly');
+    if (savedPrinter) setPrinterFriendly(savedPrinter === 'true');
+
+    const savedBg = localStorage.getItem('sagrada_showBackground');
+    if (savedBg) setShowBackground(savedBg === 'true');
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('sagrada_previewScale', previewScale.toString());
+  }, [previewScale]);
+
+  useEffect(() => {
+    localStorage.setItem('sagrada_cornerRadius', cornerRadius.toString());
+  }, [cornerRadius]);
+
+  useEffect(() => {
+    localStorage.setItem('sagrada_printerFriendly', printerFriendly.toString());
+  }, [printerFriendly]);
+
+  useEffect(() => {
+    localStorage.setItem('sagrada_showBackground', showBackground.toString());
+  }, [showBackground]);
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
     setNotification({ message, type });
@@ -286,52 +326,79 @@ const App: React.FC = () => {
 
   // Handle cell click
   const handleCellClick = (side: 'front' | 'back', index: number) => {
-    setActiveCell({ side, index });
+    if (selectedTool) {
+      // Apply selected tool directly
+      const updateFn = side === 'front' ? setFront : setBack;
+      updateFn(prev => {
+        const newCells = [...prev.cells];
+        const cell = { ...newCells[index] };
+
+        if (selectedTool.type === 'color') {
+          const color = selectedTool.value as Color;
+          if (cell.color === color) {
+            cell.color = '.';
+          } else {
+            cell.color = color;
+            cell.value = '.';
+          }
+        } else {
+          const value = selectedTool.value as Value;
+          if (cell.value === value) {
+            cell.value = '.';
+            cell.color = '.';
+          } else {
+            cell.value = value;
+            cell.color = '.';
+          }
+        }
+
+        newCells[index] = cell;
+        return { ...prev, cells: newCells };
+      });
+    } else {
+      setActiveCell({ side, index });
+    }
   };
 
   // Handle picker selection
   const handlePickerSelect = (color?: Color, value?: Value) => {
-    if (!activeCell) return;
+    if (color) {
+      setSelectedTool({ type: 'color', value: color });
+      setActiveCell(null);
+    } else if (value) {
+      setSelectedTool({ type: 'value', value: value });
+      setActiveCell(null);
+    } else if (activeCell) {
+      const { side, index } = activeCell;
+      const updateFn = side === 'front' ? setFront : setBack;
 
-    const { side, index } = activeCell;
-    const updateFn = side === 'front' ? setFront : setBack;
+      updateFn(prev => {
+        const newCells = [...prev.cells];
+        const cell = { ...newCells[index] };
 
-    updateFn(prev => {
-      const newCells = [...prev.cells];
-      const cell = { ...newCells[index] };
-
-      if (color !== undefined) {
-        // Toggle logic
-        if (cell.color === color) {
-          cell.color = '.';
-        } else {
-          cell.color = color;
-          // Mutual exclusivity: if setting color, clear value
-          cell.value = '.';
-        }
-      }
-      
-      if (value !== undefined) {
-        // Toggle logic
-        if (cell.value === value) {
-          cell.value = '.';
-          cell.color = '.'; // Delete button clears both
-        } else {
-          cell.value = value;
-          // Mutual exclusivity: if setting value, clear color
-          cell.color = '.';
-          
-          // Special case for delete button
-          if (value === '.') {
+        if (color !== undefined) {
+          if (cell.color === color) {
             cell.color = '.';
+          } else {
+            cell.color = color;
             cell.value = '.';
           }
         }
-      }
+        
+        if (value !== undefined) {
+          if (cell.value === value) {
+            cell.value = '.';
+            cell.color = '.';
+          } else {
+            cell.value = value;
+            cell.color = '.';
+          }
+        }
 
-      newCells[index] = cell;
-      return { ...prev, cells: newCells };
-    });
+        newCells[index] = cell;
+        return { ...prev, cells: newCells };
+      });
+    }
   };
 
   // Add to queue
@@ -371,7 +438,7 @@ const App: React.FC = () => {
     }
     setIsGenerating(true);
     try {
-      await generatePDF(queue, cornerRadius);
+      await generatePDF(queue, cornerRadius, printerFriendly, printerOpacity, showCropMarks);
     } catch (err) {
       console.error(err);
       alert("Hiba történt a PDF generálása közben.");
@@ -410,6 +477,60 @@ const App: React.FC = () => {
           >
             <span className="font-bold">Generálás</span>
           </button>
+
+          {/* Mentett minták (korábban Kártyatár) */}
+          <div className="relative group/menu">
+            <button className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+              "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            )}>
+              <Layout size={18} />
+              <span className="font-bold">Mentett minták</span>
+              <ChevronDown size={14} className="opacity-50" />
+            </button>
+            
+            <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 p-4 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Minta kártyák</label>
+                <select 
+                  onChange={(e) => loadPromo(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Válassz mintát...</option>
+                  {Object.keys(promos).map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">Saját kártyák</label>
+                <div className="flex items-center gap-1">
+                  <select 
+                    onChange={(e) => loadCustomCard(parseInt(e.target.value))}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
+                    value={editingCustomCardIndex !== null ? editingCustomCardIndex : ""}
+                  >
+                    <option value="" disabled>Válassz sajátot...</option>
+                    {customCards.map((card, idx) => (
+                      <option key={idx} value={idx}>{card.title}</option>
+                    ))}
+                  </select>
+                  {editingCustomCardIndex !== null && (
+                    <button 
+                      onClick={() => deleteCustomCard(editingCustomCardIndex)}
+                      className="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-all"
+                      title="Saját kártya törlése"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button 
             onClick={() => setActivePanel('queue')}
             className={cn(
@@ -418,7 +539,7 @@ const App: React.FC = () => {
             )}
           >
             <Printer size={18} />
-            <span className="hidden md:inline">Nyomtatási lista</span>
+            <span className="hidden md:inline">Nyomtatás</span>
             {queue.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-zinc-900">
                 {queue.length}
@@ -435,54 +556,19 @@ const App: React.FC = () => {
             <Settings size={18} />
             <span className="hidden md:inline">Beállítások</span>
           </button>
+          <button 
+            onClick={() => setShowWiki(true)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+              "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            )}
+          >
+            <span className="font-bold">Wiki</span>
+          </button>
         </nav>
 
         <div className="flex items-center gap-2">
-          <select 
-            onChange={(e) => loadPromo(e.target.value)}
-            className="w-32 sm:w-40 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
-            defaultValue=""
-          >
-            <option value="" disabled>Minta kártyák</option>
-            {Object.keys(promos).map(name => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
-
-          <div className="flex items-center gap-1">
-            <select 
-              onChange={(e) => loadCustomCard(parseInt(e.target.value))}
-              className="w-32 sm:w-40 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
-              value={editingCustomCardIndex !== null ? editingCustomCardIndex : ""}
-            >
-              <option value="" disabled>Saját kártyák</option>
-              {customCards.map((card, idx) => (
-                <option key={idx} value={idx}>{card.title}</option>
-              ))}
-            </select>
-            {editingCustomCardIndex !== null && (
-              <button 
-                onClick={() => deleteCustomCard(editingCustomCardIndex)}
-                className="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-all"
-                title="Saját kártya törlése"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
-
-          <button 
-            onClick={handleExportPDF}
-            disabled={isGenerating || queue.length === 0}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-300 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-          >
-            {isGenerating ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <Printer size={18} />
-            )}
-            <span className="hidden sm:inline">PDF Export</span>
-          </button>
+          {/* Kártyatár eltávolítva innen, feljebb került */}
         </div>
       </header>
 
@@ -571,7 +657,7 @@ const App: React.FC = () => {
                             exit={{ height: 0, opacity: 0 }}
                             className="px-4 pb-4"
                           >
-                            <div className="palette-grid colors">
+                            <div className="grid grid-cols-3 gap-2">
                               {COLORS.filter(c => c.id !== '.').map(color => (
                                 <button
                                   key={color.id}
@@ -580,7 +666,7 @@ const App: React.FC = () => {
                                     handlePickerSelect(color.id as Color);
                                   }}
                                   className={cn(
-                                    "rounded-md border-2 transition-all flex items-center justify-center",
+                                    "aspect-square rounded-md border-2 transition-all flex items-center justify-center",
                                     activeCell && (sideData(activeCell.side).cells[activeCell.index].color === color.id)
                                       ? "border-white scale-105 shadow-md"
                                       : "border-transparent hover:scale-105"
@@ -613,42 +699,60 @@ const App: React.FC = () => {
                             exit={{ height: 0, opacity: 0 }}
                             className="px-4 pb-4"
                           >
-                            <div className="palette-grid numbers">
-                              {VALUES.map(val => (
-                                <button
-                                  key={val}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handlePickerSelect(undefined, val as Value);
-                                  }}
-                                  className={cn(
-                                    "rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all overflow-hidden",
-                                    activeCell && (sideData(activeCell.side).cells[activeCell.index].value === val)
-                                      ? "border-white bg-zinc-700 scale-105 shadow-md"
-                                      : "border-transparent hover:bg-zinc-700 hover:scale-105"
-                                  )}
-                                >
-                                  {val === '.' ? (
-                                    <Trash2 size={14} className="text-zinc-600" />
-                                  ) : val === 'X' ? (
-                                    <span className="font-display text-xl text-zinc-500">X</span>
-                                  ) : (
-                                    <img 
-                                      src={`/Cells/${val}.png`}
-                                      alt={val}
-                                      className="w-full h-full object-contain opacity-100 block scale-[1.02]"
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        if (!target.src.includes('raw.githubusercontent.com')) {
-                                          target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
-                                        } else if (!target.src.startsWith('data:image/svg+xml')) {
-                                          target.src = getDiceSvgDataUrl(val, '.');
-                                        }
+                            <div className="grid grid-cols-3 gap-2">
+                              {['1', '2', '3', '4', '5', '6', 'X', '.', '.'].map((val, idx) => {
+                                if (idx === 8) { // Trash icon at the end
+                                  return (
+                                    <button
+                                      key="trash"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePickerSelect(undefined, '.');
                                       }}
-                                    />
-                                  )}
-                                </button>
-                              ))}
+                                      className={cn(
+                                        "aspect-square rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all overflow-hidden border-transparent hover:bg-zinc-700 hover:scale-105"
+                                      )}
+                                    >
+                                      <Trash2 size={16} className="text-red-500" />
+                                    </button>
+                                  );
+                                }
+                                if (idx === 7) return <div key="empty" />; // Empty slot before trash
+
+                                return (
+                                  <button
+                                    key={val}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePickerSelect(undefined, val as Value);
+                                    }}
+                                    className={cn(
+                                      "aspect-square rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all overflow-hidden",
+                                      activeCell && (sideData(activeCell.side).cells[activeCell.index].value === val)
+                                        ? "border-white bg-zinc-700 scale-105 shadow-md"
+                                        : "border-transparent hover:bg-zinc-700 hover:scale-105"
+                                    )}
+                                  >
+                                    {val === 'X' ? (
+                                      <span className="font-display text-xl text-zinc-500">X</span>
+                                    ) : (
+                                      <img 
+                                        src={`/Cells/${val}.png`}
+                                        alt={val}
+                                        className="w-full h-full object-contain opacity-100 block scale-[1.02]"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          if (!target.src.includes('raw.githubusercontent.com')) {
+                                            target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
+                                          } else if (!target.src.startsWith('data:image/svg+xml')) {
+                                            target.src = getDiceSvgDataUrl(val, '.');
+                                          }
+                                        }}
+                                      />
+                                    )}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </motion.div>
                         )}
@@ -707,50 +811,75 @@ const App: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex-1 space-y-4 overflow-y-auto pr-2">
+                <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
                   {queue.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-600 space-y-3">
                       <Layers size={48} strokeWidth={1} />
                       <p className="text-sm">A lista még üres.<br/>Adj hozzá kártyákat a szerkesztőből!</p>
                     </div>
                   ) : (
-                    queue.map((item, idx) => (
+                    queue.map((item) => (
                       <div 
                         key={item.id}
-                        className="group bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex flex-col gap-3 hover:border-zinc-600 transition-all cursor-pointer shadow-sm relative"
-                        onClick={() => loadFromQueue(item)}
+                        className="group relative bg-zinc-800/30 border border-zinc-800 hover:border-zinc-700 rounded-xl p-3 transition-all"
                       >
-                        <div className="flex gap-3">
-                          <div className="flex flex-col gap-2 shrink-0">
-                            <div className="w-16 h-14 bg-black rounded-lg flex items-center justify-center overflow-hidden p-0.5 border border-zinc-700 group-hover:border-zinc-500 transition-colors">
-                              <div className="origin-top-left scale-[0.17] border border-white">
-                                <Card data={item.front} activeCellIndex={null} hideShadow />
+                        <div className="flex flex-col gap-3">
+                          {/* Front Side */}
+                          <div className="flex gap-3 items-center">
+                            <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
+                              <Card 
+                                data={item.front} 
+                                activeCellIndex={null} 
+                                scale={0.15} 
+                                cornerRadius={cornerRadius}
+                                hideShadow
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
+                                {item.front.title}
+                              </p>
+                              <div className="flex gap-1 mt-1.5">
+                                {Array.from({ length: 6 }).map((_, i) => {
+                                  const isActive = i >= (6 - item.front.difficulty);
+                                  return (
+                                    <div 
+                                      key={i} 
+                                      className={cn(
+                                        "w-1.5 h-1.5 rounded-full",
+                                        isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
+                                      )} 
+                                    />
+                                  );
+                                })}
                               </div>
                             </div>
-                            {item.isDoubleSided && item.back && (
-                              <div className="w-16 h-14 bg-black rounded-lg flex items-center justify-center overflow-hidden p-0.5 border border-zinc-700 group-hover:border-zinc-500 transition-colors">
-                                <div className="origin-top-left scale-[0.17] border border-white">
-                                  <Card data={item.back} activeCellIndex={null} hideShadow />
-                                </div>
-                              </div>
-                            )}
                           </div>
-                          
-                          <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
-                            <div className="space-y-2">
-                              <div className="space-y-0.5">
-                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Előlap</p>
+
+                          {/* Back Side */}
+                          {item.isDoubleSided && item.back && (
+                            <div className="flex gap-3 items-center pt-2 border-t border-zinc-800/50">
+                              <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
+                                <Card 
+                                  data={item.back} 
+                                  activeCellIndex={null} 
+                                  scale={0.15} 
+                                  cornerRadius={cornerRadius}
+                                  hideShadow
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
-                                  {item.front.title}
+                                  {item.back.title}
                                 </p>
-                                <div className="flex gap-0.5 mt-1">
+                                <div className="flex gap-1 mt-1.5">
                                   {Array.from({ length: 6 }).map((_, i) => {
-                                    const isActive = i >= (6 - item.front.difficulty);
+                                    const isActive = i >= (6 - item.back!.difficulty);
                                     return (
                                       <div 
                                         key={i} 
                                         className={cn(
-                                          "w-1 h-1 rounded-full",
+                                          "w-1.5 h-1.5 rounded-full",
                                           isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
                                         )} 
                                       />
@@ -758,31 +887,8 @@ const App: React.FC = () => {
                                   })}
                                 </div>
                               </div>
-
-                              {item.isDoubleSided && item.back && (
-                                <div className="space-y-0.5">
-                                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Hátlap</p>
-                                  <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
-                                    {item.back.title}
-                                  </p>
-                                  <div className="flex gap-0.5 mt-1">
-                                    {Array.from({ length: 6 }).map((_, i) => {
-                                      const isActive = i >= (6 - item.back!.difficulty);
-                                      return (
-                                        <div 
-                                          key={i} 
-                                          className={cn(
-                                            "w-1 h-1 rounded-full",
-                                            isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
-                                          )} 
-                                        />
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         <button 
@@ -800,17 +906,82 @@ const App: React.FC = () => {
                 </div>
 
                 {queue.length > 0 && (
-                  <div className="pt-6 space-y-3">
+                  <div className="pt-6 space-y-4 border-t border-zinc-800 mt-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Kétoldalas mód</span>
+                        <button 
+                          onClick={() => setIsDoubleSided(!isDoubleSided)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            isDoubleSided ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            isDoubleSided ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Vágóélek</span>
+                        <button 
+                          onClick={() => setShowCropMarks(!showCropMarks)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            showCropMarks ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            showCropMarks ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">Nyomtatóbarát</span>
+                        <button 
+                          onClick={() => setPrinterFriendly(!printerFriendly)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            printerFriendly ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            printerFriendly ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                      {printerFriendly && (
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-[10px] font-bold text-zinc-500 uppercase">
+                            <span>Opacitás</span>
+                            <span>{Math.round(printerOpacity * 100)}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0.1" 
+                            max="1" 
+                            step="0.1" 
+                            value={printerOpacity}
+                            onChange={(e) => setPrinterOpacity(parseFloat(e.target.value))}
+                            className="w-full accent-blue-600"
+                          />
+                        </div>
+                      )}
+                    </div>
+
                     <button 
                       onClick={handleExportPDF}
-                      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg"
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg active:scale-95"
                     >
                       <Printer size={20} />
                       PDF Generálása
                     </button>
                     <button 
                       onClick={() => setQueue([])}
-                      className="w-full text-xs font-bold text-zinc-500 hover:text-red-500 transition-colors py-2"
+                      className="w-full text-xs font-bold text-zinc-600 hover:text-red-500 transition-colors py-2 uppercase tracking-widest"
                     >
                       Lista ürítése
                     </button>
@@ -827,11 +998,33 @@ const App: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="p-6 space-y-8"
               >
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Beállítások</h2>
-                  </div>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Beállítások</h2>
+                </div>
                 
                 <div className="space-y-6">
+                  {/* Visual Section */}
+                  <div className="space-y-4">
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Megjelenítés</label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white">Háttér minta</span>
+                        <button 
+                          onClick={() => setShowBackground(!showBackground)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            showBackground ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            showBackground ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Export/Import Section */}
                   <div className="space-y-4">
                     <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">Adatok kezelése</label>
@@ -950,34 +1143,15 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-                    <div>
-                      <p className="text-sm font-bold text-white">Kétoldalas mód</p>
-                      <p className="text-xs text-zinc-500">Hátlap generálása a kártyákhoz</p>
+                  <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <Info size={16} />
+                      <p className="text-xs font-bold uppercase">Információ</p>
                     </div>
-                    <button 
-                      onClick={() => setIsDoubleSided(!isDoubleSided)}
-                      className={cn(
-                        "w-12 h-6 rounded-full p-1 transition-colors",
-                        isDoubleSided ? "bg-green-600" : "bg-zinc-700"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-4 h-4 bg-white rounded-full transition-transform",
-                        isDoubleSided ? "translate-x-6" : "translate-x-0"
-                      )} />
-                    </button>
+                    <p className="text-xs text-zinc-500 leading-relaxed">
+                      A kártyák fizikai mérete 90x80mm. A PDF exportálás 300 DPI felbontással készül, A4-es lapra optimalizálva (6 kártya/oldal).
+                    </p>
                   </div>
-                </div>
-
-                <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-zinc-500">
-                    <Info size={16} />
-                    <p className="text-xs font-bold uppercase">Információ</p>
-                  </div>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    A kártyák fizikai mérete 90x80mm. A PDF exportálás 300 DPI felbontással készül, A4-es lapra optimalizálva (6 kártya/oldal).
-                  </p>
                 </div>
               </motion.div>
             )}
@@ -987,7 +1161,14 @@ const App: React.FC = () => {
         {/* Right Area: Preview */}
         <section 
           className="flex-1 bg-zinc-950 flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden cursor-default"
-          onClick={() => setActiveCell(null)}
+          onClick={() => {
+            setActiveCell(null);
+            if (selectedTool) setSelectedTool(null);
+          }}
+          style={showBackground ? {
+            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)',
+            backgroundSize: '24px 24px'
+          } : {}}
         >
           {/* Side Indicator */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
@@ -1018,14 +1199,23 @@ const App: React.FC = () => {
           </div>
 
           {/* Card Preview Container */}
-          <div className="preview-card-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className={cn("preview-card-container group preview-glow")}>
+          <div 
+            className="preview-card-wrapper" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div 
+              className={cn("preview-card-container group preview-glow")}
+              style={{ 
+                transform: `scale(${previewScale})`,
+                transformOrigin: 'center',
+                transition: 'transform 0.2s ease-out'
+              }}
+            >
               <Card 
                 data={currentCard} 
                 activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
                 onCellClick={(index) => handleCellClick(activeSide, index)}
                 onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
-                scale={previewScale}
                 cornerRadius={cornerRadius}
                 editable
               />
@@ -1043,10 +1233,9 @@ const App: React.FC = () => {
 
       {/* Website Footer */}
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
-        <div>&copy; 2026 Sagrada Pattern Designer</div>
+        <div>&copy; 2026 Sagrada Pattern Designer. Minden jog fenntartva.</div>
         <div className="flex items-center gap-4">
           <span>Verzió: v0.0.3.1</span>
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">GitHub</a>
         </div>
       </footer>
 
@@ -1121,7 +1310,14 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => {
                     const newCard = generateSagradaCard(genOptions);
-                    setCurrentCard(newCard);
+                    setCurrentCard(prev => ({
+                      ...prev,
+                      ...newCard,
+                      title: newCard.title,
+                      cells: newCard.cells,
+                      difficulty: newCard.difficulty,
+                      code: newCard.code
+                    }));
                     setShowGeneratorModal(false);
                     showNotification("Kártya sikeresen generálva!");
                   }}
@@ -1132,6 +1328,77 @@ const App: React.FC = () => {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Wiki Modal */}
+      <AnimatePresence>
+        {showWiki && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowWiki(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                  <BookOpen className="text-white" />
+                  Sagrada Designer Wiki
+                </h2>
+                <button 
+                  onClick={() => setShowWiki(false)}
+                  className="p-2 hover:bg-zinc-800 rounded-full transition-colors text-zinc-400"
+                >
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto space-y-8 text-zinc-300 custom-scrollbar">
+                <section className="space-y-3">
+                  <h3 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Szerkesztő használata</h3>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Kattints egy cellára a kijelöléshez, majd válassz színt vagy értéket az alsó panelen. 
+                    Ha először választasz színt/számot, az <span className="text-white font-bold">folyamatos kijelölési módba</span> vált: 
+                    ilyenkor több cellára kattintva is alkalmazhatod ugyanazt a mintát. A módból a háttérre kattintva léphetsz ki.
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Generálás</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    A "Generálás" gombbal véletlenszerű, de szabályos Sagrada mintákat hozhatsz létre. 
+                    A generált kártyák nehézségi pöttyöi fehérek maradnak, hogy később te magad jelölhesd be őket.
+                  </p>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Nyomtatás és PDF</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    Add a kártyákat a nyomtatási listához. A "Nyomtatás" panelen beállíthatod:
+                  </p>
+                  <ul className="text-xs text-zinc-400 space-y-2 list-disc pl-4">
+                    <li><span className="text-white font-bold">Kétoldalas mód:</span> Előlap és hátlap generálása.</li>
+                    <li><span className="text-white font-bold">Vágóélek:</span> Segédvonalak a pontos vágáshoz (ilyenkor a sarkok nem lekerekítettek).</li>
+                    <li><span className="text-white font-bold">Nyomtatóbarát mód:</span> Csökkenti a fekete festék használatát, csak a kereteket hagyja meg.</li>
+                  </ul>
+                </section>
+
+                <section className="space-y-3">
+                  <h4 className="text-sm font-bold text-blue-400 uppercase tracking-widest">Mentés</h4>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    A beállításaid (zoom, lekerekítés, nyomtató opciók) automatikusan mentődnek a böngésződben.
+                  </p>
+                </section>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -1173,6 +1440,9 @@ interface CardProps {
   id?: string;
   editable?: boolean;
   hideShadow?: boolean;
+  printerFriendly?: boolean;
+  printerOpacity?: number;
+  showCropMarks?: boolean;
 }
 
 const Card: React.FC<CardProps> = ({ 
@@ -1185,7 +1455,10 @@ const Card: React.FC<CardProps> = ({
   className, 
   id,
   editable = false,
-  hideShadow = false
+  hideShadow = false,
+  printerFriendly = false,
+  printerOpacity = 1,
+  showCropMarks = false
 }) => {
   const titleRef = React.useRef<HTMLSpanElement>(null);
   const codeRef = React.useRef<HTMLSpanElement>(null);
@@ -1211,14 +1484,23 @@ const Card: React.FC<CardProps> = ({
     }
   }, [data.title, data.titleSize, data.titleFont, data.code]);
 
+  const isGenerated = (data as any).isGenerated;
+
   return (
     <div 
       id={id}
-      className={cn("card-container", !hideShadow && "shadow-2xl", className)}
+      className={cn(
+        "card-container", 
+        !hideShadow && "shadow-2xl", 
+        printerFriendly && "printer-friendly",
+        showCropMarks && "crop-marks",
+        className
+      )}
       style={{ 
         transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-        borderRadius: `${cornerRadius}mm`
+        transformOrigin: 'center',
+        borderRadius: showCropMarks ? '0' : `${cornerRadius}mm`,
+        opacity: printerFriendly ? printerOpacity : 1
       }}
     >
       <div className="card-grid">
@@ -1265,33 +1547,50 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer">
-        <div className="card-title-container" ref={containerRef}>
+      <div className="card-footer" ref={containerRef}>
+        <div className="card-title-container">
           <span 
             ref={titleRef}
             className="card-title" 
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 14}pt`
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 14}pt`,
+              display: 'flex',
+              alignItems: 'center',
+              height: '100%'
             }}
           >
             {data.title}
           </span>
-          {data.code && <span ref={codeRef} className="card-code">({data.code})</span>}
+          {data.code && (
+            <span 
+              ref={codeRef} 
+              className="card-code"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%'
+              }}
+            >
+              ({data.code})
+            </span>
+          )}
         </div>
         <div className={cn("card-difficulty", editable && "editable")}>
           {Array.from({ length: 6 }).map((_, i) => {
-            // Fill from right: if difficulty is 3, dots at index 3, 4, 5 are active
-            const dotIndex = i; // 0 to 5
-            const isActive = dotIndex >= (6 - data.difficulty);
+            const isActive = i >= (6 - data.difficulty);
+            const isGeneratedDot = isGenerated && !isActive;
             return (
               <div 
                 key={i} 
-                className={cn("difficulty-dot", isActive && "active")}
+                className={cn(
+                  "difficulty-dot", 
+                  isActive && "active",
+                  isGeneratedDot && "generated"
+                )}
                 onClick={(e) => {
                   if (editable && onDifficultyChange) {
                     e.stopPropagation();
-                    // If we click dot at index i, difficulty becomes 6 - i
                     onDifficultyChange(6 - i);
                   }
                 }}

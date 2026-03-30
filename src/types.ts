@@ -15,6 +15,7 @@ export interface CardData {
   titleFont?: string;
   titleSize?: number;
   cornerRadius?: number;
+  isGenerated?: boolean;
 }
 
 export interface PatternQueueItem {
