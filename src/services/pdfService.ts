@@ -1,7 +1,8 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
+import { PatternQueueItem, CardData } from '../types';
 
-export async function generatePDF(queue, cornerRadius = 0) {
+export async function generatePDF(queue: PatternQueueItem[], cornerRadius: number = 0): Promise<void> {
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -37,13 +38,13 @@ export async function generatePDF(queue, cornerRadius = 0) {
 }
 
 async function renderBatchPage(
-  pdf, 
-  batch, 
-  side, 
-  container,
-  addNewPage,
-  cornerRadius = 0
-) {
+  pdf: jsPDF, 
+  batch: PatternQueueItem[], 
+  side: 'front' | 'back', 
+  container: HTMLDivElement,
+  addNewPage: boolean,
+  cornerRadius: number = 0
+): Promise<void> {
   if (addNewPage) {
     pdf.addPage();
   }
@@ -61,7 +62,7 @@ async function renderBatchPage(
 
   for (let idx = 0; idx < batch.length; idx++) {
     const item = batch[idx];
-    const cardData = side === 'front' ? item.front : (item.back || item.front);
+    const cardData: CardData = side === 'front' ? item.front : (item.back || item.front);
     
     const cardDiv = document.createElement('div');
     cardDiv.className = 'card-container';
@@ -82,7 +83,7 @@ async function renderBatchPage(
       <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
         ${cardData.cells.map(cell => {
           const dotColor = (cell.color === 'W' || cell.color === '.') ? 'black' : 'white';
-          const dots = {
+          const dots: Record<string, number[][]> = {
             '1': [[50, 50]], '2': [[25, 25], [75, 75]], '3': [[25, 25], [50, 50], [75, 75]],
             '4': [[25, 25], [25, 75], [75, 25], [75, 75]], '5': [[25, 25], [25, 75], [50, 50], [75, 25], [75, 75]],
             '6': [[25, 25], [25, 50], [25, 75], [75, 25], [75, 50], [75, 75]]
@@ -92,7 +93,7 @@ async function renderBatchPage(
           ).join('');
           const diceSvg = `data:image/svg+xml;base64,${btoa(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${circles}</svg>`)}`;
 
-          const colorMap = {
+          const colorMap: Record<string, string> = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
           };
           const bgColor = colorMap[cell.color] || '#ffffff';

@@ -641,7 +641,7 @@ const App: React.FC = () => {
                   </button>
 
                   <button 
-                    onClick={() => setCurrentCard(prev => ({ ...prev, cells: createEmptyGrid() }))}
+                    onClick={() => setCurrentCard(prev => ({ ...prev, cells: createEmptyGrid() as CellData[] }))}
                     className="w-full flex items-center justify-center gap-2 bg-transparent text-zinc-600 py-2 rounded-lg text-[10px] font-bold hover:text-red-500 transition-colors uppercase tracking-widest"
                   >
                     <Trash2 size={14} />
