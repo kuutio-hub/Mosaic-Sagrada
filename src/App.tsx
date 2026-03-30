@@ -641,7 +641,7 @@ const App: React.FC = () => {
                   </button>
 
                   <button 
-                    onClick={() => setCurrentCard(prev => ({ ...prev, cells: createEmptyGrid() as CellData[] }))}
+                    onClick={() => setCurrentCard(prev => ({ ...prev, cells: createEmptyGrid() }))}
                     className="w-full flex items-center justify-center gap-2 bg-transparent text-zinc-600 py-2 rounded-lg text-[10px] font-bold hover:text-red-500 transition-colors uppercase tracking-widest"
                   >
                     <Trash2 size={14} />
@@ -986,7 +986,7 @@ const App: React.FC = () => {
 
       {/* Footer / Status Bar */}
       <footer className="bg-zinc-900 border-t border-zinc-800 px-4 py-2 flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-        <div>Sagrada Pattern Designer v0.0.3.1</div>
+        <div>Sagrada Pattern Designer v0.0.3.0</div>
         <div className="flex items-center gap-4">
           <span>{activeSide === 'front' ? 'Előlap szerkesztése' : 'Hátlap szerkesztése'}</span>
           <span className="w-1 h-1 bg-zinc-700 rounded-full" />
