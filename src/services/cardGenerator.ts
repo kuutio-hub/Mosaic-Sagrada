@@ -2,10 +2,11 @@ import { CardData, CellData, Color, Value } from '../types';
 import { createEmptyGrid } from '../constants';
 
 interface GeneratorOptions {
-  colorCount: number; // How many different colors to use
-  coloredCells: number; // How many cells should have a color
-  valueCount: number; // How many different values to use (1-6)
-  valuedCells: number; // How many cells should have a value
+  colorCount: number;
+  coloredCells: number;
+  valueCount: number;
+  valuedCells: number;
+  symmetric?: boolean;
 }
 
 const COLORS: Color[] = ['R', 'G', 'B', 'Y', 'P'];
@@ -13,13 +14,11 @@ const VALUES: Value[] = ['1', '2', '3', '4', '5', '6'];
 
 export function generateSagradaCard(options: GeneratorOptions): CardData {
   const cells: CellData[] = createEmptyGrid();
-  const { colorCount, coloredCells, valueCount, valuedCells } = options;
+  const { colorCount, coloredCells, valueCount, valuedCells, symmetric = false } = options;
 
-  // 1. Select colors and values to use
   const selectedColors = [...COLORS].sort(() => Math.random() - 0.5).slice(0, colorCount);
   const selectedValues = [...VALUES].sort(() => Math.random() - 0.5).slice(0, valueCount);
 
-  // 2. Helper to check adjacency
   const isValid = (index: number, type: 'color' | 'value', val: string): boolean => {
     const row = Math.floor(index / 5);
     const col = index % 5;
@@ -40,44 +39,55 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     return true;
   };
 
-  // 3. Fill colors
-  let colorsPlaced = 0;
-  let attempts = 0;
+  const getSymmetricIndex = (index: number) => {
+    const row = Math.floor(index / 5);
+    const col = index % 5;
+    return row * 5 + (4 - col); // Horizontal symmetry
+  };
+
   const indices = Array.from({ length: 20 }, (_, i) => i).sort(() => Math.random() - 0.5);
 
-  while (colorsPlaced < coloredCells && attempts < 100) {
-    for (const idx of indices) {
-      if ((cells[idx].color === 'W' || cells[idx].color === '.') && cells[idx].value === '.') {
-        const color = selectedColors[Math.floor(Math.random() * selectedColors.length)];
-        if (isValid(idx, 'color', color)) {
-          cells[idx].color = color;
-          colorsPlaced++;
-          if (colorsPlaced >= coloredCells) break;
+  // Fill colors
+  let colorsPlaced = 0;
+  for (const idx of indices) {
+    if (colorsPlaced >= coloredCells) break;
+    if (cells[idx].color === 'W' && cells[idx].value === '.') {
+      const color = selectedColors[Math.floor(Math.random() * selectedColors.length)];
+      if (isValid(idx, 'color', color)) {
+        cells[idx].color = color;
+        colorsPlaced++;
+        
+        if (symmetric && colorsPlaced < coloredCells) {
+          const symIdx = getSymmetricIndex(idx);
+          if (symIdx !== idx && cells[symIdx].color === 'W' && cells[symIdx].value === '.' && isValid(symIdx, 'color', color)) {
+            cells[symIdx].color = color;
+            colorsPlaced++;
+          }
         }
       }
     }
-    attempts++;
   }
 
-  // 4. Fill values
+  // Fill values
   let valuesPlaced = 0;
-  attempts = 0;
-  indices.sort(() => Math.random() - 0.5);
+  const shuffledIndices = [...indices].sort(() => Math.random() - 0.5);
+  for (const idx of shuffledIndices) {
+    if (valuesPlaced >= valuedCells) break;
+    if (cells[idx].color === 'W' && cells[idx].value === '.') {
+      const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
+      if (isValid(idx, 'value', val)) {
+        cells[idx].value = val;
+        valuesPlaced++;
 
-  while (valuesPlaced < valuedCells && attempts < 100) {
-    for (const idx of indices) {
-      // Only place value if cell is empty (no color AND no value)
-      // 'W' and '.' are considered empty for color constraints in this context
-      if ((cells[idx].color === 'W' || cells[idx].color === '.') && cells[idx].value === '.') {
-        const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
-        if (isValid(idx, 'value', val)) {
-          cells[idx].value = val;
-          valuesPlaced++;
-          if (valuesPlaced >= valuedCells) break;
+        if (symmetric && valuesPlaced < valuedCells) {
+          const symIdx = getSymmetricIndex(idx);
+          if (symIdx !== idx && cells[symIdx].color === 'W' && cells[symIdx].value === '.' && isValid(symIdx, 'value', val)) {
+            cells[symIdx].value = val;
+            valuesPlaced++;
+          }
         }
       }
     }
-    attempts++;
   }
 
   // 5. Calculate difficulty (rough estimate based on number of constraints)

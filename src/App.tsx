@@ -16,6 +16,8 @@ import {
   Layout,
   ChevronDown,
   BookOpen,
+  Undo2,
+  Redo2,
   Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -85,6 +87,45 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [language, setLanguage] = useState<Language>('hu');
+  const [history, setHistory] = useState<{ front: CardData, back: CardData }[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [texture, setTexture] = useState<'none' | 'glass' | 'marble' | 'stained'>('none');
+
+  const saveToHistory = (f: CardData, b: CardData) => {
+    const newState = { 
+      front: JSON.parse(JSON.stringify(f)), 
+      back: JSON.parse(JSON.stringify(b)) 
+    };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    if (newHistory.length > 50) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setFront(JSON.parse(JSON.stringify(prev.front)));
+      setBack(JSON.parse(JSON.stringify(prev.back)));
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const next = history[historyIndex + 1];
+      setFront(JSON.parse(JSON.stringify(next.front)));
+      setBack(JSON.parse(JSON.stringify(next.back)));
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (historyIndex === -1) {
+      saveToHistory(front, back);
+    }
+  }, []);
 
   const t = (key: keyof typeof translations['hu'], params?: Record<string, string | number>) => {
     let text = translations[language][key] || translations['hu'][key] || key;
@@ -577,6 +618,24 @@ const App: React.FC = () => {
           >
             <span className="font-bold">Wiki</span>
           </button>
+
+          {/* Language Selection */}
+          <div className="flex items-center bg-zinc-800 rounded-lg p-1 ml-2 border border-zinc-700">
+            {(['hu', 'en', 'de'] as Language[]).map((lang) => (
+              <button
+                key={lang}
+                onClick={() => setLanguage(lang)}
+                className={cn(
+                  "px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all",
+                  language === lang 
+                    ? "bg-white text-black shadow-lg" 
+                    : "text-zinc-500 hover:text-zinc-300"
+                )}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -601,6 +660,25 @@ const App: React.FC = () => {
                 className="p-6 space-y-8"
               >
                 <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={undo}
+                      disabled={historyIndex <= 0}
+                      className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700"
+                      title={t('undo')}
+                    >
+                      <Undo2 size={18} />
+                    </button>
+                    <button 
+                      onClick={redo}
+                      disabled={historyIndex >= history.length - 1}
+                      className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700"
+                      title={t('redo')}
+                    >
+                      <Redo2 size={18} />
+                    </button>
+                  </div>
+
                   <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('cardData')}</h2>
                   <div className="space-y-3">
                     <div>
@@ -608,19 +686,17 @@ const App: React.FC = () => {
                       <input 
                         type="text" 
                         value={currentCard.title}
-                        onChange={(e) => setCurrentCard(prev => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) => {
+                          const newTitle = e.target.value;
+                          setCurrentCard(prev => {
+                            const updated = { ...prev, title: newTitle };
+                            if (activeSide === 'front') saveToHistory(updated, back);
+                            else saveToHistory(front, updated);
+                            return updated;
+                          });
+                        }}
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
                         placeholder={t('patternName')}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('altTitle')}</label>
-                      <input 
-                        type="text" 
-                        value={currentCard.altTitle || ''}
-                        onChange={(e) => setCurrentCard(prev => ({ ...prev, altTitle: e.target.value }))}
-                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                        placeholder={t('altTitle')}
                       />
                     </div>
                   </div>
@@ -849,6 +925,7 @@ const App: React.FC = () => {
                 cornerRadius={cornerRadius}
                 hideShadow
                 className="pointer-events-none"
+                texture={texture}
               />
                             </div>
                             <div className="flex-1 min-w-0">
@@ -883,6 +960,7 @@ const App: React.FC = () => {
                   cornerRadius={cornerRadius}
                   hideShadow
                   className="pointer-events-none"
+                  texture={texture}
                 />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1020,20 +1098,24 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
-                  {/* Language Selection */}
+                  {/* Texture Selection */}
                   <div className="space-y-4 pt-2 border-t border-zinc-800">
-                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('language')}</label>
-                    <div className="flex items-center gap-2 bg-zinc-800 p-2 rounded-xl border border-zinc-700">
-                      <Globe size={16} className="text-zinc-500 ml-2" />
-                      <select 
-                        value={language}
-                        onChange={(e) => setLanguage(e.target.value as Language)}
-                        className="flex-1 bg-transparent text-white text-xs font-bold outline-none cursor-pointer py-1"
-                      >
-                        <option value="hu">Magyar</option>
-                        <option value="en">English</option>
-                        <option value="de">Deutsch</option>
-                      </select>
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('texture')}</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['none', 'glass', 'marble', 'stained'] as const).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setTexture(t)}
+                          className={cn(
+                            "px-3 py-2 text-[10px] font-bold uppercase tracking-widest rounded-xl border transition-all",
+                            texture === t 
+                              ? "bg-white text-black border-white shadow-lg" 
+                              : "bg-zinc-800 text-zinc-500 border-zinc-700 hover:border-zinc-500"
+                          )}
+                        >
+                          {t}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -1176,16 +1258,6 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-
-                  <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-zinc-500">
-                      <Info size={16} />
-                      <p className="text-xs font-bold uppercase">{t('info')}</p>
-                    </div>
-                    <p className="text-xs text-zinc-500 leading-relaxed">
-                      {t('infoDesc')}
-                    </p>
-                  </div>
                 </div>
               </motion.div>
             )}
@@ -1252,6 +1324,7 @@ const App: React.FC = () => {
                 onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
                 cornerRadius={cornerRadius}
                 editable
+                texture={texture}
               />
               
               {/* Scale Info */}
@@ -1298,6 +1371,30 @@ const App: React.FC = () => {
               </div>
               
               <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                      <Layout size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white uppercase tracking-wider">{t('symmetric')}</p>
+                      <p className="text-[10px] text-zinc-500">{t('symmetricDesc') || 'Szimmetrikus mintázat generálása'}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setGenOptions(prev => ({ ...prev, symmetric: !prev.symmetric }))}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-all relative p-1",
+                      genOptions.symmetric ? "bg-blue-600" : "bg-zinc-700"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                      genOptions.symmetric ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('colorCount')}</label>
@@ -1344,14 +1441,19 @@ const App: React.FC = () => {
                 <button 
                   onClick={() => {
                     const newCard = generateSagradaCard(genOptions);
-                    setCurrentCard(prev => ({
-                      ...prev,
-                      ...newCard,
-                      title: newCard.title,
-                      cells: newCard.cells,
-                      difficulty: newCard.difficulty,
-                      code: newCard.code
-                    }));
+                    setCurrentCard(prev => {
+                      const updated = {
+                        ...prev,
+                        ...newCard,
+                        title: newCard.title,
+                        cells: newCard.cells,
+                        difficulty: newCard.difficulty,
+                        code: newCard.code
+                      };
+                      if (activeSide === 'front') saveToHistory(updated, back);
+                      else saveToHistory(front, updated);
+                      return updated;
+                    });
                     setShowGeneratorModal(false);
                     showNotification(t('cardGenerated'));
                   }}
@@ -1427,6 +1529,16 @@ const App: React.FC = () => {
                     {t('saveDesc')}
                   </p>
                 </section>
+
+                <section className="bg-zinc-800/50 border border-zinc-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-zinc-500">
+                    <Info size={16} />
+                    <h4 className="text-xs font-bold uppercase">{t('info')}</h4>
+                  </div>
+                  <p className="text-xs text-zinc-400 leading-relaxed">
+                    {t('infoDesc')}
+                  </p>
+                </section>
               </div>
             </motion.div>
           </motion.div>
@@ -1474,6 +1586,7 @@ interface CardProps {
   printerFriendly?: boolean;
   printerOpacity?: number;
   showCropMarks?: boolean;
+  texture?: 'none' | 'glass' | 'marble' | 'stained';
 }
 
 const Card: React.FC<CardProps> = ({ 
@@ -1489,7 +1602,8 @@ const Card: React.FC<CardProps> = ({
   hideShadow = false,
   printerFriendly = false,
   printerOpacity = 1,
-  showCropMarks = false
+  showCropMarks = false,
+  texture = 'none'
 }) => {
   const titleRef = React.useRef<HTMLSpanElement>(null);
   const codeRef = React.useRef<HTMLSpanElement>(null);
@@ -1498,18 +1612,17 @@ const Card: React.FC<CardProps> = ({
 
   React.useLayoutEffect(() => {
     if (titleRef.current && containerRef.current) {
-      const codeWidth = codeRef.current ? codeRef.current.offsetWidth + 8 : 0;
-      const containerWidth = Math.max(50, containerRef.current.clientWidth - 12 - codeWidth);
+      const containerWidth = containerRef.current.clientWidth - 12;
       const baseFontSize = data.titleSize || 14;
       let currentFontSize = baseFontSize;
       
-      // Reset to base size first to measure
       titleRef.current.style.fontSize = `${currentFontSize}pt`;
       
-      // Shrink if overflows
-      while (titleRef.current.scrollWidth > containerWidth && currentFontSize > 6) {
-        currentFontSize -= 0.5;
+      let attempts = 0;
+      while (titleRef.current.scrollWidth > containerWidth && currentFontSize > 4 && attempts < 50) {
+        currentFontSize -= 0.2;
         titleRef.current.style.fontSize = `${currentFontSize}pt`;
+        attempts++;
       }
       setAdjustedFontSize(currentFontSize);
     }
@@ -1551,7 +1664,11 @@ const Card: React.FC<CardProps> = ({
           >
             {cell.color !== '.' && (
               <div 
-                className={cn("color-overlay", `c-${cell.color.toLowerCase()}`)} 
+                className={cn(
+                  "color-overlay", 
+                  `c-${cell.color.toLowerCase()}`,
+                  texture !== 'none' && `texture-${texture}`
+                )} 
               />
             )}
             {cell.value !== '.' && (
