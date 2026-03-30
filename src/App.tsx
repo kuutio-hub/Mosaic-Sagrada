@@ -91,7 +91,7 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('/data/promos.json')
+    fetch('/promos.json')
       .then(res => res.json())
       .then(data => setPromos(data))
       .catch(err => console.error("Failed to load promos:", err));

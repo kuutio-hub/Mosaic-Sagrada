@@ -1,0 +1,40 @@
+# Vercel Deployment Követelmények (Prompt 0)
+
+Ez a fájl tartalmazza a Vercel-en történő sikeres deployoláshoz szükséges technikai és kódolási követelményeket.
+
+## 1. Technológiai Stack
+- **React:** 18+
+- **Build Tool:** Vite
+- **Nyelv:** TypeScript (szigorú típusosság)
+- **Stílus:** Tailwind CSS (nincs CSS-in-JS, nincs külön CSS fájl)
+
+## 2. Projekt Szerkezet
+- `package.json`: Kötelező, nem módosítható/törölhető.
+- `metadata.json`: Alkalmazásnév, leírás, engedélyek.
+- `.env.example`: Környezeti változók dokumentálása.
+- `src/`: Forráskód.
+- `dist/`: Build kimenet (npm run build).
+
+## 3. Kódolási Szabványok
+- **TypeScript:** Szigorú típusosság, named imports (nincs object destructuring), standard `enum` (nincs `const enum`).
+- **Importok:** Legfelül, named imports.
+- **Komponensek:** Funkcionális komponensek, hookok.
+
+## 4. API és Biztonság
+- **Harmadik fél API kulcsok:** Szerveroldali kezelés (Express + Vite).
+- **Gemini API:** `@google/genai` SDK, csak frontend.
+- **API Kulcs UI:** Tilos saját UI-t készíteni API kulcsoknak.
+- **Környezeti változók:** `.env.example` használata.
+
+## 5. Könyvtárak
+- **Animáció:** `motion` (import: `motion/react`).
+- **Ikonok:** `lucide-react`.
+- **Adatvizualizáció:** `d3`, `recharts`.
+
+## 6. Build és Deploy
+- **Build parancs:** `npm run build` (NODE_ENV=production).
+- **Start parancs:** `node server.ts` (full-stack esetén).
+- **Port:** 3000 (hardcoded).
+
+## 7. Tanulságok és Hibajavítások (Folyamatosan frissítve)
+- **TypeScript TS2345 hiba:** Állapotfrissítések (`useState`) esetén a `setState` callback-ben a visszatérési értéknek pontosan meg kell egyeznie a state típusával. Spread operátor (`...`) helyett explicit objektum létrehozás ajánlott, ha a típushelyesség nem garantált.
