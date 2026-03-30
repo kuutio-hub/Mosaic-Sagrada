@@ -8,6 +8,7 @@ export interface CellData {
 
 export interface CardData {
   title: string;
+  altTitle?: string;
   difficulty: number;
   cells: CellData[];
   code?: string;

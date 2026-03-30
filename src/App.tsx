@@ -33,6 +33,7 @@ import {
 } from './constants';
 import { cn, generateId } from './lib/utils';
 import { generatePDF } from './services/pdfService';
+import { generateSagradaCard } from './services/cardGenerator';
 
 const getDiceSvgDataUrl = (value: string, color: string) => {
   const dots: Record<string, number[][]> = {
@@ -72,6 +73,13 @@ const App: React.FC = () => {
   const [isColorsExpanded, setIsColorsExpanded] = useState(true);
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [showGeneratorModal, setShowGeneratorModal] = useState(false);
+  const [genOptions, setGenOptions] = useState({
+    colorCount: 5,
+    coloredCells: 6,
+    valueCount: 6,
+    valuedCells: 6
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentCard = activeSide === 'front' ? front : back;
@@ -391,8 +399,16 @@ const App: React.FC = () => {
               activePanel === 'editor' ? "bg-white text-black" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}
           >
-            <Plus size={18} />
-            <span className="hidden md:inline">Szerkesztő</span>
+            <span className="font-bold">Szerkesztő</span>
+          </button>
+          <button 
+            onClick={() => setShowGeneratorModal(true)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+              "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            )}
+          >
+            <span className="font-bold">Generálás</span>
           </button>
           <button 
             onClick={() => setActivePanel('queue')}
@@ -401,7 +417,7 @@ const App: React.FC = () => {
               activePanel === 'queue' ? "bg-white text-black" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}
           >
-            <Layers size={18} />
+            <Printer size={18} />
             <span className="hidden md:inline">Nyomtatási lista</span>
             {queue.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-zinc-900">
@@ -494,6 +510,16 @@ const App: React.FC = () => {
                         onChange={(e) => setCurrentCard(prev => ({ ...prev, title: e.target.value }))}
                         className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
                         placeholder="Minta név"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1 block">Alternatív név (zárójelben)</label>
+                      <input 
+                        type="text" 
+                        value={currentCard.altTitle || ''}
+                        onChange={(e) => setCurrentCard(prev => ({ ...prev, altTitle: e.target.value }))}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
+                        placeholder="Alternatív név"
                       />
                     </div>
                   </div>
@@ -691,51 +717,82 @@ const App: React.FC = () => {
                     queue.map((item, idx) => (
                       <div 
                         key={item.id}
-                        className="group bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-4 hover:border-zinc-600 transition-all cursor-pointer shadow-sm"
+                        className="group bg-zinc-950 border border-zinc-800 rounded-xl p-3 flex flex-col gap-3 hover:border-zinc-600 transition-all cursor-pointer shadow-sm relative"
                         onClick={() => loadFromQueue(item)}
                       >
-                        <div className="w-20 h-18 bg-black rounded-lg flex items-center justify-center overflow-hidden p-0.5 shrink-0 border border-zinc-800 group-hover:border-zinc-600 transition-colors">
-                          <div className="origin-top-left scale-[0.21]">
-                            <Card data={item.front} activeCellIndex={null} hideShadow />
+                        <div className="flex gap-3">
+                          <div className="flex flex-col gap-2 shrink-0">
+                            <div className="w-16 h-14 bg-black rounded-lg flex items-center justify-center overflow-hidden p-0.5 border border-zinc-700 group-hover:border-zinc-500 transition-colors">
+                              <div className="origin-top-left scale-[0.17] border border-white">
+                                <Card data={item.front} activeCellIndex={null} hideShadow />
+                              </div>
+                            </div>
+                            {item.isDoubleSided && item.back && (
+                              <div className="w-16 h-14 bg-black rounded-lg flex items-center justify-center overflow-hidden p-0.5 border border-zinc-700 group-hover:border-zinc-500 transition-colors">
+                                <div className="origin-top-left scale-[0.17] border border-white">
+                                  <Card data={item.back} activeCellIndex={null} hideShadow />
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold truncate text-white group-hover:text-blue-400 transition-colors">{item.front.title}</p>
-                          <div className="flex flex-col gap-1 mt-1">
-                            <p className="text-[10px] text-zinc-500 uppercase font-bold flex items-center gap-1.5">
-                              {item.isDoubleSided ? (
-                                <span className="flex items-center gap-1 text-blue-500">
-                                  <FlipHorizontal size={10} />
-                                  Kétoldalas
-                                </span>
-                              ) : (
-                                <span className="text-zinc-600">Egyoldalas</span>
+                          
+                          <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
+                            <div className="space-y-2">
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Előlap</p>
+                                <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
+                                  {item.front.title}
+                                </p>
+                                <div className="flex gap-0.5 mt-1">
+                                  {Array.from({ length: 6 }).map((_, i) => {
+                                    const isActive = i >= (6 - item.front.difficulty);
+                                    return (
+                                      <div 
+                                        key={i} 
+                                        className={cn(
+                                          "w-1 h-1 rounded-full",
+                                          isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
+                                        )} 
+                                      />
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {item.isDoubleSided && item.back && (
+                                <div className="space-y-0.5">
+                                  <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider">Hátlap</p>
+                                  <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
+                                    {item.back.title}
+                                  </p>
+                                  <div className="flex gap-0.5 mt-1">
+                                    {Array.from({ length: 6 }).map((_, i) => {
+                                      const isActive = i >= (6 - item.back!.difficulty);
+                                      return (
+                                        <div 
+                                          key={i} 
+                                          className={cn(
+                                            "w-1 h-1 rounded-full",
+                                            isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
+                                          )} 
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               )}
-                            </p>
-                            <div className="flex gap-0.5">
-                              {Array.from({ length: 6 }).map((_, i) => {
-                                const isActive = i >= (6 - item.front.difficulty);
-                                return (
-                                  <div 
-                                    key={i} 
-                                    className={cn(
-                                      "w-1.5 h-1.5 rounded-full",
-                                      isActive ? "bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)]" : "bg-zinc-800"
-                                    )} 
-                                  />
-                                );
-                              })}
                             </div>
                           </div>
                         </div>
+
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFromQueue(item.id);
                           }}
-                          className="p-2 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                          className="absolute top-2 right-2 p-1.5 text-zinc-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     ))
@@ -984,15 +1041,99 @@ const App: React.FC = () => {
         </section>
       </main>
 
-      {/* Footer / Status Bar */}
-      <footer className="bg-zinc-900 border-t border-zinc-800 px-4 py-2 flex items-center justify-between text-[10px] font-bold text-zinc-600 uppercase tracking-widest">
-        <div>Sagrada Pattern Designer v0.0.3.0</div>
+      {/* Website Footer */}
+      <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
+        <div>&copy; 2026 Sagrada Pattern Designer</div>
         <div className="flex items-center gap-4">
-          <span>{activeSide === 'front' ? 'Előlap szerkesztése' : 'Hátlap szerkesztése'}</span>
-          <span className="w-1 h-1 bg-zinc-700 rounded-full" />
-          <span>{queue.length} kártya a listán</span>
+          <span>Verzió: v0.0.3.1</span>
+          <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">GitHub</a>
         </div>
       </footer>
+
+      {/* Generator Modal */}
+      <AnimatePresence>
+        {showGeneratorModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGeneratorModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">Kártya generálása</h3>
+                <button onClick={() => setShowGeneratorModal(false)} className="text-zinc-500 hover:text-white">
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Színek száma</label>
+                    <input 
+                      type="number" 
+                      min="1" max="5"
+                      value={genOptions.colorCount}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, colorCount: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Színes cellák</label>
+                    <input 
+                      type="number" 
+                      min="0" max="10"
+                      value={genOptions.coloredCells}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Számok száma</label>
+                    <input 
+                      type="number" 
+                      min="1" max="6"
+                      value={genOptions.valueCount}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, valueCount: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Számos cellák</label>
+                    <input 
+                      type="number" 
+                      min="0" max="10"
+                      value={genOptions.valuedCells}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    const newCard = generateSagradaCard(genOptions);
+                    setCurrentCard(newCard);
+                    setShowGeneratorModal(false);
+                    showNotification("Kártya sikeresen generálva!");
+                  }}
+                  className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg"
+                >
+                  Generálás indítása
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Notification */}
       <AnimatePresence>
