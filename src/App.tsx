@@ -47,7 +47,7 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   
   // Használd a relatív útvonalat a PNG-khez, az assets mappából
   if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `./assets/Cells/${value}.png`;
+    return `/Cells/${value}.png`;
   }
   
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
@@ -1531,7 +1531,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.2.2</span>
+          <span>{t('version')}: v1.2.3</span>
         </div>
       </footer>
 
