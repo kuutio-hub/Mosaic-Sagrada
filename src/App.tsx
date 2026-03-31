@@ -204,8 +204,11 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('/promos.json')
-      .then(res => res.json())
+    fetch('./promos.json')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         console.log("Promos loaded:", data);
         setPromos(data);
