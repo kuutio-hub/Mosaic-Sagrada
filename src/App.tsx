@@ -45,9 +45,9 @@ import { translations, Language } from './i18n';
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
-  // Használd a relatív útvonalat a PNG-khez, hogy biztosan megtalálja őket a Vercel
+  // Használd a relatív útvonalat a PNG-khez, az assets mappából
   if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `./Cells/${value}.png`;
+    return `./assets/Cells/${value}.png`;
   }
   
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
@@ -204,7 +204,7 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('./promos.json')
+    fetch('./assets/promos.json')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -1528,7 +1528,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.2.0</span>
+          <span>{t('version')}: v1.2.1</span>
         </div>
       </footer>
 
