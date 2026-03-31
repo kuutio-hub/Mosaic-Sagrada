@@ -204,7 +204,7 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('./assets/promos.json')
+    fetch('/promos.json')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -807,7 +807,10 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={getValueSvgDataUrl(val)}
+                                        src={`/Cells/${val}.png`}
+                                        onError={(e) => {
+                                          e.currentTarget.src = getValueSvgDataUrl(val);
+                                        }}
                                         alt={val}
                                         className="w-full h-full object-contain opacity-100 block scale-[1.02]"
                                       />
@@ -1528,7 +1531,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.2.1</span>
+          <span>{t('version')}: v1.2.2</span>
         </div>
       </footer>
 
