@@ -67,18 +67,26 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     if (colorsPlaced >= coloredCells) break;
     if (cells[idx].color === 'W' && cells[idx].value === '.') {
       const color = selectedColors[Math.floor(Math.random() * selectedColors.length)];
-      if (isValid(idx, 'color', color)) {
+      
+      const symIndices = getSymmetricIndices(idx);
+      
+      // Check if idx and all symIndices are valid
+      let allValid = isValid(idx, 'color', color);
+      if (allValid) {
+        for (const symIdx of symIndices) {
+          if (cells[symIdx].color !== 'W' || cells[symIdx].value !== '.' || !isValid(symIdx, 'color', color)) {
+            allValid = false;
+            break;
+          }
+        }
+      }
+      
+      if (allValid) {
         cells[idx].color = color;
         colorsPlaced++;
-        
-        if (symmetric || horizontalSymmetry || verticalSymmetry) {
-          const symIndices = getSymmetricIndices(idx);
-          for (const symIdx of symIndices) {
-            if (colorsPlaced < coloredCells && cells[symIdx].color === 'W' && cells[symIdx].value === '.' && isValid(symIdx, 'color', color)) {
-              cells[symIdx].color = color;
-              colorsPlaced++;
-            }
-          }
+        for (const symIdx of symIndices) {
+          cells[symIdx].color = color;
+          colorsPlaced++;
         }
       }
     }
@@ -92,18 +100,26 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     // A cell can only have a color OR a value, not both
     if (cells[idx].value === '.' && cells[idx].color === 'W') {
       const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
-      if (isValid(idx, 'value', val)) {
+      
+      const symIndices = getSymmetricIndices(idx);
+      
+      // Check if idx and all symIndices are valid
+      let allValid = isValid(idx, 'value', val);
+      if (allValid) {
+        for (const symIdx of symIndices) {
+          if (cells[symIdx].value !== '.' || cells[symIdx].color !== 'W' || !isValid(symIdx, 'value', val)) {
+            allValid = false;
+            break;
+          }
+        }
+      }
+      
+      if (allValid) {
         cells[idx].value = val;
         valuesPlaced++;
-
-        if (symmetric || horizontalSymmetry || verticalSymmetry) {
-          const symIndices = getSymmetricIndices(idx);
-          for (const symIdx of symIndices) {
-            if (valuesPlaced < valuedCells && cells[symIdx].value === '.' && cells[symIdx].color === 'W' && isValid(symIdx, 'value', val)) {
-              cells[symIdx].value = val;
-              valuesPlaced++;
-            }
-          }
+        for (const symIdx of symIndices) {
+          cells[symIdx].value = val;
+          valuesPlaced++;
         }
       }
     }

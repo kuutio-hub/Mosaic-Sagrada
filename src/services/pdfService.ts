@@ -82,7 +82,7 @@ function generateCardHTML(
         let valueImgSrc = '';
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
-            valueImgSrc = `${window.location.origin}/Cells/${cell.value}.png`;
+            valueImgSrc = `/Cells/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`

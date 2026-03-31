@@ -47,7 +47,7 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   
   // Use PNGs for numbers 1-6
   if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `${window.location.origin}/Cells/${value}.png`;
+    return `/Cells/${value}.png`;
   }
   
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
@@ -206,7 +206,10 @@ const App: React.FC = () => {
   useEffect(() => {
     fetch('/promos.json')
       .then(res => res.json())
-      .then(data => setPromos(data))
+      .then(data => {
+        console.log("Promos loaded:", data);
+        setPromos(data);
+      })
       .catch(err => console.error("Failed to load promos:", err));
 
     const saved = localStorage.getItem('customCards');
