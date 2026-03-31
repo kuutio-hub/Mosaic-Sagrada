@@ -82,7 +82,7 @@ function generateCardHTML(
         let valueImgSrc = '';
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
-            valueImgSrc = `/assets/Cells/${cell.value}.png`;
+            valueImgSrc = `${window.location.origin}/Cells/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`
@@ -115,9 +115,9 @@ function generateCardHTML(
   return `
     <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.4mm solid #000000;' : ''}">
       ${cellsHTML}
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: ${printerFriendly ? '0.2mm solid #000000' : 'none'};">
-        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left; padding-top: 2mm;">
-          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: ${finalFontSize}pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10.2mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: none;">
+        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left; padding-top: 2.5mm;">
+          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 12pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; padding-top: 0.5mm;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
         <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; width: ${dotsWidth}mm; height: 100%;">
           ${Array.from({ length: 6 }).map((_, i) => {

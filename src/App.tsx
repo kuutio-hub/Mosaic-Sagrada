@@ -47,7 +47,7 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   
   // Use PNGs for numbers 1-6
   if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `/assets/Cells/${value}.png`;
+    return `${window.location.origin}/Cells/${value}.png`;
   }
   
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
@@ -1743,7 +1743,7 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer" ref={containerRef}>
+      <div className="card-footer" ref={containerRef} style={{ height: '10.2mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
         <div className="card-title-container">
           <span 
             ref={titleRef}
@@ -1753,7 +1753,8 @@ const Card: React.FC<CardProps> = ({
               fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
               display: 'flex',
               alignItems: 'center',
-              height: '100%'
+              height: '100%',
+              paddingTop: '0.5mm' // Fine tune vertical alignment
             }}
           >
             {data.title} {data.code || ''}

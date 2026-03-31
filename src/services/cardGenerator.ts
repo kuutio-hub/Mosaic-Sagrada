@@ -117,12 +117,11 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   else if (totalConstraints <= 12) difficulty = 5;
   else difficulty = 6;
 
-  // Generate a date-based name
-  const date = new Date();
-  const dateStr = date.toISOString().replace(/[-:T]/g, '').slice(0, 14);
+  // Generate a short short name
+  const shortId = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   return {
-    title: `Gen-${dateStr}`,
+    title: `Gen-${shortId}`,
     difficulty,
     cells,
     code: '', // Remove seed from code as it's not reproducible

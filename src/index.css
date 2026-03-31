@@ -159,13 +159,17 @@ body {
 }
 
 .card-footer {
-  margin-top: auto;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   padding: 0 2.5mm;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 10mm;
+  height: 10.2mm;
   background: black;
+  box-sizing: border-box;
 }
 
 /* Textures removed */
@@ -178,12 +182,12 @@ body {
   min-width: 0;
   overflow: hidden;
   container-type: inline-size;
-  padding-top: 2mm; /* Move title slightly down */
+  padding-top: 2.5mm; /* Move title slightly down */
 }
 
 .card-title {
   font-family: "Uncial Antiqua", serif;
-  font-size: min(12pt, 12cqi);
+  font-size: 12pt;
   text-transform: uppercase;
   white-space: nowrap;
   line-height: 1;
@@ -263,7 +267,7 @@ body {
 
 .card-container.printer-friendly .card-footer {
   background: white !important;
-  border-top: 0.2mm solid black !important;
+  border-top: none !important;
 }
 
 .card-container.printer-friendly .card-title,
