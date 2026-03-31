@@ -123,7 +123,11 @@ export const translations = {
     undo: "Visszavonás",
     redo: "Újra",
     symmetric: "Szimmetrikus",
-    symmetricDesc: "Szimmetrikus mintázat generálása"
+    symmetricDesc: "Szimmetrikus mintázat generálása",
+    dataManagementDesc: "Adatok importálása és exportálása.",
+    horizontalSymmetry: "Vízszintes szimmetria",
+    verticalSymmetry: "Függőleges szimmetria",
+    cardAddedToQueue: "Hozzáadva a nyomtatási listához"
   },
   en: {
     title: "Sagrada Pattern Designer",
@@ -247,7 +251,11 @@ export const translations = {
     undo: "Undo",
     redo: "Redo",
     symmetric: "Symmetric",
-    symmetricDesc: "Generate symmetric pattern"
+    symmetricDesc: "Generate symmetric pattern",
+    dataManagementDesc: "Import and export data.",
+    horizontalSymmetry: "Horizontal Symmetry",
+    verticalSymmetry: "Vertical Symmetry",
+    cardAddedToQueue: "Added to print queue"
   },
   de: {
     title: "Sagrada Muster Designer",
@@ -371,6 +379,10 @@ export const translations = {
     undo: "Rückgängig",
     redo: "Wiederholen",
     symmetric: "Symmetrisch",
-    symmetricDesc: "Symmetrisches Muster generieren"
+    symmetricDesc: "Symmetrisches Muster generieren",
+    dataManagementDesc: "Daten importieren und exportieren.",
+    horizontalSymmetry: "Horizontale Symmetrie",
+    verticalSymmetry: "Vertikale Symmetrie",
+    cardAddedToQueue: "Zur Druckliste hinzugefügt"
   }
 };
