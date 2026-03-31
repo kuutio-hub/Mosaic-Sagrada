@@ -82,7 +82,8 @@ function generateCardHTML(
         let valueImgSrc = '';
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
-            valueImgSrc = `/Cells/${cell.value}.png`;
+            // Használd a relatív útvonalat a PDF generálásnál is
+            valueImgSrc = `./Cells/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`

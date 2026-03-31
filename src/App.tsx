@@ -45,9 +45,9 @@ import { translations, Language } from './i18n';
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
-  // Use PNGs for numbers 1-6
+  // Használd a relatív útvonalat a PNG-khez, hogy biztosan megtalálja őket a Vercel
   if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `/Cells/${value}.png`;
+    return `./Cells/${value}.png`;
   }
   
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
