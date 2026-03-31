@@ -79,11 +79,19 @@ function generateCardHTML(
         const isX = cell.value === 'X';
         const hasValue = cell.value !== '.' && cell.value !== 'X';
         
-        const valueSvg = hasValue ? `data:image/svg+xml;base64,${btoa(`
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-            <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="80" fill="${dotColor(cell.color)}">${cell.value}</text>
-          </svg>
-        `)}` : '';
+        let valueImgSrc = '';
+        if (hasValue) {
+          if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
+            valueImgSrc = `/assets/Cells/${cell.value}.png`;
+          } else {
+            // Fallback for other values if any
+            valueImgSrc = `data:image/svg+xml;base64,${btoa(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="80" fill="${dotColor(cell.color)}">${cell.value}</text>
+              </svg>
+            `)}`;
+          }
+        }
 
         return `
           <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? '#f3f4f6' : '#ffffff'}; overflow: hidden; border: 0.2mm solid #000000;">
@@ -94,7 +102,7 @@ function generateCardHTML(
               <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                 ${isX ? 
                   `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueSvg}" style="width: 100%; height: 100%; object-fit: cover;" />`
+                  `<img src="${valueImgSrc}" style="width: 100%; height: 100%; object-fit: cover;" />`
                 }
               </div>
             ` : ''}
@@ -105,10 +113,10 @@ function generateCardHTML(
   `;
 
   return `
-    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden;">
+    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.4mm solid #000000;' : ''}">
       ${cellsHTML}
       <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: ${printerFriendly ? '0.2mm solid #000000' : 'none'};">
-        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left;">
+        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left; padding-top: 2mm;">
           <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: ${finalFontSize}pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
         <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; width: ${dotsWidth}mm; height: 100%;">
@@ -182,9 +190,6 @@ async function renderBatchPage(
     cardDiv.style.flexDirection = 'column';
     
     cardDiv.style.background = printerFriendly ? '#ffffff' : '#000000';
-    if (printerFriendly) {
-      cardDiv.style.border = '0.2mm solid #000000';
-    }
     
     const col = side === 'front' ? (idx % 2) : (1 - (idx % 2));
     const row = Math.floor(idx / 2);

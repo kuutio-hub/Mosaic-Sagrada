@@ -164,7 +164,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 12mm;
+  height: 10mm;
   background: black;
 }
 
@@ -178,11 +178,12 @@ body {
   min-width: 0;
   overflow: hidden;
   container-type: inline-size;
+  padding-top: 2mm; /* Move title slightly down */
 }
 
 .card-title {
   font-family: "Uncial Antiqua", serif;
-  font-size: min(14pt, 12cqi);
+  font-size: min(12pt, 12cqi);
   text-transform: uppercase;
   white-space: nowrap;
   line-height: 1;
@@ -252,4 +253,32 @@ body {
   aspect-ratio: 1;
   width: 100%;
   border-radius: 0.375rem;
+}
+
+.card-container.printer-friendly {
+  background: white !important;
+  color: black !important;
+  border: 0.4mm solid black !important;
+}
+
+.card-container.printer-friendly .card-footer {
+  background: white !important;
+  border-top: 0.2mm solid black !important;
+}
+
+.card-container.printer-friendly .card-title,
+.card-container.printer-friendly .card-code {
+  color: black !important;
+}
+
+.card-container.printer-friendly .difficulty-dot {
+  background-color: #e5e7eb !important;
+}
+
+.card-container.printer-friendly .difficulty-dot.active {
+  background-color: black !important;
+}
+
+.card-container.printer-friendly .card-cell {
+  border: 0.1mm solid #000000;
 }

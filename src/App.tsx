@@ -45,6 +45,11 @@ import { translations, Language } from './i18n';
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
+  // Use PNGs for numbers 1-6
+  if (['1', '2', '3', '4', '5', '6'].includes(value)) {
+    return `/assets/Cells/${value}.png`;
+  }
+  
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -1665,7 +1670,7 @@ const Card: React.FC<CardProps> = ({
   React.useLayoutEffect(() => {
     if (titleRef.current && containerRef.current) {
       const containerWidth = containerRef.current.clientWidth - 12;
-      const baseFontSize = data.titleSize || 14;
+      const baseFontSize = data.titleSize || 12;
       let currentFontSize = baseFontSize;
       
       titleRef.current.style.fontSize = `${currentFontSize}pt`;
@@ -1745,7 +1750,7 @@ const Card: React.FC<CardProps> = ({
             className="card-title" 
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 14}pt`,
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
               display: 'flex',
               alignItems: 'center',
               height: '100%'
