@@ -82,8 +82,8 @@ function generateCardHTML(
         let valueImgSrc = '';
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
-            // Használd az abszolút útvonalat a public mappából
-            valueImgSrc = `/Cells/${cell.value}.png`;
+            // Használd a GitHub útvonalat, fallback a public mappával
+            valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`
@@ -103,7 +103,7 @@ function generateCardHTML(
               <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                 ${isX ? 
                   `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueImgSrc}" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,${btoa(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='80' fill='${dotColor(cell.color)}'>${cell.value}</text></svg>`)}';" style="width: 100%; height: 100%; object-fit: cover;" />`
+                  `<img src="${valueImgSrc}" onerror="this.onerror=null;this.src='/Cells/${cell.value}.png';this.onerror=function(){this.onerror=null;this.src='data:image/svg+xml;base64,${btoa(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='80' fill='${dotColor(cell.color)}'>${cell.value}</text></svg>`)}';};" style="width: 100%; height: 100%; object-fit: cover;" />`
                 }
               </div>
             ` : ''}
