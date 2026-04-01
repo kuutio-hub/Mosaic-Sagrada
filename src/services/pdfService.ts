@@ -97,7 +97,7 @@ function generateCardHTML(
               ${dots[cell.value] || ''}
             </svg>
           `)}`;
-          valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
+          valueImgSrc = `https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`;
         }
 
         return `
