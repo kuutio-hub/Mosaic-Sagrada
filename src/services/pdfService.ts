@@ -80,23 +80,24 @@ function generateCardHTML(
         const hasValue = cell.value !== '.' && cell.value !== 'X';
         
         let valueImgSrc = '';
+        let svgFallback = '';
         if (hasValue) {
           const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
-          const dotSize = 12;
+          const dotSize = 10;
           const dots: Record<string, string> = {
             '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-            '2': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-            '3': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-            '4': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-            '5': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-            '6': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`
+            '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+            '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+            '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+            '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+            '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
           };
-          valueImgSrc = `data:image/svg+xml;base64,${btoa(`
+          svgFallback = `data:image/svg+xml;base64,${btoa(`
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-              <rect x="5" y="5" width="90" height="90" rx="15" ry="15" fill="none" stroke="${dotColor}" stroke-width="5" />
               ${dots[cell.value] || ''}
             </svg>
           `)}`;
+          valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
         }
 
         return `
@@ -108,7 +109,7 @@ function generateCardHTML(
               <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                 ${isX ? 
                   `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueImgSrc}" style="width: 100%; height: 100%; object-fit: cover;" />`
+                  `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width: 100%; height: 100%; object-fit: cover;" />`
                 }
               </div>
             ` : ''}

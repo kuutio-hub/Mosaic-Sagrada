@@ -47,19 +47,19 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
   const dotColor = (color === 'W' || color === '.') ? '#333333' : 'white';
-  const dotSize = 12;
+  const dotSize = 10;
+  // Compact layout for 10x10 feel in 15x15 cell (viewBox 100x100)
   const dots: Record<string, string> = {
     '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-    '2': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-    '3': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-    '4': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-    '5': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`,
-    '6': `<circle cx="25" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="25" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="25" cy="75" r="${dotSize}" fill="${dotColor}" /><circle cx="75" cy="75" r="${dotSize}" fill="${dotColor}" />`
+    '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+    '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+    '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+    '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+    '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
   };
 
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-      <rect x="5" y="5" width="90" height="90" rx="15" ry="15" fill="none" stroke="${dotColor}" stroke-width="5" />
       ${dots[value] || ''}
     </svg>
   `;
@@ -818,7 +818,11 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={getValueSvgDataUrl(val)}
+                                        src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${val}.png`}
+                                        onError={(e) => {
+                                          e.currentTarget.onerror = null;
+                                          e.currentTarget.src = getValueSvgDataUrl(val);
+                                        }}
                                         alt={val}
                                         className="w-full h-full object-contain opacity-100 block scale-[1.02]"
                                       />
@@ -1750,7 +1754,11 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={getValueSvgDataUrl(cell.value, cell.color)}
+                    src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`}
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
+                    }}
                     alt={cell.value}
                   />
                 )}
