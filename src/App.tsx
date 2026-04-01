@@ -806,7 +806,7 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`/assets/Cells/${val}.png`}
+                                        src={`/Cells/${val}.png`}
                                         onError={(e) => {
                                           e.currentTarget.onerror = null;
                                           e.currentTarget.src = getValueSvgDataUrl(val);
