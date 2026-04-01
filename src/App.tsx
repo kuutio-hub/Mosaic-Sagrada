@@ -48,7 +48,7 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-      <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="80" fill="${textColor}">${value}</text>
+      <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="65" fill="${textColor}">${value}</text>
     </svg>
   `;
   return `data:image/svg+xml;base64,${btoa(svg)}`;
@@ -59,9 +59,9 @@ const App: React.FC = () => {
   const [back, setBack] = useState<CardData>(JSON.parse(JSON.stringify(DEFAULT_BACK)));
   const [queue, setQueue] = useState<PatternQueueItem[]>([]);
   const [activeSide, setActiveSide] = useState<'front' | 'back'>('front');
-  const [isDoubleSided, setIsDoubleSided] = useState(false);
+  const [isDoubleSided, setIsDoubleSided] = useState(true);
   const [activeCell, setActiveCell] = useState<{ side: 'front' | 'back', index: number } | null>(null);
-  const [activePanel, setActivePanel] = useState<'editor' | 'queue' | 'settings' | 'generator' | 'saved'>('editor');
+  const [activePanel, setActivePanel] = useState<'editor' | 'queue' | 'settings'>('editor');
   const [isGenerating, setIsGenerating] = useState(false);
   const [promos, setPromos] = useState<PromoCards>({});
   const [customCards, setCustomCards] = useState<CardData[]>([]);
@@ -71,6 +71,7 @@ const App: React.FC = () => {
   const [isColorsExpanded, setIsColorsExpanded] = useState(true);
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [showGeneratorModal, setShowGeneratorModal] = useState(false);
   const [showWiki, setShowWiki] = useState(false);
   const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: Color | Value } | null>(null);
   const [printerFriendly, setPrinterFriendly] = useState(false);
@@ -82,21 +83,13 @@ const App: React.FC = () => {
     coloredCells: 6,
     valueCount: 6,
     valuedCells: 6,
-    symmetric: false,
-    horizontalSymmetry: false,
-    verticalSymmetry: false
+    symmetric: false
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [language, setLanguage] = useState<Language>('hu');
   const [history, setHistory] = useState<{ front: CardData, back: CardData }[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-
-  useEffect(() => {
-    if (!isDoubleSided && activeSide === 'back') {
-      setActiveSide('front');
-    }
-  }, [isDoubleSided, activeSide]);
 
   const saveToHistory = (f: CardData, b: CardData) => {
     const newState = { 
@@ -200,19 +193,9 @@ const App: React.FC = () => {
   // Load promos and custom cards
   useEffect(() => {
     fetch('/promos.json')
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        console.log("Promos loaded:", data);
-        setPromos(data);
-      })
-      .catch(err => {
-        console.error("Failed to load promos:", err);
-        // Hibakeresés: írjuk ki a konzolra a pontos hibaüzenetet
-        console.error("DEBUG: Failed to fetch /promos.json. Check if file exists in the root of the public directory.");
-      });
+      .then(res => res.json())
+      .then(data => setPromos(data))
+      .catch(err => console.error("Failed to load promos:", err));
 
     const saved = localStorage.getItem('customCards');
     if (saved) {
@@ -475,7 +458,7 @@ const App: React.FC = () => {
   const addToQueue = () => {
     const newItem: PatternQueueItem = {
       id: generateId(),
-      front: isDoubleSided ? JSON.parse(JSON.stringify(front)) : JSON.parse(JSON.stringify(activeSide === 'front' ? front : back)),
+      front: JSON.parse(JSON.stringify(front)),
       back: isDoubleSided ? JSON.parse(JSON.stringify(back)) : null,
       isDoubleSided
     };
@@ -539,26 +522,67 @@ const App: React.FC = () => {
             <span className="font-bold">{t('editor')}</span>
           </button>
           <button 
-            onClick={() => setActivePanel('generator')}
+            onClick={() => setShowGeneratorModal(true)}
             className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              activePanel === 'generator' ? "bg-white text-black" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              "text-zinc-400 hover:bg-zinc-800 hover:text-white"
             )}
           >
             <span className="font-bold">{t('generation')}</span>
           </button>
 
           {/* Mentett minták (korábban Kártyatár) */}
-          <button 
-            onClick={() => setActivePanel('saved')}
-            className={cn(
+          <div className="relative group/menu">
+            <button className={cn(
               "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
-              activePanel === 'saved' ? "bg-white text-black" : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            )}
-          >
-            <Layout size={18} />
-            <span className="font-bold">{t('savedPatterns')}</span>
-          </button>
+              "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            )}>
+              <Layout size={18} />
+              <span className="font-bold">{t('savedPatterns')}</span>
+              <ChevronDown size={14} className="opacity-50" />
+            </button>
+            
+            <div className="absolute top-full left-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all z-50 p-4 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">{t('patternCards')}</label>
+                <select 
+                  onChange={(e) => loadPromo(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
+                  defaultValue=""
+                >
+                  <option value="" disabled>{t('choosePattern')}</option>
+                  {Object.keys(promos).map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest px-1">{t('myCards')}</label>
+                <div className="flex items-center gap-1">
+                  <select 
+                    onChange={(e) => loadCustomCard(parseInt(e.target.value))}
+                    className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-xs rounded-lg px-2 py-2 outline-none focus:ring-1 focus:ring-white"
+                    value={editingCustomCardIndex !== null ? editingCustomCardIndex : ""}
+                  >
+                    <option value="" disabled>{t('chooseOwn')}</option>
+                    {customCards.map((card, idx) => (
+                      <option key={idx} value={idx}>{card.title}</option>
+                    ))}
+                  </select>
+                  {editingCustomCardIndex !== null && (
+                    <button 
+                      onClick={() => deleteCustomCard(editingCustomCardIndex)}
+                      className="p-2 text-zinc-500 hover:text-red-500 hover:bg-zinc-800 rounded-lg transition-all"
+                      title={t('deleteOwnCard')}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <button 
             onClick={() => setActivePanel('queue')}
@@ -682,28 +706,26 @@ const App: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('palette')}</h2>
                     <div className="flex items-center gap-2">
-                      {isDoubleSided && (
-                        <div className="flex bg-zinc-800 p-1 rounded-lg">
-                          <button 
-                            onClick={() => setActiveSide('front')}
-                            className={cn(
-                              "px-3 py-1 text-xs font-bold rounded-md transition-all",
-                              activeSide === 'front' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
-                            )}
-                          >
-                            {t('front')}
-                          </button>
-                          <button 
-                            onClick={() => setActiveSide('back')}
-                            className={cn(
-                              "px-3 py-1 text-xs font-bold rounded-md transition-all",
-                              activeSide === 'back' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
-                            )}
-                          >
-                            {t('back')}
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex bg-zinc-800 p-1 rounded-lg">
+                        <button 
+                          onClick={() => setActiveSide('front')}
+                          className={cn(
+                            "px-3 py-1 text-xs font-bold rounded-md transition-all",
+                            activeSide === 'front' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
+                          )}
+                        >
+                          {t('front')}
+                        </button>
+                        <button 
+                          onClick={() => setActiveSide('back')}
+                          className={cn(
+                            "px-3 py-1 text-xs font-bold rounded-md transition-all",
+                            activeSide === 'back' ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
+                          )}
+                        >
+                          {t('back')}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -807,12 +829,16 @@ const App: React.FC = () => {
                                     ) : (
                                       <img 
                                         src={`/Cells/${val}.png`}
-                                        onError={(e) => {
-                                          e.currentTarget.onerror = null;
-                                          e.currentTarget.src = getValueSvgDataUrl(val);
-                                        }}
                                         alt={val}
                                         className="w-full h-full object-contain opacity-100 block scale-[1.02]"
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          if (!target.src.includes('raw.githubusercontent.com')) {
+                                            target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
+                                          } else if (!target.src.startsWith('data:image/svg+xml')) {
+                                            target.src = getValueSvgDataUrl(val);
+                                          }
+                                        }}
                                       />
                                     )}
                                   </button>
@@ -891,17 +917,15 @@ const App: React.FC = () => {
                         <div className="flex flex-col gap-3">
                           {/* Front Side */}
                           <div className="flex gap-3 items-center">
-                            <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 relative">
-                              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                                <Card 
-                                  data={item.front} 
-                                  activeCellIndex={null} 
-                                  scale={0.15} 
-                                  cornerRadius={cornerRadius}
-                                  hideShadow
-                                  className="pointer-events-none"
-                                />
-                              </div>
+                            <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
+              <Card 
+                data={item.front} 
+                activeCellIndex={null} 
+                scale={0.15} 
+                cornerRadius={cornerRadius}
+                hideShadow
+                className="pointer-events-none"
+              />
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
@@ -927,17 +951,15 @@ const App: React.FC = () => {
                           {/* Back Side */}
                           {item.isDoubleSided && item.back && (
                             <div className="flex gap-3 items-center pt-2 border-t border-zinc-800/50">
-                              <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 relative">
-                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                                  <Card 
-                                    data={item.back} 
-                                    activeCellIndex={null} 
-                                    scale={0.15} 
-                                    cornerRadius={cornerRadius}
-                                    hideShadow
-                                    className="pointer-events-none"
-                                  />
-                                </div>
+                              <div className="w-16 h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-zinc-800 flex items-center justify-center">
+                <Card 
+                  data={item.back} 
+                  activeCellIndex={null} 
+                  scale={0.15} 
+                  cornerRadius={cornerRadius}
+                  hideShadow
+                  className="pointer-events-none"
+                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-bold truncate text-white group-hover:text-blue-400 transition-colors">
@@ -982,12 +1004,7 @@ const App: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('doubleSided')}</span>
                         <button 
-                          onClick={() => {
-                            if (isDoubleSided) {
-                              setActiveSide('front');
-                            }
-                            setIsDoubleSided(!isDoubleSided);
-                          }}
+                          onClick={() => setIsDoubleSided(!isDoubleSided)}
                           className={cn(
                             "w-10 h-5 rounded-full transition-colors relative",
                             isDoubleSided ? "bg-blue-600" : "bg-zinc-800"
@@ -1066,261 +1083,6 @@ const App: React.FC = () => {
               </motion.div>
             )}
 
-            {activePanel === 'saved' && (
-              <motion.div 
-                key="saved"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="p-6 space-y-8"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('savedPatterns')}</h2>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('patternCards')}</label>
-                    <select 
-                      onChange={(e) => {
-                        loadPromo(e.target.value);
-                        setActivePanel('editor');
-                      }}
-                      className="w-full bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white"
-                      defaultValue=""
-                    >
-                      <option value="" disabled>{t('choosePattern')}</option>
-                      {Object.keys(promos).map(name => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest">{t('myCards')}</label>
-                    <div className="flex items-center gap-2">
-                      <select 
-                        onChange={(e) => {
-                          loadCustomCard(parseInt(e.target.value));
-                          setActivePanel('editor');
-                        }}
-                        className="flex-1 bg-zinc-800 border border-zinc-700 text-white text-sm rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white"
-                        value={editingCustomCardIndex !== null ? editingCustomCardIndex : ""}
-                      >
-                        <option value="" disabled>{t('chooseOwn')}</option>
-                        {customCards.map((card, idx) => (
-                          <option key={idx} value={idx}>{card.title}</option>
-                        ))}
-                      </select>
-                      {editingCustomCardIndex !== null && (
-                        <button 
-                          onClick={() => deleteCustomCard(editingCustomCardIndex)}
-                          className="p-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-all"
-                          title={t('deleteOwnCard')}
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Data Management moved here */}
-                  <div className="pt-6 border-t border-zinc-800">
-                    <details className="group">
-                      <summary className="flex items-center justify-between cursor-pointer list-none">
-                        <h3 className="text-sm font-bold text-white">{t('dataManagement')}</h3>
-                        <ChevronDown size={16} className="text-zinc-500 group-open:rotate-180 transition-transform" />
-                      </summary>
-                      <div className="mt-4 space-y-4">
-                        <div className="grid grid-cols-1 gap-3">
-                          <button 
-                            onClick={() => {
-                              const cards = Object.entries(promos).map(([title, promo]) => ({
-                                title,
-                                difficulty: promo.difficulty,
-                                code: promo.code,
-                                cells: parsePattern(promo.pattern)
-                              }));
-                              handleExport(cards, 'sagrada_minta_kartyak');
-                            }}
-                            className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
-                          >
-                            <span className="text-xs font-bold text-white">{t('exportPatterns')}</span>
-                            <Download size={16} className="text-zinc-400" />
-                          </button>
-
-                          <button 
-                            onClick={() => handleExport(customCards, 'sagrada_sajat_kartyak')}
-                            className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
-                          >
-                            <span className="text-xs font-bold text-white">{t('exportOwn')}</span>
-                            <Download size={16} className="text-zinc-400" />
-                          </button>
-
-                          <label className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer">
-                            <span className="text-xs font-bold text-white">{t('importCards')}</span>
-                            <Upload size={16} className="text-zinc-400" />
-                            <input 
-                              type="file" 
-                              ref={fileInputRef} 
-                              accept=".json" 
-                              onChange={handleImport} 
-                              className="hidden" 
-                            />
-                          </label>
-                        </div>
-                        <p className="text-xs text-zinc-500 text-center">
-                          {t('dataManagementDesc')}
-                        </p>
-                      </div>
-                    </details>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {activePanel === 'generator' && (
-              <motion.div 
-                key="generator"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="p-6 space-y-8"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('generation')}</h2>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-                          <Layout size={18} />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white uppercase tracking-wider">{t('horizontalSymmetry') || 'Vízszintes szimmetria'}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setGenOptions(prev => ({ ...prev, horizontalSymmetry: !prev.horizontalSymmetry }))}
-                        className={cn(
-                          "w-12 h-6 rounded-full transition-all relative p-1",
-                          genOptions.horizontalSymmetry ? "bg-blue-600" : "bg-zinc-700"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                          genOptions.horizontalSymmetry ? "translate-x-6" : "translate-x-0"
-                        )} />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
-                          <Layout size={18} className="rotate-90" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white uppercase tracking-wider">{t('verticalSymmetry') || 'Függőleges szimmetria'}</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setGenOptions(prev => ({ ...prev, verticalSymmetry: !prev.verticalSymmetry }))}
-                        className={cn(
-                          "w-12 h-6 rounded-full transition-all relative p-1",
-                          genOptions.verticalSymmetry ? "bg-purple-600" : "bg-zinc-700"
-                        )}
-                      >
-                        <div className={cn(
-                          "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
-                          genOptions.verticalSymmetry ? "translate-x-6" : "translate-x-0"
-                        )} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('colorCount')}</label>
-                      <input 
-                        type="number" 
-                        min="1" max="5"
-                        value={genOptions.colorCount}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, colorCount: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('coloredCells')}</label>
-                      <input 
-                        type="number" 
-                        min="0" max="10"
-                        value={genOptions.coloredCells}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valueCount')}</label>
-                      <input 
-                        type="number" 
-                        min="1" max="6"
-                        value={genOptions.valueCount}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, valueCount: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valuedCells')}</label>
-                      <input 
-                        type="number" 
-                        min="0" max="10"
-                        value={genOptions.valuedCells}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value) }))}
-                        className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        const newCard = generateSagradaCard(genOptions);
-                        setCurrentCard(prev => {
-                          const updated = {
-                            ...prev,
-                            ...newCard,
-                            title: newCard.title,
-                            cells: newCard.cells,
-                            difficulty: newCard.difficulty,
-                            code: newCard.code
-                          };
-                          if (activeSide === 'front') saveToHistory(updated, back);
-                          else saveToHistory(front, updated);
-                          return updated;
-                        });
-                        showNotification(t('cardGenerated'));
-                      }}
-                      className="flex-1 bg-zinc-800 text-white py-4 rounded-xl font-bold hover:bg-zinc-700 transition-colors shadow-lg"
-                    >
-                      {t('startGeneration')}
-                    </button>
-                    <button 
-                      onClick={() => {
-                        addToQueue();
-                        showNotification(t('cardAddedToQueue') || 'Hozzáadva a nyomtatási listához');
-                      }}
-                      className="flex-1 bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg flex items-center justify-center gap-2"
-                    >
-                      <Printer size={18} />
-                      {t('addToQueue') || 'Nyomtatásba'}
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
             {activePanel === 'settings' && (
               <motion.div 
                 key="settings"
@@ -1368,6 +1130,48 @@ const App: React.FC = () => {
                           )} />
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Export/Import Section */}
+                  <div className="space-y-4">
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('dataManagement')}</label>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button 
+                        onClick={() => {
+                          const cards = Object.entries(promos).map(([title, promo]) => ({
+                            title,
+                            difficulty: promo.difficulty,
+                            code: promo.code,
+                            cells: parsePattern(promo.pattern)
+                          }));
+                          handleExport(cards, 'sagrada_minta_kartyak');
+                        }}
+                        className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
+                      >
+                        <span className="text-xs font-bold text-white">{t('exportPatterns')}</span>
+                        <Download size={16} className="text-zinc-400" />
+                      </button>
+
+                      <button 
+                        onClick={() => handleExport(customCards, 'sagrada_sajat_kartyak')}
+                        className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors"
+                      >
+                        <span className="text-xs font-bold text-white">{t('exportOwn')}</span>
+                        <Download size={16} className="text-zinc-400" />
+                      </button>
+
+                      <label className="flex items-center justify-between bg-zinc-800 p-3 rounded-xl border border-zinc-700 hover:bg-zinc-700 transition-colors cursor-pointer">
+                        <span className="text-xs font-bold text-white">{t('importCards')}</span>
+                        <Upload size={16} className="text-zinc-400" />
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          accept=".json" 
+                          onChange={handleImport} 
+                          className="hidden" 
+                        />
+                      </label>
                     </div>
                   </div>
 
@@ -1465,34 +1269,32 @@ const App: React.FC = () => {
           } : {}}
         >
           {/* Side Indicator */}
-          {isDoubleSided && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
-              <button 
-                onClick={() => setActiveSide('front')}
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                  activeSide === 'front' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
-                )}
-              >
-                {t('front')}
-              </button>
-              <button 
-                onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-                className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform text-zinc-400 hover:text-white"
-              >
-                <FlipHorizontal size={20} />
-              </button>
-              <button 
-                onClick={() => setActiveSide('back')}
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                  activeSide === 'back' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
-                )}
-              >
-                {t('back')}
-              </button>
-            </div>
-          )}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
+            <button 
+              onClick={() => setActiveSide('front')}
+              className={cn(
+                "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
+                activeSide === 'front' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
+              )}
+            >
+              {t('front')}
+            </button>
+            <button 
+              onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
+              className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform text-zinc-400 hover:text-white"
+            >
+              <FlipHorizontal size={20} />
+            </button>
+            <button 
+              onClick={() => setActiveSide('back')}
+              className={cn(
+                "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
+                activeSide === 'back' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500 hover:text-white"
+              )}
+            >
+              {t('back')}
+            </button>
+          </div>
 
           {/* Card Preview Container */}
           <div 
@@ -1531,9 +1333,130 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.2.4</span>
+          <span>{t('version')}: v1.2.0</span>
         </div>
       </footer>
+
+      {/* Generator Modal */}
+      <AnimatePresence>
+        {showGeneratorModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowGeneratorModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white">{t('generateCard')}</h3>
+                <button onClick={() => setShowGeneratorModal(false)} className="text-zinc-500 hover:text-white">
+                  <CloseIcon size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl border border-zinc-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                      <Layout size={18} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white uppercase tracking-wider">{t('symmetric')}</p>
+                      <p className="text-[10px] text-zinc-500">{t('symmetricDesc') || 'Szimmetrikus mintázat generálása'}</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setGenOptions(prev => ({ ...prev, symmetric: !prev.symmetric }))}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-all relative p-1",
+                      genOptions.symmetric ? "bg-blue-600" : "bg-zinc-700"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-4 h-4 bg-white rounded-full transition-all shadow-sm",
+                      genOptions.symmetric ? "translate-x-6" : "translate-x-0"
+                    )} />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('colorCount')}</label>
+                    <input 
+                      type="number" 
+                      min="1" max="5"
+                      value={genOptions.colorCount}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, colorCount: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('coloredCells')}</label>
+                    <input 
+                      type="number" 
+                      min="0" max="10"
+                      value={genOptions.coloredCells}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valueCount')}</label>
+                    <input 
+                      type="number" 
+                      min="1" max="6"
+                      value={genOptions.valueCount}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, valueCount: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{t('valuedCells')}</label>
+                    <input 
+                      type="number" 
+                      min="0" max="10"
+                      value={genOptions.valuedCells}
+                      onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value) }))}
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white outline-none focus:ring-1 focus:ring-white"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => {
+                    const newCard = generateSagradaCard(genOptions);
+                    setCurrentCard(prev => {
+                      const updated = {
+                        ...prev,
+                        ...newCard,
+                        title: newCard.title,
+                        cells: newCard.cells,
+                        difficulty: newCard.difficulty,
+                        code: newCard.code
+                      };
+                      if (activeSide === 'front') saveToHistory(updated, back);
+                      else saveToHistory(front, updated);
+                      return updated;
+                    });
+                    setShowGeneratorModal(false);
+                    showNotification(t('cardGenerated'));
+                  }}
+                  className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-zinc-200 transition-colors shadow-lg"
+                >
+                  {t('startGeneration')}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Wiki Modal */}
       <AnimatePresence>
@@ -1679,7 +1602,7 @@ const Card: React.FC<CardProps> = ({
   React.useLayoutEffect(() => {
     if (titleRef.current && containerRef.current) {
       const containerWidth = containerRef.current.clientWidth - 12;
-      const baseFontSize = data.titleSize || 12;
+      const baseFontSize = data.titleSize || 14;
       let currentFontSize = baseFontSize;
       
       titleRef.current.style.fontSize = `${currentFontSize}pt`;
@@ -1742,8 +1665,16 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={getValueSvgDataUrl(cell.value, cell.color)}
+                    src={`/Cells/${cell.value}.png`}
                     alt={cell.value}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('raw.githubusercontent.com')) {
+                        target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${cell.value}.png`;
+                      } else if (!target.src.startsWith('data:image/svg+xml')) {
+                        target.src = getValueSvgDataUrl(cell.value, cell.color);
+                      }
+                    }}
                   />
                 )}
               </>
@@ -1752,18 +1683,17 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer" ref={containerRef} style={{ height: '10.2mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+      <div className="card-footer" ref={containerRef}>
         <div className="card-title-container">
           <span 
             ref={titleRef}
             className="card-title" 
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 14}pt`,
               display: 'flex',
               alignItems: 'center',
-              height: '100%',
-              paddingTop: '0.5mm' // Fine tune vertical alignment
+              height: '100%'
             }}
           >
             {data.title} {data.code || ''}

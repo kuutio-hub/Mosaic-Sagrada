@@ -23,7 +23,7 @@ export const DEFAULT_FRONT: CardData = {
   difficulty: 3,
   cells: createEmptyGrid(),
   titleFont: 'Uncial Antiqua',
-  titleSize: 12,
+  titleSize: 14,
   cornerRadius: 0
 };
 
@@ -32,7 +32,7 @@ export const DEFAULT_BACK: CardData = {
   difficulty: 4,
   cells: createEmptyGrid(),
   titleFont: 'Uncial Antiqua',
-  titleSize: 12,
+  titleSize: 14,
   cornerRadius: 0
 };
 

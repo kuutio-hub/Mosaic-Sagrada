@@ -7,8 +7,6 @@ interface GeneratorOptions {
   valueCount: number;
   valuedCells: number;
   symmetric?: boolean;
-  horizontalSymmetry?: boolean;
-  verticalSymmetry?: boolean;
 }
 
 const COLORS: Color[] = ['R', 'G', 'B', 'Y', 'P'];
@@ -16,7 +14,7 @@ const VALUES: Value[] = ['1', '2', '3', '4', '5', '6'];
 
 export function generateSagradaCard(options: GeneratorOptions): CardData {
   const cells: CellData[] = createEmptyGrid();
-  const { colorCount, coloredCells, valueCount, valuedCells, symmetric = false, horizontalSymmetry = false, verticalSymmetry = false } = options;
+  const { colorCount, coloredCells, valueCount, valuedCells, symmetric = false } = options;
 
   const selectedColors = [...COLORS].sort(() => Math.random() - 0.5).slice(0, colorCount);
   const selectedValues = [...VALUES].sort(() => Math.random() - 0.5).slice(0, valueCount);
@@ -41,22 +39,10 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     return true;
   };
 
-  const getSymmetricIndices = (index: number) => {
+  const getSymmetricIndex = (index: number) => {
     const row = Math.floor(index / 5);
     const col = index % 5;
-    const syms = new Set<number>();
-    
-    if (symmetric || horizontalSymmetry) {
-      syms.add(row * 5 + (4 - col)); // Horizontal symmetry
-    }
-    if (verticalSymmetry) {
-      syms.add((3 - row) * 5 + col); // Vertical symmetry
-    }
-    if ((symmetric || horizontalSymmetry) && verticalSymmetry) {
-      syms.add((3 - row) * 5 + (4 - col)); // Both
-    }
-    
-    return Array.from(syms).filter(i => i !== index);
+    return row * 5 + (4 - col); // Horizontal symmetry
   };
 
   const indices = Array.from({ length: 20 }, (_, i) => i).sort(() => Math.random() - 0.5);
@@ -67,26 +53,16 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     if (colorsPlaced >= coloredCells) break;
     if (cells[idx].color === 'W' && cells[idx].value === '.') {
       const color = selectedColors[Math.floor(Math.random() * selectedColors.length)];
-      
-      const symIndices = getSymmetricIndices(idx);
-      
-      // Check if idx and all symIndices are valid
-      let allValid = isValid(idx, 'color', color);
-      if (allValid) {
-        for (const symIdx of symIndices) {
-          if (cells[symIdx].color !== 'W' || cells[symIdx].value !== '.' || !isValid(symIdx, 'color', color)) {
-            allValid = false;
-            break;
-          }
-        }
-      }
-      
-      if (allValid) {
+      if (isValid(idx, 'color', color)) {
         cells[idx].color = color;
         colorsPlaced++;
-        for (const symIdx of symIndices) {
-          cells[symIdx].color = color;
-          colorsPlaced++;
+        
+        if (symmetric && colorsPlaced < coloredCells) {
+          const symIdx = getSymmetricIndex(idx);
+          if (symIdx !== idx && cells[symIdx].color === 'W' && cells[symIdx].value === '.' && isValid(symIdx, 'color', color)) {
+            cells[symIdx].color = color;
+            colorsPlaced++;
+          }
         }
       }
     }
@@ -97,29 +73,19 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   const shuffledIndices = [...indices].sort(() => Math.random() - 0.5);
   for (const idx of shuffledIndices) {
     if (valuesPlaced >= valuedCells) break;
-    // A cell can only have a color OR a value, not both
-    if (cells[idx].value === '.' && cells[idx].color === 'W') {
+    // Allow placing a value even if the cell already has a color
+    if (cells[idx].value === '.') {
       const val = selectedValues[Math.floor(Math.random() * selectedValues.length)];
-      
-      const symIndices = getSymmetricIndices(idx);
-      
-      // Check if idx and all symIndices are valid
-      let allValid = isValid(idx, 'value', val);
-      if (allValid) {
-        for (const symIdx of symIndices) {
-          if (cells[symIdx].value !== '.' || cells[symIdx].color !== 'W' || !isValid(symIdx, 'value', val)) {
-            allValid = false;
-            break;
-          }
-        }
-      }
-      
-      if (allValid) {
+      if (isValid(idx, 'value', val)) {
         cells[idx].value = val;
         valuesPlaced++;
-        for (const symIdx of symIndices) {
-          cells[symIdx].value = val;
-          valuesPlaced++;
+
+        if (symmetric && valuesPlaced < valuedCells) {
+          const symIdx = getSymmetricIndex(idx);
+          if (symIdx !== idx && cells[symIdx].value === '.' && isValid(symIdx, 'value', val)) {
+            cells[symIdx].value = val;
+            valuesPlaced++;
+          }
         }
       }
     }
@@ -133,14 +99,16 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   else if (totalConstraints <= 12) difficulty = 5;
   else difficulty = 6;
 
-  // Generate a short short name
-  const shortId = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Generate a seed-based name
+  const seed = Math.random().toString(36).substring(2, 7).toUpperCase();
+  const date = new Date();
+  const dateStr = `${date.getMonth() + 1}${date.getDate()}`;
 
   return {
-    title: `Gen-${shortId}`,
+    title: `Gen-${seed}-${dateStr}`,
     difficulty,
     cells,
-    code: '', // Remove seed from code as it's not reproducible
+    code: seed,
     isGenerated: true // Custom flag for UI
   };
 }
