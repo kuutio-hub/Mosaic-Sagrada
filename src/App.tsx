@@ -828,7 +828,7 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`/Cells/${val}.png`}
+                                        src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/assets/Cells/${val}.png`}
                                         alt={val}
                                         className="w-full h-full object-contain opacity-100 block scale-[1.02]"
                                         onError={(e) => {
@@ -1665,7 +1665,7 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`/Cells/${cell.value}.png`}
+                    src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/assets/Cells/${cell.value}.png`}
                     alt={cell.value}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;

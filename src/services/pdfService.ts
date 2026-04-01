@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PatternQueueItem } from '../types';
+import { CELL_IMAGES } from '../constants';
 
 export async function generatePDF(
   queue: PatternQueueItem[], 
@@ -15,14 +16,29 @@ export async function generatePDF(
     format: 'a4'
   });
 
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.top = '-10000px';
-  container.style.left = '-10000px';
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.top = '-10000px';
+  iframe.style.left = '-10000px';
+  iframe.style.width = '210mm';
+  iframe.style.height = '297mm';
+  document.body.appendChild(iframe);
+
+  const iframeDoc = iframe.contentWindow?.document;
+  if (!iframeDoc) {
+    document.body.removeChild(iframe);
+    throw new Error("Could not create iframe document");
+  }
+
+  iframeDoc.open();
+  iframeDoc.write('<html><head><style>@import url("https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap");</style></head><body style="margin:0;padding:0;background:#ffffff;color:#000000;"></body></html>');
+  iframeDoc.close();
+
+  const container = iframeDoc.createElement('div');
   container.style.width = '210mm';
   container.style.height = '297mm';
-  container.style.background = 'white';
-  document.body.appendChild(container);
+  container.style.background = '#ffffff';
+  iframeDoc.body.appendChild(container);
 
   for (let i = 0; i < queue.length; i += 6) {
     const batch = queue.slice(i, i + 6);
@@ -34,7 +50,7 @@ export async function generatePDF(
   }
 
   pdf.save('sagrada_cards.pdf');
-  document.body.removeChild(container);
+  document.body.removeChild(iframe);
 }
 
 function generateCardHTML(
@@ -52,7 +68,7 @@ function generateCardHTML(
   const textColor = printerFriendly ? '#000000' : '#ffffff';
   const dotActiveColor = printerFriendly ? '#000000' : '#ffffff';
   const dotInactiveColor = printerFriendly ? '#e5e7eb' : '#333333';
-  const dotsWidth = 6 * 3 + 5 * 1.5;
+  const dotsWidth = 6 * 2.5 + 5 * 1.5;
 
   const cellsHTML = `
     <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
@@ -64,11 +80,20 @@ function generateCardHTML(
         const isX = cell.value === 'X';
         const hasValue = cell.value !== '.' && cell.value !== 'X';
         
-        const valueSvg = hasValue ? `data:image/svg+xml;base64,${btoa(`
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-            <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="65" fill="${dotColor(cell.color)}">${cell.value}</text>
-          </svg>
-        `)}` : '';
+        let valueImgSrc = '';
+        if (hasValue) {
+          if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
+            // Használd az abszolút útvonalat a public mappából
+            valueImgSrc = CELL_IMAGES[cell.value] || `/Cells/${cell.value}.png`;
+          } else {
+            // Fallback for other values if any
+            valueImgSrc = `data:image/svg+xml;base64,${btoa(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                <text x="50" y="50" dominant-baseline="central" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="80" fill="${dotColor(cell.color)}">${cell.value}</text>
+              </svg>
+            `)}`;
+          }
+        }
 
         return `
           <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? '#f3f4f6' : '#ffffff'}; overflow: hidden; border: 0.2mm solid #000000;">
@@ -79,7 +104,7 @@ function generateCardHTML(
               <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                 ${isX ? 
                   `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueSvg}" style="width: 12mm; height: 12mm; object-fit: contain;" />`
+                  `<img src="${valueImgSrc}" onerror="this.onerror=null;this.src='data:image/svg+xml;base64,${btoa(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50' y='50' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='80' fill='${dotColor(cell.color)}'>${cell.value}</text></svg>`)}';" style="width: 100%; height: 100%; object-fit: cover;" />`
                 }
               </div>
             ` : ''}
@@ -90,11 +115,11 @@ function generateCardHTML(
   `;
 
   return `
-    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden;">
+    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.4mm solid #000000;' : ''}">
       ${cellsHTML}
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: ${printerFriendly ? '0.2mm solid #000000' : 'none'};">
-        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left;">
-          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: ${finalFontSize}pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10.2mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: none;">
+        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left; padding-top: 2.5mm;">
+          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 12pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; padding-top: 0.5mm;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
         <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; width: ${dotsWidth}mm; height: 100%;">
           ${Array.from({ length: 6 }).map((_, i) => {
@@ -116,7 +141,7 @@ function generateCardHTML(
               }
             }
             
-            return `<div class="difficulty-dot" style="width: 3mm; height: 3mm; background-color: ${dotColor}; border-radius: 50%; border: ${border}; opacity: ${opacity}; ${isActive && !printerFriendly && !isGenerated ? 'box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);' : ''}"></div>`;
+            return `<div class="difficulty-dot" style="width: 2.5mm; height: 2.5mm; background-color: ${dotColor}; border-radius: 50%; border: ${border}; opacity: ${opacity}; ${isActive && !printerFriendly && !isGenerated ? 'box-shadow: 0 0 3px rgba(255, 255, 255, 0.5);' : ''}"></div>`;
           }).join('')}
         </div>
       </div>
@@ -139,8 +164,9 @@ async function renderBatchPage(
     pdf.addPage();
   }
 
+  const doc = container.ownerDocument;
   container.innerHTML = '';
-  const pageDiv = document.createElement('div');
+  const pageDiv = doc.createElement('div');
   pageDiv.className = 'print-page';
   pageDiv.style.position = 'relative';
   pageDiv.style.backgroundColor = '#ffffff';
@@ -148,31 +174,30 @@ async function renderBatchPage(
   pageDiv.style.height = '297mm';
   container.appendChild(pageDiv);
 
-  const startX = 15;
-  const startY = 28.5;
+  const gapX = showCropMarks ? 15 : 5;
+  const gapY = showCropMarks ? 15 : 5;
   const cardW = 90;
   const cardH = 80;
+  const startX = (210 - (2 * cardW + gapX)) / 2;
+  const startY = (297 - (3 * cardH + 2 * gapY)) / 2;
 
   for (let idx = 0; idx < batch.length; idx++) {
     const item = batch[idx];
     const cardData = side === 'front' ? item.front : (item.back || item.front);
     
-    const cardDiv = document.createElement('div');
+    const cardDiv = doc.createElement('div');
     cardDiv.className = 'card-container';
     cardDiv.style.position = 'absolute';
     cardDiv.style.display = 'flex';
     cardDiv.style.flexDirection = 'column';
     
     cardDiv.style.background = printerFriendly ? '#ffffff' : '#000000';
-    if (printerFriendly) {
-      cardDiv.style.border = '0.2mm solid #000000';
-    }
     
     const col = side === 'front' ? (idx % 2) : (1 - (idx % 2));
     const row = Math.floor(idx / 2);
     
-    cardDiv.style.left = `${startX + col * cardW}mm`;
-    cardDiv.style.top = `${startY + row * cardH}mm`;
+    cardDiv.style.left = `${startX + col * (cardW + gapX)}mm`;
+    cardDiv.style.top = `${startY + row * (cardH + gapY)}mm`;
     cardDiv.style.width = `90mm`;
     cardDiv.style.height = `80mm`;
     cardDiv.style.borderRadius = showCropMarks ? '0' : `${cornerRadius}mm`;
@@ -181,7 +206,7 @@ async function renderBatchPage(
     
     // Add crop marks if enabled
     if (showCropMarks) {
-      const markLen = 10; // mm
+      const markLen = 5; // mm
       const markOffset = 1; // mm
       const markThickness = '0.3mm';
       const x = startX + col * cardW;
@@ -207,7 +232,7 @@ async function renderBatchPage(
       pageDiv.innerHTML += marks;
     }
     
-    const innerCard = document.createElement('div');
+    const innerCard = doc.createElement('div');
     innerCard.style.position = 'absolute';
     innerCard.style.top = '0';
     innerCard.style.left = '0';
@@ -232,40 +257,7 @@ async function renderBatchPage(
   const canvas = await html2canvas(pageDiv, {
     scale: 3,
     useCORS: true,
-    backgroundColor: '#ffffff',
-    onclone: (clonedDoc) => {
-      // Aggressively remove oklch from all styles to prevent parsing error
-      const allElements = clonedDoc.getElementsByTagName('*');
-      for (let i = 0; i < allElements.length; i++) {
-        const el = allElements[i] as HTMLElement;
-        if (el.style) {
-          // Check for oklch in inline styles
-          for (let j = 0; j < el.style.length; j++) {
-            const prop = el.style[j];
-            const val = el.style.getPropertyValue(prop);
-            if (val && val.includes('oklch')) {
-              // Replace with a safe fallback
-              el.style.setProperty(prop, '#18181b'); // Zinc-900 fallback
-            }
-          }
-        }
-      }
-      
-      // Instead of removing all styles, let's try to replace oklch in style tags
-      const styles = clonedDoc.getElementsByTagName('style');
-      for (let i = 0; i < styles.length; i++) {
-        const style = styles[i];
-        if (style.innerHTML.includes('oklch')) {
-          // Replace oklch(...) with a safe hex color
-          // This is a crude regex but should catch most cases
-          style.innerHTML = style.innerHTML.replace(/oklch\([^)]+\)/g, '#18181b');
-        }
-      }
-      
-      // Keep link tags but maybe they also have oklch?
-      // If it's a tailwind CDN link, it definitely has oklch.
-      // We might need to remove them if the regex above isn't enough.
-    }
+    backgroundColor: '#ffffff'
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 0.95);

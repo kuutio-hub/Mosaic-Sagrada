@@ -1,1 +1,0 @@
-/* Image data for difficulty levels will be handled via script or assets */
