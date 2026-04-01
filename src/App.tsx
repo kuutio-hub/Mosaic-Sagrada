@@ -1754,7 +1754,7 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`}
+                    src={`https://github.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png?raw=true`}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
