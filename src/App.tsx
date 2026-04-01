@@ -35,7 +35,8 @@ import {
   DEFAULT_BACK, 
   COLORS, 
   VALUES, 
-  createEmptyGrid 
+  createEmptyGrid,
+  ColorOption
 } from './constants';
 import { cn, generateId } from './lib/utils';
 import { generatePDF } from './services/pdfService';
@@ -738,7 +739,7 @@ const App: React.FC = () => {
                             className="px-4 pb-4"
                           >
                             <div className="grid grid-cols-3 gap-2">
-                              {COLORS.filter(c => c.id !== '.').map(color => (
+                              {COLORS.filter((c: ColorOption) => c.id !== '.').map((color: ColorOption) => (
                                 <button
                                   key={color.id}
                                   onClick={(e) => {
