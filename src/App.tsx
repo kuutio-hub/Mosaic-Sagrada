@@ -834,7 +834,7 @@ const App: React.FC = () => {
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement;
                                           if (!target.src.includes('raw.githubusercontent.com')) {
-                                            target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${val}.png`;
+                                            target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/assets/Cells/${val}.png`;
                                           } else if (!target.src.startsWith('data:image/svg+xml')) {
                                             target.src = getValueSvgDataUrl(val);
                                           }
@@ -1670,7 +1670,7 @@ const Card: React.FC<CardProps> = ({
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       if (!target.src.includes('raw.githubusercontent.com')) {
-                        target.src = `https://raw.githubusercontent.com/chardila/sagrada_generator/main/${cell.value}.png`;
+                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/assets/Cells/${cell.value}.png`;
                       } else if (!target.src.startsWith('data:image/svg+xml')) {
                         target.src = getValueSvgDataUrl(cell.value, cell.color);
                       }
