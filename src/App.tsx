@@ -199,7 +199,7 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('/assets/promos.json')
+    fetch('/promos.json')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -208,7 +208,11 @@ const App: React.FC = () => {
         console.log("Promos loaded:", data);
         setPromos(data);
       })
-      .catch(err => console.error("Failed to load promos:", err));
+      .catch(err => {
+        console.error("Failed to load promos:", err);
+        // Hibakeresés: írjuk ki a konzolra a pontos hibaüzenetet
+        console.error("DEBUG: Failed to fetch /promos.json. Check if file exists in the root of the public directory.");
+      });
 
     const saved = localStorage.getItem('customCards');
     if (saved) {
@@ -1527,7 +1531,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.2.3</span>
+          <span>{t('version')}: v1.2.4</span>
         </div>
       </footer>
 
