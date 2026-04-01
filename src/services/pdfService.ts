@@ -1,7 +1,6 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PatternQueueItem } from '../types';
-import { CELL_IMAGES } from '../constants';
 
 export async function generatePDF(
   queue: PatternQueueItem[], 
@@ -84,7 +83,7 @@ function generateCardHTML(
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
             // Használd az abszolút útvonalat a public mappából
-            valueImgSrc = CELL_IMAGES[cell.value] || `/Cells/${cell.value}.png`;
+            valueImgSrc = `/Cells/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`
