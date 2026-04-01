@@ -83,7 +83,7 @@ function generateCardHTML(
         if (hasValue) {
           if (['1', '2', '3', '4', '5', '6'].includes(cell.value)) {
             // Használd az abszolút útvonalat a public mappából
-            valueImgSrc = `/Cells/${cell.value}.png`;
+            valueImgSrc = `/assets/Cells/${cell.value}.png`;
           } else {
             // Fallback for other values if any
             valueImgSrc = `data:image/svg+xml;base64,${btoa(`

@@ -45,11 +45,6 @@ import { translations, Language } from './i18n';
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
-  // Használd a relatív útvonalat a PNG-khez, az assets mappából
-  if (['1', '2', '3', '4', '5', '6'].includes(value)) {
-    return `/Cells/${value}.png`;
-  }
-  
   const textColor = (color === 'W' || color === '.') ? '#333333' : 'white';
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
@@ -204,7 +199,7 @@ const App: React.FC = () => {
 
   // Load promos and custom cards
   useEffect(() => {
-    fetch('/promos.json')
+    fetch('/assets/promos.json')
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -807,8 +802,9 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`/Cells/${val}.png`}
+                                        src={`/assets/Cells/${val}.png`}
                                         onError={(e) => {
+                                          e.currentTarget.onerror = null;
                                           e.currentTarget.src = getValueSvgDataUrl(val);
                                         }}
                                         alt={val}
