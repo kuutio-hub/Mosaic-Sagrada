@@ -818,7 +818,7 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${val}.png?raw=true`}
+                                        src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${val}.png`}
                                         onError={(e) => {
                                           e.currentTarget.onerror = null;
                                           e.currentTarget.src = getValueSvgDataUrl(val);
@@ -1754,7 +1754,7 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`https://github.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png?raw=true`}
+                    src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
