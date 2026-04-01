@@ -819,6 +819,7 @@ const App: React.FC = () => {
                                     ) : (
                                       <img 
                                         src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${val}.png`}
+                                        referrerPolicy="no-referrer"
                                         onError={(e) => {
                                           e.currentTarget.onerror = null;
                                           e.currentTarget.src = getValueSvgDataUrl(val);
@@ -1755,6 +1756,7 @@ const Card: React.FC<CardProps> = ({
                 ) : (
                   <img 
                     src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`}
+                    referrerPolicy="no-referrer"
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
