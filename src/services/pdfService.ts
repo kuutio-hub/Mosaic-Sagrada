@@ -49,13 +49,19 @@ export async function generatePDF(
   }
 
   const now = new Date();
-  const timestamp = now.getFullYear().toString() + 
-                   (now.getMonth() + 1).toString().padStart(2, '0') + 
-                   now.getDate().toString().padStart(2, '0') + '_' + 
-                   now.getHours().toString().padStart(2, '0') + 
-                   now.getMinutes().toString().padStart(2, '0') + 
-                   now.getSeconds().toString().padStart(2, '0');
-  const filename = `sagrada_cards_${timestamp}.pdf`;
+  const dateStr = now.getFullYear().toString().slice(-2) + 
+                  (now.getMonth() + 1).toString().padStart(2, '0') + 
+                  now.getDate().toString().padStart(2, '0');
+  const timeStr = now.getHours().toString().padStart(2, '0') + 
+                  now.getMinutes().toString().padStart(2, '0');
+  
+  const minuteKey = `sagrada_last_gen_${dateStr}_${timeStr}`;
+  const lastCount = parseInt(localStorage.getItem(minuteKey) || '0');
+  const newCount = lastCount + 1;
+  localStorage.setItem(minuteKey, newCount.toString());
+  
+  const suffix = newCount > 1 ? `-${newCount - 1}` : '';
+  const filename = `Sagrada_${dateStr}_${timeStr}${suffix}.pdf`;
   pdf.save(filename);
   document.body.removeChild(iframe);
 }
@@ -68,68 +74,15 @@ function generateCardHTML(
   showCropMarks: boolean
 ): string {
   const title = cardData.title || '';
-  const dotColor = (color: string) => (color === 'W' || color === '.') ? '#333333' : '#ffffff';
   
-  const finalFontSize = fontSize;
   const footerBg = printerFriendly ? '#ffffff' : '#000000';
   const textColor = printerFriendly ? '#000000' : '#ffffff';
   const dotActiveColor = printerFriendly ? '#000000' : '#ffffff';
   const dotInactiveColor = printerFriendly ? '#e5e7eb' : '#333333';
-  const dotsWidth = 6 * 2.5 + 5 * 1.5;
-
-  const cellsHTML = `
-    <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
-      ${cardData.cells.map((cell: any) => {
-        const colorMap: Record<string, string> = {
-          'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
-        };
-        const bgColor = colorMap[cell.color] || '#ffffff';
-        const isX = cell.value === 'X';
-        const hasValue = cell.value !== '.' && cell.value !== 'X';
-        
-        let valueImgSrc = '';
-        let svgFallback = '';
-        if (hasValue) {
-          const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
-          const dotSize = 10;
-          const dots: Record<string, string> = {
-            '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-            '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
-          };
-          svgFallback = `data:image/svg+xml;base64,${btoa(`
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-              ${dots[cell.value] || ''}
-            </svg>
-          `)}`;
-          valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
-        }
-
-        return `
-          <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? '#f3f4f6' : '#ffffff'}; overflow: hidden; border: 0.2mm solid #000000;">
-            ${cell.color !== '.' && cell.color !== 'W' ? `
-              <div style="position: absolute; inset: 0; background-color: ${bgColor}; opacity: 1; z-index: 2;"></div>
-            ` : ''}
-            ${cell.value !== '.' ? `
-              <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
-                ${isX ? 
-                  `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width: 100%; height: 100%; object-fit: cover;" />`
-                }
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
 
   return `
     <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.2mm solid #e5e7eb;' : ''}">
-      <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2mm; padding: 2mm 2mm 0 2mm; width: fit-content; margin: 0 auto;">
+      <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
         ${cardData.cells.map((cell: any) => {
           const colorMap: Record<string, string> = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
@@ -160,7 +113,7 @@ function generateCardHTML(
           }
 
           return `
-            <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? (printerFriendly ? '#f9fafb' : '#1f2937') : (printerFriendly ? '#ffffff' : '#000000')}; overflow: hidden; border: 0.2mm solid ${printerFriendly ? '#d1d5db' : '#374151'};">
+            <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? (printerFriendly ? '#f9fafb' : '#1f2937') : '#ffffff'}; overflow: hidden; border: 0.2mm solid ${printerFriendly ? '#d1d5db' : '#374151'};">
               ${cell.color !== '.' && cell.color !== 'W' ? `
                 <div style="position: absolute; inset: 0; background-color: ${bgColor}; opacity: 1; z-index: 2;"></div>
               ` : ''}
@@ -176,8 +129,8 @@ function generateCardHTML(
           `;
         }).join('')}
       </div>
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
-        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%;">
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10.2mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
+        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; padding-top: 2.5mm;">
           <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 11pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
         <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; height: 100%;">

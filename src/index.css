@@ -104,8 +104,8 @@ body {
   display: grid;
   grid-template-columns: repeat(5, 15mm);
   grid-template-rows: repeat(4, 15mm);
-  gap: 2mm;
-  padding: 2mm 2mm 0 2mm;
+  gap: 2.5mm;
+  padding: 2.5mm 2.5mm 0 2.5mm;
   width: fit-content;
   margin: 0 auto;
 }
@@ -163,11 +163,11 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0 4mm;
+  padding: 0 2.5mm;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 12mm;
+  height: 10.2mm;
   background: black;
   box-sizing: border-box;
 }
@@ -182,6 +182,7 @@ body {
   min-width: 0;
   overflow: hidden;
   container-type: inline-size;
+  padding-top: 2.5mm; /* Move title slightly down */
 }
 
 .card-title {

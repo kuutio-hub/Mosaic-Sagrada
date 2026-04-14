@@ -612,19 +612,7 @@ const App: React.FC = () => {
                 <section className="space-y-4">
                   <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('cardData')}</h2>
                   <div className="space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('cardName')}</label>
-                      <input 
-                        type="text" 
-                        value={currentCard.title}
-                        onChange={(e) => {
-                          const newTitle = e.target.value;
-                          setCurrentCard(prev => ({ ...prev, title: newTitle }));
-                        }}
-                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                        placeholder={t('patternName')}
-                      />
-                    </div>
+                    <p className="text-[10px] text-zinc-500 italic">{t('clickTitleToRename')}</p>
                   </div>
                 </section>
 
@@ -1421,6 +1409,7 @@ const App: React.FC = () => {
                 activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
                 onCellClick={(index) => handleCellClick(activeSide, index)}
                 onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
+                onTitleChange={(title) => setCurrentCard(prev => ({ ...prev, title }))}
                 cornerRadius={cornerRadius}
                 editable
               />
@@ -1440,8 +1429,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>Design by: hrvthgrgly@gmail.com</span>
-          <span>{t('version')}: v1.3.0</span>
+          <span>{t('version')}: v1.3.1</span>
         </div>
       </footer>
 
@@ -1555,6 +1543,7 @@ interface CardProps {
   activeCellIndex: number | null;
   onCellClick?: (index: number) => void;
   onDifficultyChange?: (difficulty: number) => void;
+  onTitleChange?: (title: string) => void;
   scale?: number;
   cornerRadius?: number;
   className?: string;
@@ -1571,6 +1560,7 @@ const Card: React.FC<CardProps> = ({
   activeCellIndex, 
   onCellClick, 
   onDifficultyChange,
+  onTitleChange,
   scale = 1, 
   cornerRadius = 0, 
   className, 
@@ -1585,6 +1575,8 @@ const Card: React.FC<CardProps> = ({
   const codeRef = React.useRef<HTMLSpanElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [adjustedFontSize, setAdjustedFontSize] = React.useState<number | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
+  const [editTitleValue, setEditTitleValue] = React.useState(data.title);
 
   React.useLayoutEffect(() => {
     if (titleRef.current && containerRef.current) {
@@ -1603,6 +1595,13 @@ const Card: React.FC<CardProps> = ({
       setAdjustedFontSize(currentFontSize);
     }
   }, [data.title, data.titleSize, data.titleFont, data.code]);
+
+  const handleTitleSubmit = () => {
+    setIsEditingTitle(false);
+    if (onTitleChange) {
+      onTitleChange(editTitleValue);
+    }
+  };
 
   const isGenerated = (data as any).isGenerated;
 
@@ -1667,21 +1666,45 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer" ref={containerRef} style={{ height: '12mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+      <div className="card-footer" ref={containerRef} style={{ height: '10.2mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
         <div className="card-title-container">
-          <span 
-            ref={titleRef}
-            className="card-title" 
-            style={{ 
-              fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
-              display: 'flex',
-              alignItems: 'center',
-              height: '100%'
-            }}
-          >
-            {data.title} {data.code || ''}
-          </span>
+          {isEditingTitle && editable ? (
+            <input 
+              autoFocus
+              value={editTitleValue}
+              onChange={(e) => setEditTitleValue(e.target.value)}
+              onBlur={handleTitleSubmit}
+              onKeyDown={(e) => e.key === 'Enter' && handleTitleSubmit()}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-transparent border-b border-white text-white outline-none w-full font-display uppercase"
+              style={{ 
+                fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
+                fontFamily: data.titleFont || '"Uncial Antiqua", serif'
+              }}
+            />
+          ) : (
+            <span 
+              ref={titleRef}
+              className={cn("card-title", editable && "cursor-text hover:opacity-80")}
+              onClick={(e) => {
+                if (editable) {
+                  e.stopPropagation();
+                  setIsEditingTitle(true);
+                  setEditTitleValue(data.title);
+                }
+              }}
+              style={{ 
+                fontFamily: data.titleFont || '"Uncial Antiqua", serif',
+                fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
+                display: 'flex',
+                alignItems: 'center',
+                height: '100%',
+                paddingTop: '2.5mm' // Fine tune vertical alignment
+              }}
+            >
+              {data.title} {data.code || ''}
+            </span>
+          )}
         </div>
         <div className={cn("card-difficulty", editable && "editable")}>
           {Array.from({ length: 6 }).map((_, i) => {
