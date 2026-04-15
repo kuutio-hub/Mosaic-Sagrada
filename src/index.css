@@ -1,21 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Cinzel:wght@400;700&family=MedievalSharp&family=Almendra:wght@400;700&family=Pirata+One&family=Great+Vibes&family=Playfair+Display:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Montserrat:wght@400;700&family=Inter:wght@400;700&display=swap');
 
-:root {
-  --card-width: 90mm;
-  --card-height: 80mm;
-  --cell-size: 15mm;
-  --gap-size: 2.5mm;
-  --bg-black: #000000;
+@layer base {
+  :root {
+    --card-width: 90mm;
+    --card-height: 80mm;
+    --cell-size: 15mm;
+    --gap-size: 2.5mm;
+    --bg-black: #000000;
+  }
+
+  body {
+    @apply bg-zinc-950 text-zinc-100 antialiased;
+  }
 }
 
-body {
-  background-color: #09090b; /* zinc-950 */
-  color: #f4f4f5; /* zinc-100 */
-  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
-}
+@layer components {
+  .glass-panel {
+    @apply bg-zinc-900/50 backdrop-blur-md border border-zinc-800/50;
+  }
+  
+  .btn-primary {
+    @apply bg-white text-black font-bold py-3 px-6 rounded-xl transition-all hover:bg-zinc-200 active:scale-95 shadow-lg shadow-white/5;
+  }
+  
+  .btn-secondary {
+    @apply bg-zinc-800 text-zinc-300 font-bold py-3 px-6 rounded-xl transition-all hover:bg-zinc-700 active:scale-95 border border-zinc-700;
+  }
 
-.font-display {
-  font-family: "Uncial Antiqua", serif;
+  .nav-item-active {
+    @apply bg-white text-black shadow-lg shadow-white/10;
+  }
+
+  .nav-item-inactive {
+    @apply text-zinc-500 hover:text-white hover:bg-zinc-800/50;
+  }
 }
 
 /* Print styles */
@@ -237,19 +259,6 @@ body {
 .card-difficulty.editable .difficulty-dot:hover {
   transform: scale(1.2);
   background-color: #666666;
-}
-
-.palette-grid {
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-  width: 100%;
-}
-
-.palette-grid button {
-  aspect-ratio: 1;
-  width: 100%;
-  border-radius: 0.375rem;
 }
 
 .card-container.printer-friendly {

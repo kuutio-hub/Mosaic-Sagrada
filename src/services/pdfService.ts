@@ -1,11 +1,13 @@
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+
 export async function generatePDF(
-  queue, 
-  cornerRadius = 0,
-  printerFriendly = false,
-  printerOpacity = 1,
-  showCropMarks = false
+  queue: any[], 
+  cornerRadius: number = 0,
+  printerFriendly: boolean = false,
+  printerOpacity: number = 1,
+  showCropMarks: boolean = false
 ) {
-  const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -58,27 +60,24 @@ export async function generatePDF(
 }
 
 function generateCardHTML(
-  cardData, 
-  fontSize, 
-  printerFriendly, 
-  printerOpacity,
-  showCropMarks
+  cardData: any, 
+  fontSize: number, 
+  printerFriendly: boolean, 
+  printerOpacity: number,
+  showCropMarks: boolean
 ) {
   const title = cardData.title || '';
-  const dotColor = (color) => (color === 'W' || color === '.') ? '#333333' : '#ffffff';
   
-  const finalFontSize = fontSize;
   const footerBg = printerFriendly ? '#ffffff' : '#000000';
   const textColor = printerFriendly ? '#000000' : '#ffffff';
   const dotActiveColor = printerFriendly ? '#000000' : '#ffffff';
   const dotInactiveColor = printerFriendly ? '#e5e7eb' : '#333333';
-  const dotsWidth = 6 * 2.5 + 5 * 1.5;
 
   return `
     <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.2mm solid #e5e7eb;' : ''}">
       <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2mm; padding: 2mm 2mm 0 2mm; width: fit-content; margin: 0 auto;">
-        ${cardData.cells.map((cell) => {
-          const colorMap = {
+        ${cardData.cells.map((cell: any) => {
+          const colorMap: Record<string, string> = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
           };
           const bgColor = colorMap[cell.color] || '#ffffff';
@@ -90,7 +89,7 @@ function generateCardHTML(
           if (hasValue) {
             const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
             const dotSize = 10;
-            const dots = {
+            const dots: Record<string, string> = {
               '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
               '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
               '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
@@ -103,8 +102,8 @@ function generateCardHTML(
                 ${dots[cell.value] || ''}
               </svg>
             `)}`;
-            // Try local first, then GitHub
-            valueImgSrc = `./PNG/${cell.value}.png`;
+            // Try local first
+            valueImgSrc = `/PNG/${cell.value}.png`;
           }
 
           return `
@@ -157,15 +156,15 @@ function generateCardHTML(
 }
 
 async function renderBatchPage(
-  pdf, 
-  batch, 
-  side, 
-  container,
-  addNewPage,
-  cornerRadius = 0,
-  printerFriendly = false,
-  printerOpacity = 1,
-  showCropMarks = false
+  pdf: jsPDF, 
+  batch: any[], 
+  side: 'front' | 'back', 
+  container: HTMLElement,
+  addNewPage: boolean,
+  cornerRadius: number = 0,
+  printerFriendly: boolean = false,
+  printerOpacity: number = 1,
+  showCropMarks: boolean = false
 ) {
   if (addNewPage) {
     pdf.addPage();
@@ -258,7 +257,7 @@ async function renderBatchPage(
     });
   }));
 
-  const canvas = await window.html2canvas(pageDiv, {
+  const canvas = await html2canvas(pageDiv, {
     scale: 3,
     useCORS: true,
     backgroundColor: '#ffffff'
