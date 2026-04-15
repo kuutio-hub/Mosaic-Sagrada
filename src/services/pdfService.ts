@@ -48,7 +48,15 @@ export async function generatePDF(
     }
   }
 
-  pdf.save('sagrada_cards.pdf');
+  const now = new Date();
+  const timestamp = now.getFullYear().toString() + 
+                   (now.getMonth() + 1).toString().padStart(2, '0') + 
+                   now.getDate().toString().padStart(2, '0') + '_' + 
+                   now.getHours().toString().padStart(2, '0') + 
+                   now.getMinutes().toString().padStart(2, '0') + 
+                   now.getSeconds().toString().padStart(2, '0');
+  const filename = `sagrada_cards_${timestamp}.pdf`;
+  pdf.save(filename);
   document.body.removeChild(iframe);
 }
 
@@ -120,13 +128,59 @@ function generateCardHTML(
   `;
 
   return `
-    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.4mm solid #000000;' : ''}">
-      ${cellsHTML}
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10.2mm; padding: 0 2.5mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1}; border-top: none;">
-        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%; text-align: left; padding-top: 2.5mm;">
-          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 12pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%; padding-top: 0.5mm;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
+    <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.2mm solid #e5e7eb;' : ''}">
+      <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2mm; padding: 2mm 2mm 0 2mm; width: fit-content; margin: 0 auto;">
+        ${cardData.cells.map((cell: any) => {
+          const colorMap: Record<string, string> = {
+            'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
+          };
+          const bgColor = colorMap[cell.color] || '#ffffff';
+          const isX = cell.value === 'X';
+          const hasValue = cell.value !== '.' && cell.value !== 'X';
+          
+          let valueImgSrc = '';
+          let svgFallback = '';
+          if (hasValue) {
+            const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
+            const dotSize = 10;
+            const dots: Record<string, string> = {
+              '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
+              '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+              '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+              '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+              '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
+              '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
+            };
+            svgFallback = `data:image/svg+xml;base64,${btoa(`
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                ${dots[cell.value] || ''}
+              </svg>
+            `)}`;
+            valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
+          }
+
+          return `
+            <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? (printerFriendly ? '#f9fafb' : '#1f2937') : (printerFriendly ? '#ffffff' : '#000000')}; overflow: hidden; border: 0.2mm solid ${printerFriendly ? '#d1d5db' : '#374151'};">
+              ${cell.color !== '.' && cell.color !== 'W' ? `
+                <div style="position: absolute; inset: 0; background-color: ${bgColor}; opacity: 1; z-index: 2;"></div>
+              ` : ''}
+              ${cell.value !== '.' ? `
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
+                  ${isX ? 
+                    `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: ${printerFriendly ? '#9ca3af' : '#4b5563'}; opacity: 1; line-height: 1;">X</span>` : 
+                    `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width: 100%; height: 100%; object-fit: cover;" />`
+                  }
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
+        <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%;">
+          <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 11pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
-        <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; width: ${dotsWidth}mm; height: 100%;">
+        <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; height: 100%;">
           ${Array.from({ length: 6 }).map((_, i) => {
             const isActive = i >= (6 - cardData.difficulty);
             const isGenerated = cardData.isGenerated;
@@ -137,12 +191,12 @@ function generateCardHTML(
 
             if (isGenerated) {
               if (isActive) {
-                dotColor = '#ffffff';
+                dotColor = printerFriendly ? '#000000' : '#ffffff';
                 opacity = 1;
               } else {
                 dotColor = 'transparent';
-                border = '0.2mm solid #ffffff';
-                opacity = 0.8;
+                border = `0.2mm solid ${printerFriendly ? '#000000' : '#ffffff'}`;
+                opacity = 0.6;
               }
             }
             
@@ -201,12 +255,15 @@ async function renderBatchPage(
     const col = side === 'front' ? (idx % 2) : (1 - (idx % 2));
     const row = Math.floor(idx / 2);
     
-    cardDiv.style.left = `${startX + col * (cardW + gapX)}mm`;
-    cardDiv.style.top = `${startY + row * (cardH + gapY)}mm`;
+    const cardX = startX + col * (cardW + gapX);
+    const cardY = startY + row * (cardH + gapY);
+
+    cardDiv.style.left = `${cardX}mm`;
+    cardDiv.style.top = `${cardY}mm`;
     cardDiv.style.width = `90mm`;
     cardDiv.style.height = `80mm`;
     cardDiv.style.borderRadius = showCropMarks ? '0' : `${cornerRadius}mm`;
-    cardDiv.style.overflow = 'visible'; // Allow crop marks to be seen outside if needed
+    cardDiv.style.overflow = 'visible';
     cardDiv.style.boxSizing = 'border-box';
     
     // Add crop marks if enabled
@@ -214,27 +271,21 @@ async function renderBatchPage(
       const markLen = 5; // mm
       const markOffset = 1; // mm
       const markThickness = '0.3mm';
-      const x = startX + col * cardW;
-      const y = startY + row * cardH;
       
       const marks = `
-        <!-- Top Left -->
-        <div style="position: absolute; top: ${y - markOffset - markLen}mm; left: ${x}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
-        <div style="position: absolute; top: ${y}mm; left: ${x - markOffset - markLen}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${-markOffset - markLen}mm; left: 0; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: 0; left: ${-markOffset - markLen}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
         
-        <!-- Top Right -->
-        <div style="position: absolute; top: ${y - markOffset - markLen}mm; left: ${x + cardW}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
-        <div style="position: absolute; top: ${y}mm; left: ${x + cardW + markOffset}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${-markOffset - markLen}mm; left: ${cardW}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: 0; left: ${cardW + markOffset}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
         
-        <!-- Bottom Left -->
-        <div style="position: absolute; top: ${y + cardH + markOffset}mm; left: ${x}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
-        <div style="position: absolute; top: ${y + cardH}mm; left: ${x - markOffset - markLen}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${cardH + markOffset}mm; left: 0; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${cardH}mm; left: ${-markOffset - markLen}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
         
-        <!-- Bottom Right -->
-        <div style="position: absolute; top: ${y + cardH + markOffset}mm; left: ${x + cardW}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
-        <div style="position: absolute; top: ${y + cardH}mm; left: ${x + cardW + markOffset}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${cardH + markOffset}mm; left: ${cardW}mm; width: ${markThickness}; height: ${markLen}mm; background: #000; z-index: 100;"></div>
+        <div style="position: absolute; top: ${cardH}mm; left: ${cardW + markOffset}mm; width: ${markLen}mm; height: ${markThickness}; background: #000; z-index: 100;"></div>
       `;
-      pageDiv.innerHTML += marks;
+      cardDiv.innerHTML = marks;
     }
     
     const innerCard = doc.createElement('div');
