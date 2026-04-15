@@ -776,7 +776,14 @@ const App: React.FC = () => {
                       <input 
                         type="range" min="0" max="20" 
                         value={genOptions.coloredCells}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value) }))}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setGenOptions(prev => ({ 
+                            ...prev, 
+                            coloredCells: val,
+                            valuedCells: Math.min(prev.valuedCells, 20 - val)
+                          }));
+                        }}
                         className="w-full accent-white"
                       />
                     </div>
@@ -802,7 +809,14 @@ const App: React.FC = () => {
                       <input 
                         type="range" min="0" max="20" 
                         value={genOptions.valuedCells}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value) }))}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value);
+                          setGenOptions(prev => ({ 
+                            ...prev, 
+                            valuedCells: val,
+                            coloredCells: Math.min(prev.coloredCells, 20 - val)
+                          }));
+                        }}
                         className="w-full accent-white"
                       />
                     </div>
@@ -1133,6 +1147,22 @@ const App: React.FC = () => {
                         </div>
                         <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('showBackground')}</span>
                       </label>
+                    </div>
+
+                    <div className="pt-6 border-t border-zinc-800">
+                      <button 
+                        onClick={() => {
+                          console.log("--- Asset Debug ---");
+                          [1,2,3,4,5,6].forEach(n => {
+                            const path = `/png/${n}.png`;
+                            fetch(path).then(r => console.log(`${path}: ${r.status} ${r.statusText}`));
+                          });
+                          showNotification("Debug info logged to console");
+                        }}
+                        className="w-full py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl text-xs font-bold hover:text-white transition-all"
+                      >
+                        Log Asset Status
+                      </button>
                     </div>
                   </div>
                 </section>

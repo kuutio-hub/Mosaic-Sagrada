@@ -5,7 +5,16 @@ const VALUES = ['1', '2', '3', '4', '5', '6'];
 
 export function generateSagradaCard(options: any) {
   const cells = createEmptyGrid();
-  const { colorCount, coloredCells, valueCount, valuedCells, symmetric = false, horizontalSymmetry = false, verticalSymmetry = false } = options;
+  const { colorCount, coloredCells: rawColoredCells, valueCount, valuedCells: rawValuedCells, symmetric = false, horizontalSymmetry = false, verticalSymmetry = false } = options;
+
+  // Ensure total constraints do not exceed 20
+  let coloredCells = rawColoredCells;
+  let valuedCells = rawValuedCells;
+  if (coloredCells + valuedCells > 20) {
+    const ratio = coloredCells / (coloredCells + valuedCells);
+    coloredCells = Math.floor(20 * ratio);
+    valuedCells = 20 - coloredCells;
+  }
 
   const selectedColors = [...COLORS].sort(() => Math.random() - 0.5).slice(0, colorCount);
   const selectedValues = [...VALUES].sort(() => Math.random() - 0.5).slice(0, valueCount);

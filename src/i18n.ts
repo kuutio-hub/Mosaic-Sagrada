@@ -67,7 +67,9 @@ export const translations = {
     info: "Információ",
     infoDesc: "Ez az alkalmazás egy rajongói projekt, nem hivatalos Sagrada kiegészítő.",
     deleteOwnCard: "Saját kártya törlése",
-    patternSaved: "Minta elmentve"
+    patternSaved: "Minta elmentve",
+    debug: "Hibakeresés",
+    showBackground: "Háttér megjelenítése"
   },
   en: {
     title: "Sagrada Window Designer",
@@ -137,7 +139,9 @@ export const translations = {
     info: "Information",
     infoDesc: "This application is a fan project, not an official Sagrada supplement.",
     deleteOwnCard: "Delete own card",
-    patternSaved: "Pattern saved"
+    patternSaved: "Pattern saved",
+    debug: "Debug",
+    showBackground: "Show Background"
   },
   de: {
     title: "Sagrada Fenster Designer",
@@ -207,6 +211,8 @@ export const translations = {
     info: "Information",
     infoDesc: "Diese Anwendung ist ein Fanprojekt, keine offizielle Sagrada-Ergänzung.",
     deleteOwnCard: "Eigene Karte löschen",
-    patternSaved: "Muster gespeichert"
+    patternSaved: "Muster gespeichert",
+    debug: "Fehlersuche",
+    showBackground: "Hintergrund anzeigen"
   }
 };
