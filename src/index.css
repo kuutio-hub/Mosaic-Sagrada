@@ -108,6 +108,8 @@ body {
   padding: 2.5mm 2.5mm 0 2.5mm;
   width: fit-content;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .card-cell {
@@ -167,9 +169,10 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 10.2mm;
+  height: 10mm;
   background: black;
   box-sizing: border-box;
+  z-index: 5;
 }
 
 /* Textures removed */
@@ -182,7 +185,7 @@ body {
   min-width: 0;
   overflow: hidden;
   container-type: inline-size;
-  padding-top: 2.5mm; /* Move title slightly down */
+  padding-top: 0.5mm; /* Move title slightly down */
 }
 
 .card-title {

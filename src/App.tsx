@@ -179,7 +179,7 @@ const App: React.FC = () => {
         return res.json();
       })
       .then(data => {
-        console.log("Promos loaded:", data);
+        console.log("Promos loaded successfully");
         setPromos(data);
       })
       .catch(err => {
@@ -1651,9 +1651,13 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`}
+                    src={`https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`}
                     referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    loading="eager"
+                    onLoad={() => console.log(`Successfully loaded PNG: ${cell.value}`)}
                     onError={(e) => {
+                      console.error(`Failed to load PNG: ${cell.value} from ${e.currentTarget.src}`);
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
                     }}
@@ -1666,7 +1670,7 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer" ref={containerRef} style={{ height: '10.2mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+      <div className="card-footer" ref={containerRef} style={{ height: '10mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
         <div className="card-title-container">
           {isEditingTitle && editable ? (
             <input 
@@ -1699,7 +1703,7 @@ const Card: React.FC<CardProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 height: '100%',
-                paddingTop: '2.5mm' // Fine tune vertical alignment
+                paddingTop: '0.5mm' // Fine tune vertical alignment
               }}
             >
               {data.title} {data.code || ''}
