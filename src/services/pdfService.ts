@@ -100,7 +100,7 @@ function generateCardHTML(
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[cell.value] || ''}</svg>`;
             svgFallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
             // Try local first
-            valueImgSrc = `/png/${cell.value}.png`;
+            valueImgSrc = `png/${cell.value}.png`;
           }
 
           return `

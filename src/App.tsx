@@ -170,17 +170,15 @@ const Card: React.FC<{
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`/png/${cell.value}.png`}
+                    src={`png/${cell.value}.png`}
                     referrerPolicy="no-referrer"
                     className="value-image"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      if (target.src.includes('/png/')) {
-                        // Try GitHub fallback
-                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
-                      } else if (target.src.includes('githubusercontent')) {
-                        // Try SVG fallback
+                      if (target.src.includes('githubusercontent')) {
                         target.src = getValueSvgDataUrl(cell.value, cell.color);
+                      } else {
+                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
                       }
                     }}
                     alt={cell.value}
@@ -692,12 +690,15 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`/png/${val}.png`} 
+                                        src={`png/${val}.png`} 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
-                                          target.onerror = null; 
-                                          target.src = getValueSvgDataUrl(val); 
+                                          if (target.src.includes('githubusercontent')) {
+                                            target.src = getValueSvgDataUrl(val);
+                                          } else {
+                                            target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${val}.png`;
+                                          }
                                         }} 
                                       />
                                     )}
@@ -1269,8 +1270,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>© 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>Design by: hrvthgrgly@gmail.com</span>
-          <span>{t('version')}: v1.3.0</span>
+          <span>{t('version')}: v1.4.0</span>
         </div>
       </footer>
 
