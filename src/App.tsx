@@ -65,12 +65,8 @@ const getValueSvgDataUrl = (value: string, color: string = 'W') => {
     '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
   };
 
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-      ${dots[value] || ''}
-    </svg>
-  `;
-  return `data:image/svg+xml;base64,${btoa(svg)}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[value] || ''}</svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
 const Card: React.FC<{
@@ -169,28 +165,28 @@ const Card: React.FC<{
               />
             )}
             {cell.value !== '.' && (
-              <>
+              <div className="value-container" key={`${cell.value}-${cell.color}`}>
                 {cell.value === 'X' ? (
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
                     src={`/png/${cell.value}.png`}
                     referrerPolicy="no-referrer"
+                    className="value-image"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      target.onerror = null;
-                      // Fallback to GitHub raw
-                      target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
-                      // Final fallback to SVG
-                      target.onerror = () => {
-                        target.onerror = null;
+                      if (target.src.includes('/png/')) {
+                        // Try GitHub fallback
+                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
+                      } else if (target.src.includes('githubusercontent')) {
+                        // Try SVG fallback
                         target.src = getValueSvgDataUrl(cell.value, cell.color);
-                      };
+                      }
                     }}
                     alt={cell.value}
                   />
                 )}
-              </>
+              </div>
             )}
           </div>
         ))}

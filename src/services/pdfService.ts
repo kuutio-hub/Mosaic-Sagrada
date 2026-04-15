@@ -97,11 +97,8 @@ function generateCardHTML(
               '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
               '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
             };
-            svgFallback = `data:image/svg+xml;base64,${btoa(`
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-                ${dots[cell.value] || ''}
-              </svg>
-            `)}`;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[cell.value] || ''}</svg>`;
+            svgFallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
             // Try local first
             valueImgSrc = `/png/${cell.value}.png`;
           }
@@ -123,7 +120,7 @@ function generateCardHTML(
           `;
         }).join('')}
       </div>
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 7.5mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 9.9mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
         <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%;">
           <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 11pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
