@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { PatternQueueItem } from '../types';
+import { diceImages } from '../lib/imageAssets';
 
 export async function generatePDF(
   queue: PatternQueueItem[], 
@@ -109,7 +110,7 @@ function generateCardHTML(
                 ${dots[cell.value] || ''}
               </svg>
             `;
-            valueImgSrc = `https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`;
+            valueImgSrc = diceImages[cell.value] || `https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`;
           }
 
           return `

@@ -39,6 +39,7 @@ import {
   ColorOption
 } from './constants';
 import { cn, generateId } from './lib/utils';
+import { diceImages } from './lib/imageAssets';
 import { generatePDF } from './services/pdfService';
 import { generateSagradaCard } from './services/cardGenerator';
 import { translations, Language } from './i18n';
@@ -1651,7 +1652,7 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`}
+                    src={diceImages[cell.value] || `https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`}
                     referrerPolicy="no-referrer"
                     crossOrigin="anonymous"
                     loading="eager"
