@@ -126,9 +126,9 @@
   display: grid;
   grid-template-columns: repeat(5, 15mm);
   grid-template-rows: repeat(4, 15mm);
-  gap: 2mm;
-  padding: 2mm 2mm 0 2mm;
-  width: fit-content;
+  gap: 2.5mm;
+  padding: 2.5mm;
+  width: 90mm;
   margin: 0 auto;
 }
 
@@ -187,7 +187,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 12mm;
+  height: 7.5mm;
   background: black;
   box-sizing: border-box;
 }
@@ -203,7 +203,7 @@
 
 .card-title {
   font-family: "Uncial Antiqua", serif;
-  font-size: 12pt;
+  font-size: 10pt;
   text-transform: uppercase;
   white-space: nowrap;
   line-height: 1;

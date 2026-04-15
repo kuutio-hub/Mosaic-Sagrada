@@ -78,6 +78,7 @@ const Card: React.FC<{
   activeCellIndex: number | null;
   onCellClick?: (index: number) => void;
   onDifficultyChange?: (difficulty: number) => void;
+  onTitleChange?: (title: string) => void;
   scale?: number;
   cornerRadius?: number;
   className?: string;
@@ -92,6 +93,7 @@ const Card: React.FC<{
   activeCellIndex, 
   onCellClick, 
   onDifficultyChange,
+  onTitleChange,
   scale = 1, 
   cornerRadius = 0, 
   className, 
@@ -172,13 +174,13 @@ const Card: React.FC<{
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`/PNG/${cell.value}.png`}
+                    src={`/png/${cell.value}.png`}
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
                       target.onerror = null;
                       // Fallback to GitHub raw
-                      target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
+                      target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
                       // Final fallback to SVG
                       target.onerror = () => {
                         target.onerror = null;
@@ -196,17 +198,16 @@ const Card: React.FC<{
 
       <div className="card-footer" ref={containerRef}>
         <div className="card-title-container">
-          <span 
-            ref={titleRef}
-            className="card-title" 
+          <input 
+            className="card-title bg-transparent border-none outline-none flex-1 min-w-0 hover:bg-white/5 focus:bg-white/10 rounded px-1 -ml-1 transition-colors" 
+            value={data.title}
+            onChange={(e) => onTitleChange?.(e.target.value)}
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 10}pt`
             }}
-          >
-            {data.title}
-          </span>
-          {data.code && <span className="card-code ml-2 opacity-40">{data.code}</span>}
+          />
+          {data.code && <span className="card-code ml-2 opacity-40 shrink-0">{data.code}</span>}
         </div>
         <div className={cn("card-difficulty", editable && "editable")}>
           {Array.from({ length: 6 }).map((_, i) => {
@@ -245,6 +246,7 @@ const App: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [promos, setPromos] = useState<any>({});
   const [customCards, setCustomCards] = useState<CardData[]>([]);
+  const [libraryTab, setLibraryTab] = useState<'saved' | 'promos'>('saved');
   const [editingCustomCardIndex, setEditingCustomCardIndex] = useState<number | null>(null);
   const [cornerRadius, setCornerRadius] = useState(0);
   const [previewScale, setPreviewScale] = useState(1);
@@ -591,20 +593,6 @@ const App: React.FC = () => {
                 className="p-6 space-y-8"
               >
                 <section className="space-y-4">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('cardData')}</h2>
-                  <div className="space-y-3">
-                    <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('cardName')}</label>
-                    <input 
-                      type="text" 
-                      value={currentCard.title}
-                      onChange={(e) => setCurrentCard(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
-                      placeholder={t('patternName')}
-                    />
-                  </div>
-                </section>
-
-                <section className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('palette')}</h2>
                     {isDoubleSided && (
@@ -708,7 +696,7 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`/PNG/${val}.png`} 
+                                        src={`/png/${val}.png`} 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
@@ -790,7 +778,7 @@ const App: React.FC = () => {
                         <span className="text-xs font-bold text-white">{genOptions.coloredCells}</span>
                       </div>
                       <input 
-                        type="range" min="2" max="10" 
+                        type="range" min="0" max="20" 
                         value={genOptions.coloredCells}
                         onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value) }))}
                         className="w-full accent-white"
@@ -816,7 +804,7 @@ const App: React.FC = () => {
                         <span className="text-xs font-bold text-white">{genOptions.valuedCells}</span>
                       </div>
                       <input 
-                        type="range" min="2" max="10" 
+                        type="range" min="0" max="20" 
                         value={genOptions.valuedCells}
                         onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value) }))}
                         className="w-full accent-white"
@@ -864,76 +852,112 @@ const App: React.FC = () => {
                 exit={{ opacity: 0, x: -20 }}
                 className="flex-1 flex flex-col min-h-0"
               >
-                <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('savedPatterns')}</h2>
-                  <div className="flex gap-2">
+                <div className="p-6 border-b border-zinc-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('savedPatterns')}</h2>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                        title={t('import')}
+                      >
+                        <Upload size={18} />
+                      </button>
+                      <button 
+                        onClick={() => handleExport(customCards, 'sagrada_patterns')}
+                        className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
+                        title={t('export')}
+                      >
+                        <Download size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
                     <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                      title={t('import')}
+                      onClick={() => setLibraryTab('saved')}
+                      className={cn(
+                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                        libraryTab === 'saved' ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
+                      )}
                     >
-                      <Upload size={18} />
+                      {t('myCards')}
                     </button>
                     <button 
-                      onClick={() => handleExport(customCards, 'sagrada_patterns')}
-                      className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                      title={t('export')}
+                      onClick={() => setLibraryTab('promos')}
+                      className={cn(
+                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                        libraryTab === 'promos' ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
+                      )}
                     >
-                      <Download size={18} />
+                      {t('promos')}
                     </button>
                   </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleImport} 
-                    className="hidden" 
-                    accept=".json"
-                  />
                 </div>
                 
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {customCards.length === 0 ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto text-zinc-700">
-                        <BookOpen size={32} />
+                  {libraryTab === 'saved' ? (
+                    customCards.length === 0 ? (
+                      <div className="text-center py-12 space-y-4">
+                        <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto text-zinc-700">
+                          <BookOpen size={32} />
+                        </div>
+                        <p className="text-xs text-zinc-600 font-medium">{t('noSavedPatterns')}</p>
                       </div>
-                      <p className="text-xs text-zinc-600 font-medium">{t('noSavedPatterns')}</p>
-                    </div>
+                    ) : (
+                      customCards.map((card, idx) => (
+                        <div 
+                          key={idx}
+                          className={cn(
+                            "group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between",
+                            editingCustomCardIndex === idx 
+                              ? "bg-white border-white shadow-xl shadow-white/10" 
+                              : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
+                          )}
+                          onClick={() => loadCustomCard(idx)}
+                        >
+                          <div className="flex items-center gap-3 min-width-0">
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs",
+                              editingCustomCardIndex === idx ? "bg-zinc-900 text-white" : "bg-zinc-800 text-zinc-400"
+                            )}>
+                              {card.difficulty}
+                            </div>
+                            <span className={cn(
+                              "text-xs font-bold truncate max-w-[120px]",
+                              editingCustomCardIndex === idx ? "text-black" : "text-white"
+                            )}>
+                              {card.title}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
+                            className={cn(
+                              "p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all",
+                              editingCustomCardIndex === idx ? "hover:bg-zinc-100 text-zinc-400 hover:text-red-500" : "hover:bg-zinc-800 text-zinc-600 hover:text-red-500"
+                            )}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))
+                    )
                   ) : (
-                    customCards.map((card, idx) => (
+                    Object.keys(promos).map(name => (
                       <div 
-                        key={idx}
-                        className={cn(
-                          "group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between",
-                          editingCustomCardIndex === idx 
-                            ? "bg-white border-white shadow-xl shadow-white/10" 
-                            : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
-                        )}
-                        onClick={() => loadCustomCard(idx)}
+                        key={name}
+                        className="group p-4 rounded-2xl border bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all cursor-pointer flex items-center justify-between"
+                        onClick={() => loadPromo(name)}
                       >
                         <div className="flex items-center gap-3 min-width-0">
-                          <div className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs",
-                            editingCustomCardIndex === idx ? "bg-zinc-900 text-white" : "bg-zinc-800 text-zinc-400"
-                          )}>
-                            {card.difficulty}
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs bg-zinc-800 text-zinc-400">
+                            {promos[name].difficulty}
                           </div>
-                          <span className={cn(
-                            "text-xs font-bold truncate max-w-[120px]",
-                            editingCustomCardIndex === idx ? "text-black" : "text-white"
-                          )}>
-                            {card.title}
+                          <span className="text-xs font-bold truncate max-w-[160px] text-white">
+                            {name}
                           </span>
                         </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
-                          className={cn(
-                            "p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all",
-                            editingCustomCardIndex === idx ? "hover:bg-zinc-100 text-zinc-400 hover:text-red-500" : "hover:bg-zinc-800 text-zinc-600 hover:text-red-500"
-                          )}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <ChevronRight size={16} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
                       </div>
                     ))
                   )}
@@ -1188,15 +1212,28 @@ const App: React.FC = () => {
             </div>
           )}
           <div className="preview-card-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className="preview-card-container preview-glow" style={{ transform: `scale(${previewScale})` }}>
-              <Card 
-                data={currentCard}
-                activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
-                onCellClick={(idx) => handleCellClick(activeSide, idx)}
-                onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
-                cornerRadius={cornerRadius}
-                editable={true}
-              />
+            <div className="flex flex-col items-center gap-8">
+              <div className="preview-card-container preview-glow" style={{ transform: `scale(${previewScale})` }}>
+                <Card 
+                  data={currentCard}
+                  activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
+                  onCellClick={(idx) => handleCellClick(activeSide, idx)}
+                  onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
+                  onTitleChange={(title) => setCurrentCard(prev => ({ ...prev, title }))}
+                  cornerRadius={cornerRadius}
+                  editable={true}
+                />
+              </div>
+              
+              <motion.button 
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={addToQueue}
+                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-bold shadow-2xl shadow-white/10"
+              >
+                <Plus size={20} />
+                {t('addToQueue')}
+              </motion.button>
             </div>
           </div>
         </section>

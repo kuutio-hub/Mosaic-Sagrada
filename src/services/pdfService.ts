@@ -75,7 +75,7 @@ function generateCardHTML(
 
   return `
     <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.2mm solid #e5e7eb;' : ''}">
-      <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2mm; padding: 2mm 2mm 0 2mm; width: fit-content; margin: 0 auto;">
+      <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm; width: 90mm; margin: 0 auto;">
         ${cardData.cells.map((cell: any) => {
           const colorMap: Record<string, string> = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
@@ -103,7 +103,7 @@ function generateCardHTML(
               </svg>
             `)}`;
             // Try local first
-            valueImgSrc = `/PNG/${cell.value}.png`;
+            valueImgSrc = `/png/${cell.value}.png`;
           }
 
           return `
@@ -115,7 +115,7 @@ function generateCardHTML(
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                   ${isX ? 
                     `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: ${printerFriendly ? '#9ca3af' : '#4b5563'}; opacity: 1; line-height: 1;">X</span>` : 
-                    `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png'; this.onerror=function(){this.onerror=null; this.src='${svgFallback}';};" style="width: 100%; height: 100%; object-fit: cover;" />`
+                    `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png'; this.onerror=function(){this.onerror=null; this.src='${svgFallback}';};" style="width: 100%; height: 100%; object-fit: cover;" />`
                   }
                 </div>
               ` : ''}
@@ -123,7 +123,7 @@ function generateCardHTML(
           `;
         }).join('')}
       </div>
-      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
+      <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 7.5mm; padding: 0 4mm; background: ${footerBg}; box-sizing: border-box; z-index: 10; opacity: ${printerFriendly ? printerOpacity : 1};">
         <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: hidden; height: 100%;">
           <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: 11pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
         </div>
