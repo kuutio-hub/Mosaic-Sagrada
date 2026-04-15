@@ -39,7 +39,6 @@ import {
   ColorOption
 } from './constants';
 import { cn, generateId } from './lib/utils';
-import { diceImages } from './lib/imageAssets';
 import { generatePDF } from './services/pdfService';
 import { generateSagradaCard } from './services/cardGenerator';
 import { translations, Language } from './i18n';
@@ -88,7 +87,7 @@ const App: React.FC = () => {
   const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: Color | Value } | null>(null);
   const [printerFriendly, setPrinterFriendly] = useState(false);
   const [showBackground, setShowBackground] = useState(true);
-  const [printerOpacity, setPrinterOpacity] = useState(1);
+  const [printerOpacity, setPrinterOpacity] = useState(100);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const [genOptions, setGenOptions] = useState({
     colorCount: 5,
@@ -102,12 +101,50 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [language, setLanguage] = useState<Language>('hu');
+  const [history, setHistory] = useState<{ front: CardData, back: CardData }[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   useEffect(() => {
     if (!isDoubleSided && activeSide === 'back') {
       setActiveSide('front');
     }
   }, [isDoubleSided, activeSide]);
+
+  const saveToHistory = (f: CardData, b: CardData) => {
+    const newState = { 
+      front: JSON.parse(JSON.stringify(f)), 
+      back: JSON.parse(JSON.stringify(b)) 
+    };
+    const newHistory = history.slice(0, historyIndex + 1);
+    newHistory.push(newState);
+    if (newHistory.length > 50) newHistory.shift();
+    setHistory(newHistory);
+    setHistoryIndex(newHistory.length - 1);
+  };
+
+  const undo = () => {
+    if (historyIndex > 0) {
+      const prev = history[historyIndex - 1];
+      setFront(JSON.parse(JSON.stringify(prev.front)));
+      setBack(JSON.parse(JSON.stringify(prev.back)));
+      setHistoryIndex(historyIndex - 1);
+    }
+  };
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+      const next = history[historyIndex + 1];
+      setFront(JSON.parse(JSON.stringify(next.front)));
+      setBack(JSON.parse(JSON.stringify(next.back)));
+      setHistoryIndex(historyIndex + 1);
+    }
+  };
+
+  useEffect(() => {
+    if (historyIndex === -1) {
+      saveToHistory(front, back);
+    }
+  }, []);
 
   const t = (key: keyof typeof translations['hu'], params?: Record<string, string | number>) => {
     let text = translations[language][key] || translations['hu'][key] || key;
@@ -180,7 +217,7 @@ const App: React.FC = () => {
         return res.json();
       })
       .then(data => {
-        console.log("Promos loaded successfully");
+        console.log("Promos loaded:", data);
         setPromos(data);
       })
       .catch(err => {
@@ -611,9 +648,45 @@ const App: React.FC = () => {
                 className="p-6 space-y-8"
               >
                 <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={undo}
+                      disabled={historyIndex <= 0}
+                      className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700"
+                      title={t('undo')}
+                    >
+                      <Undo2 size={18} />
+                    </button>
+                    <button 
+                      onClick={redo}
+                      disabled={historyIndex >= history.length - 1}
+                      className="flex-1 flex items-center justify-center gap-2 bg-zinc-800 text-zinc-400 py-2.5 rounded-xl font-bold hover:bg-zinc-700 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-zinc-700"
+                      title={t('redo')}
+                    >
+                      <Redo2 size={18} />
+                    </button>
+                  </div>
+
                   <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('cardData')}</h2>
                   <div className="space-y-3">
-                    <p className="text-[10px] text-zinc-500 italic">{t('clickTitleToRename')}</p>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1 block">{t('cardName')}</label>
+                      <input 
+                        type="text" 
+                        value={currentCard.title}
+                        onChange={(e) => {
+                          const newTitle = e.target.value;
+                          setCurrentCard(prev => {
+                            const updated = { ...prev, title: newTitle };
+                            if (activeSide === 'front') saveToHistory(updated, back);
+                            else saveToHistory(front, updated);
+                            return updated;
+                          });
+                        }}
+                        className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 text-white rounded-lg focus:ring-2 focus:ring-white focus:border-transparent outline-none transition-all"
+                        placeholder={t('patternName')}
+                      />
+                    </div>
                   </div>
                 </section>
 
@@ -1227,14 +1300,19 @@ const App: React.FC = () => {
                     <button 
                       onClick={() => {
                         const newCard = generateSagradaCard(genOptions);
-                        setCurrentCard(prev => ({
-                          ...prev,
-                          ...newCard,
-                          title: newCard.title,
-                          cells: newCard.cells,
-                          difficulty: newCard.difficulty,
-                          code: newCard.code
-                        }));
+                        setCurrentCard(prev => {
+                          const updated = {
+                            ...prev,
+                            ...newCard,
+                            title: newCard.title,
+                            cells: newCard.cells,
+                            difficulty: newCard.difficulty,
+                            code: newCard.code
+                          };
+                          if (activeSide === 'front') saveToHistory(updated, back);
+                          else saveToHistory(front, updated);
+                          return updated;
+                        });
                         showNotification(t('cardGenerated'));
                       }}
                       className="flex-1 bg-zinc-800 text-white py-4 rounded-xl font-bold hover:bg-zinc-700 transition-colors shadow-lg"
@@ -1269,6 +1347,43 @@ const App: React.FC = () => {
                 </div>
                 
                 <div className="space-y-6">
+                  {/* Visual Section */}
+                  <div className="space-y-4">
+                    <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('display')}</label>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white">{t('printerFriendly')}</span>
+                        <button 
+                          onClick={() => setPrinterFriendly(!printerFriendly)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            printerFriendly ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            printerFriendly ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white">{t('showBackground')}</span>
+                        <button 
+                          onClick={() => setShowBackground(!showBackground)}
+                          className={cn(
+                            "w-10 h-5 rounded-full transition-colors relative",
+                            showBackground ? "bg-blue-600" : "bg-zinc-800"
+                          )}
+                        >
+                          <div className={cn(
+                            "absolute top-1 w-3 h-3 bg-white rounded-full transition-all",
+                            showBackground ? "left-6" : "left-1"
+                          )} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Zoom Controls */}
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-zinc-500 uppercase tracking-widest">{t('zoom')}</label>
@@ -1410,7 +1525,6 @@ const App: React.FC = () => {
                 activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
                 onCellClick={(index) => handleCellClick(activeSide, index)}
                 onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
-                onTitleChange={(title) => setCurrentCard(prev => ({ ...prev, title }))}
                 cornerRadius={cornerRadius}
                 editable
               />
@@ -1430,7 +1544,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>&copy; 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.3.1</span>
+          <span>{t('version')}: v1.2.4</span>
         </div>
       </footer>
 
@@ -1544,7 +1658,6 @@ interface CardProps {
   activeCellIndex: number | null;
   onCellClick?: (index: number) => void;
   onDifficultyChange?: (difficulty: number) => void;
-  onTitleChange?: (title: string) => void;
   scale?: number;
   cornerRadius?: number;
   className?: string;
@@ -1561,7 +1674,6 @@ const Card: React.FC<CardProps> = ({
   activeCellIndex, 
   onCellClick, 
   onDifficultyChange,
-  onTitleChange,
   scale = 1, 
   cornerRadius = 0, 
   className, 
@@ -1576,8 +1688,6 @@ const Card: React.FC<CardProps> = ({
   const codeRef = React.useRef<HTMLSpanElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [adjustedFontSize, setAdjustedFontSize] = React.useState<number | null>(null);
-  const [isEditingTitle, setIsEditingTitle] = React.useState(false);
-  const [editTitleValue, setEditTitleValue] = React.useState(data.title);
 
   React.useLayoutEffect(() => {
     if (titleRef.current && containerRef.current) {
@@ -1596,13 +1706,6 @@ const Card: React.FC<CardProps> = ({
       setAdjustedFontSize(currentFontSize);
     }
   }, [data.title, data.titleSize, data.titleFont, data.code]);
-
-  const handleTitleSubmit = () => {
-    setIsEditingTitle(false);
-    if (onTitleChange) {
-      onTitleChange(editTitleValue);
-    }
-  };
 
   const isGenerated = (data as any).isGenerated;
 
@@ -1652,13 +1755,9 @@ const Card: React.FC<CardProps> = ({
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={diceImages[cell.value] || `https://github.com/kuutio-hub/Mosaic-Sagrada/blob/main/PNG/${cell.value}.png?raw=true`}
+                    src={`https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`}
                     referrerPolicy="no-referrer"
-                    crossOrigin="anonymous"
-                    loading="eager"
-                    onLoad={() => console.log(`Successfully loaded PNG: ${cell.value}`)}
                     onError={(e) => {
-                      console.error(`Failed to load PNG: ${cell.value} from ${e.currentTarget.src}`);
                       e.currentTarget.onerror = null;
                       e.currentTarget.src = getValueSvgDataUrl(cell.value, cell.color);
                     }}
@@ -1671,45 +1770,22 @@ const Card: React.FC<CardProps> = ({
         ))}
       </div>
 
-      <div className="card-footer" ref={containerRef} style={{ height: '10mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+      <div className="card-footer" ref={containerRef} style={{ height: '10.2mm', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
         <div className="card-title-container">
-          {isEditingTitle && editable ? (
-            <input 
-              autoFocus
-              value={editTitleValue}
-              onChange={(e) => setEditTitleValue(e.target.value)}
-              onBlur={handleTitleSubmit}
-              onKeyDown={(e) => e.key === 'Enter' && handleTitleSubmit()}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-transparent border-b border-white text-white outline-none w-full font-display uppercase"
-              style={{ 
-                fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
-                fontFamily: data.titleFont || '"Uncial Antiqua", serif'
-              }}
-            />
-          ) : (
-            <span 
-              ref={titleRef}
-              className={cn("card-title", editable && "cursor-text hover:opacity-80")}
-              onClick={(e) => {
-                if (editable) {
-                  e.stopPropagation();
-                  setIsEditingTitle(true);
-                  setEditTitleValue(data.title);
-                }
-              }}
-              style={{ 
-                fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-                fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
-                display: 'flex',
-                alignItems: 'center',
-                height: '100%',
-                paddingTop: '0.5mm' // Fine tune vertical alignment
-              }}
-            >
-              {data.title} {data.code || ''}
-            </span>
-          )}
+          <span 
+            ref={titleRef}
+            className="card-title" 
+            style={{ 
+              fontFamily: data.titleFont || '"Uncial Antiqua", serif',
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 12}pt`,
+              display: 'flex',
+              alignItems: 'center',
+              height: '100%',
+              paddingTop: '0.5mm' // Fine tune vertical alignment
+            }}
+          >
+            {data.title} {data.code || ''}
+          </span>
         </div>
         <div className={cn("card-difficulty", editable && "editable")}>
           {Array.from({ length: 6 }).map((_, i) => {
