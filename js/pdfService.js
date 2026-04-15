@@ -1,14 +1,11 @@
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
-import { PatternQueueItem } from '../types';
-
 export async function generatePDF(
-  queue: PatternQueueItem[], 
-  cornerRadius: number = 0,
-  printerFriendly: boolean = false,
-  printerOpacity: number = 1,
-  showCropMarks: boolean = false
+  queue, 
+  cornerRadius = 0,
+  printerFriendly = false,
+  printerOpacity = 1,
+  showCropMarks = false
 ) {
+  const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
@@ -61,14 +58,14 @@ export async function generatePDF(
 }
 
 function generateCardHTML(
-  cardData: any, 
-  fontSize: number, 
-  printerFriendly: boolean, 
-  printerOpacity: number,
-  showCropMarks: boolean
-): string {
+  cardData, 
+  fontSize, 
+  printerFriendly, 
+  printerOpacity,
+  showCropMarks
+) {
   const title = cardData.title || '';
-  const dotColor = (color: string) => (color === 'W' || color === '.') ? '#333333' : '#ffffff';
+  const dotColor = (color) => (color === 'W' || color === '.') ? '#333333' : '#ffffff';
   
   const finalFontSize = fontSize;
   const footerBg = printerFriendly ? '#ffffff' : '#000000';
@@ -77,61 +74,11 @@ function generateCardHTML(
   const dotInactiveColor = printerFriendly ? '#e5e7eb' : '#333333';
   const dotsWidth = 6 * 2.5 + 5 * 1.5;
 
-  const cellsHTML = `
-    <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2.5mm; padding: 2.5mm 2.5mm 0 2.5mm; width: fit-content; margin: 0 auto;">
-      ${cardData.cells.map((cell: any) => {
-        const colorMap: Record<string, string> = {
-          'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
-        };
-        const bgColor = colorMap[cell.color] || '#ffffff';
-        const isX = cell.value === 'X';
-        const hasValue = cell.value !== '.' && cell.value !== 'X';
-        
-        let valueImgSrc = '';
-        let svgFallback = '';
-        if (hasValue) {
-          const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
-          const dotSize = 10;
-          const dots: Record<string, string> = {
-            '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-            '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-            '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
-          };
-          svgFallback = `data:image/svg+xml;base64,${btoa(`
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-              ${dots[cell.value] || ''}
-            </svg>
-          `)}`;
-          valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
-        }
-
-        return `
-          <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? '#f3f4f6' : '#ffffff'}; overflow: hidden; border: 0.2mm solid #000000;">
-            ${cell.color !== '.' && cell.color !== 'W' ? `
-              <div style="position: absolute; inset: 0; background-color: ${bgColor}; opacity: 1; z-index: 2;"></div>
-            ` : ''}
-            ${cell.value !== '.' ? `
-              <div style="font-weight: bold; color: ${dotColor(cell.color)}; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
-                ${isX ? 
-                  `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: #9ca3af; opacity: 1; line-height: 1;">X</span>` : 
-                  `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width: 100%; height: 100%; object-fit: cover;" />`
-                }
-              </div>
-            ` : ''}
-          </div>
-        `;
-      }).join('')}
-    </div>
-  `;
-
   return `
     <div style="width: 90mm; height: 80mm; position: relative; background: ${printerFriendly ? '#ffffff' : '#000000'}; color: white; display: flex; flex-direction: column; box-sizing: border-box; overflow: hidden; ${printerFriendly ? 'border: 0.2mm solid #e5e7eb;' : ''}">
       <div class="card-grid" style="display: grid; grid-template-columns: repeat(5, 15mm); grid-template-rows: repeat(4, 15mm); gap: 2mm; padding: 2mm 2mm 0 2mm; width: fit-content; margin: 0 auto;">
-        ${cardData.cells.map((cell: any) => {
-          const colorMap: Record<string, string> = {
+        ${cardData.cells.map((cell) => {
+          const colorMap = {
             'R': '#ed1c24', 'G': '#00a651', 'B': '#0072bc', 'Y': '#fff200', 'P': '#662d91', 'W': '#ffffff', '.': '#ffffff'
           };
           const bgColor = colorMap[cell.color] || '#ffffff';
@@ -143,7 +90,7 @@ function generateCardHTML(
           if (hasValue) {
             const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
             const dotSize = 10;
-            const dots: Record<string, string> = {
+            const dots = {
               '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
               '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
               '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
@@ -156,7 +103,8 @@ function generateCardHTML(
                 ${dots[cell.value] || ''}
               </svg>
             `)}`;
-            valueImgSrc = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png`;
+            // Try local first, then GitHub
+            valueImgSrc = `./PNG/${cell.value}.png`;
           }
 
           return `
@@ -168,7 +116,7 @@ function generateCardHTML(
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                   ${isX ? 
                     `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: ${printerFriendly ? '#9ca3af' : '#4b5563'}; opacity: 1; line-height: 1;">X</span>` : 
-                    `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='${svgFallback}';" style="width: 100%; height: 100%; object-fit: cover;" />`
+                    `<img src="${valueImgSrc}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/PNG/${cell.value}.png'; this.onerror=function(){this.onerror=null; this.src='${svgFallback}';};" style="width: 100%; height: 100%; object-fit: cover;" />`
                   }
                 </div>
               ` : ''}
@@ -209,15 +157,15 @@ function generateCardHTML(
 }
 
 async function renderBatchPage(
-  pdf: jsPDF, 
-  batch: PatternQueueItem[], 
-  side: 'front' | 'back', 
-  container: HTMLElement,
-  addNewPage: boolean,
-  cornerRadius: number = 0,
-  printerFriendly: boolean = false,
-  printerOpacity: number = 1,
-  showCropMarks: boolean = false
+  pdf, 
+  batch, 
+  side, 
+  container,
+  addNewPage,
+  cornerRadius = 0,
+  printerFriendly = false,
+  printerOpacity = 1,
+  showCropMarks = false
 ) {
   if (addNewPage) {
     pdf.addPage();
@@ -310,7 +258,7 @@ async function renderBatchPage(
     });
   }));
 
-  const canvas = await html2canvas(pageDiv, {
+  const canvas = await window.html2canvas(pageDiv, {
     scale: 3,
     useCORS: true,
     backgroundColor: '#ffffff'

@@ -1,5 +1,3 @@
-export type Language = 'hu' | 'en' | 'de';
-
 export const translations = {
   hu: {
     title: "Sagrada Pattern Designer",

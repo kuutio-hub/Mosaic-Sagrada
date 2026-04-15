@@ -1,27 +1,16 @@
-import { CardData, CellData, Color, Value } from '../types';
-import { createEmptyGrid } from '../constants';
+import { createEmptyGrid } from './constants.js';
 
-interface GeneratorOptions {
-  colorCount: number;
-  coloredCells: number;
-  valueCount: number;
-  valuedCells: number;
-  symmetric?: boolean;
-  horizontalSymmetry?: boolean;
-  verticalSymmetry?: boolean;
-}
+const COLORS = ['R', 'G', 'B', 'Y', 'P'];
+const VALUES = ['1', '2', '3', '4', '5', '6'];
 
-const COLORS: Color[] = ['R', 'G', 'B', 'Y', 'P'];
-const VALUES: Value[] = ['1', '2', '3', '4', '5', '6'];
-
-export function generateSagradaCard(options: GeneratorOptions): CardData {
-  const cells: CellData[] = createEmptyGrid();
+export function generateSagradaCard(options) {
+  const cells = createEmptyGrid();
   const { colorCount, coloredCells, valueCount, valuedCells, symmetric = false, horizontalSymmetry = false, verticalSymmetry = false } = options;
 
   const selectedColors = [...COLORS].sort(() => Math.random() - 0.5).slice(0, colorCount);
   const selectedValues = [...VALUES].sort(() => Math.random() - 0.5).slice(0, valueCount);
 
-  const isValid = (index: number, type: 'color' | 'value', val: string): boolean => {
+  const isValid = (index, type, val) => {
     const row = Math.floor(index / 5);
     const col = index % 5;
 
@@ -41,10 +30,10 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     return true;
   };
 
-  const getSymmetricIndices = (index: number) => {
+  const getSymmetricIndices = (index) => {
     const row = Math.floor(index / 5);
     const col = index % 5;
-    const syms = new Set<number>();
+    const syms = new Set();
     
     if (symmetric || horizontalSymmetry) {
       syms.add(row * 5 + (4 - col)); // Horizontal symmetry
@@ -125,7 +114,6 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
     }
   }
 
-  // 5. Calculate difficulty (rough estimate based on number of constraints)
   const totalConstraints = coloredCells + valuedCells;
   let difficulty = 3;
   if (totalConstraints <= 8) difficulty = 3;
@@ -133,14 +121,13 @@ export function generateSagradaCard(options: GeneratorOptions): CardData {
   else if (totalConstraints <= 12) difficulty = 5;
   else difficulty = 6;
 
-  // Generate a short short name
   const shortId = Math.random().toString(36).substring(2, 8).toUpperCase();
 
   return {
     title: `Gen-${shortId}`,
     difficulty,
     cells,
-    code: '', // Remove seed from code as it's not reproducible
-    isGenerated: true // Custom flag for UI
+    code: '',
+    isGenerated: true
   };
 }

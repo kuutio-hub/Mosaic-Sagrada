@@ -1,8 +1,6 @@
-import { CardData, CellData, Color } from './types';
+export const DEFAULT_CELL = { color: 'W', value: '.' };
 
-export const DEFAULT_CELL: CellData = { color: 'W', value: '.' };
-
-export const createEmptyGrid = (): CellData[] => 
+export const createEmptyGrid = () => 
   Array(20).fill(null).map(() => ({ color: 'W', value: '.' }));
 
 export const FONTS = [
@@ -18,7 +16,7 @@ export const FONTS = [
   { id: 'Inter', label: 'Inter' }
 ];
 
-export const DEFAULT_FRONT: CardData = {
+export const DEFAULT_FRONT = {
   title: "MINTA NÉV",
   difficulty: 3,
   cells: createEmptyGrid(),
@@ -27,7 +25,7 @@ export const DEFAULT_FRONT: CardData = {
   cornerRadius: 0
 };
 
-export const DEFAULT_BACK: CardData = {
+export const DEFAULT_BACK = {
   title: "MINTA NÉV (HÁT)",
   difficulty: 4,
   cells: createEmptyGrid(),
@@ -36,13 +34,7 @@ export const DEFAULT_BACK: CardData = {
   cornerRadius: 0
 };
 
-export interface ColorOption {
-  id: Color;
-  hex: string;
-  label: string;
-}
-
-export const COLORS: readonly ColorOption[] = [
+export const COLORS = [
   { id: 'R', hex: '#ed1c24', label: 'Piros' },
   { id: 'G', hex: '#00a651', label: 'Zöld' },
   { id: 'B', hex: '#0072bc', label: 'Kék' },
@@ -50,9 +42,9 @@ export const COLORS: readonly ColorOption[] = [
   { id: 'P', hex: '#662d91', label: 'Lila' },
   { id: 'W', hex: '#ffffff', label: 'Fehér' },
   { id: '.', hex: '#ffffff', label: 'Nincs' }
-] as const;
+];
 
-export const VALUES = ['1', '2', '3', '4', '5', '6', 'X', '.'] as const;
+export const VALUES = ['1', '2', '3', '4', '5', '6', 'X', '.'];
 
 export const PHYSICAL_DIMENSIONS = {
   cardWidth: 90, // mm

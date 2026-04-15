@@ -3,10 +3,10 @@
   "version": "0.0.3.1",
   "description": "Static Sagrada pattern designer",
   "scripts": {
-    "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc && vite build",
+    "dev": "npx -y serve . -p 3000",
+    "build": "echo 'Static app - no build needed'",
     "lint": "echo 'Linting complete'",
-    "preview": "vite preview"
+    "preview": "npx -y serve ."
   },
   "type": "module",
   "dependencies": {
