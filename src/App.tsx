@@ -18,6 +18,23 @@ import {
   BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Import dice images
+import dice1 from './assets/png/1.png';
+import dice2 from './assets/png/2.png';
+import dice3 from './assets/png/3.png';
+import dice4 from './assets/png/4.png';
+import dice5 from './assets/png/5.png';
+import dice6 from './assets/png/6.png';
+
+const diceImages: Record<string, string> = {
+  '1': dice1,
+  '2': dice2,
+  '3': dice3,
+  '4': dice4,
+  '5': dice5,
+  '6': dice6,
+};
 import { 
   DEFAULT_FRONT, 
   DEFAULT_BACK, 
@@ -170,16 +187,12 @@ const Card: React.FC<{
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`png/${cell.value}.png`}
+                    src={diceImages[cell.value]}
                     referrerPolicy="no-referrer"
                     className="value-image"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      if (target.src.includes('githubusercontent')) {
-                        target.src = getValueSvgDataUrl(cell.value, cell.color);
-                      } else {
-                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${cell.value}.png`;
-                      }
+                      target.src = getValueSvgDataUrl(cell.value, cell.color);
                     }}
                     alt={cell.value}
                   />
@@ -690,15 +703,11 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`png/${val}.png`} 
+                                        src={diceImages[val]} 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
-                                          if (target.src.includes('githubusercontent')) {
-                                            target.src = getValueSvgDataUrl(val);
-                                          } else {
-                                            target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/png/${val}.png`;
-                                          }
+                                          target.src = getValueSvgDataUrl(val);
                                         }} 
                                       />
                                     )}
@@ -1151,19 +1160,9 @@ const App: React.FC = () => {
                     </div>
 
                     <div className="pt-6 border-t border-zinc-800">
-                      <button 
-                        onClick={() => {
-                          console.log("--- Asset Debug ---");
-                          [1,2,3,4,5,6].forEach(n => {
-                            const path = `/png/${n}.png`;
-                            fetch(path).then(r => console.log(`${path}: ${r.status} ${r.statusText}`));
-                          });
-                          showNotification("Debug info logged to console");
-                        }}
-                        className="w-full py-3 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-xl text-xs font-bold hover:text-white transition-all"
-                      >
-                        Log Asset Status
-                      </button>
+                      <p className="text-[10px] text-zinc-600 font-medium text-center italic">
+                        Sagrada Pattern Designer v1.4.0
+                      </p>
                     </div>
                   </div>
                 </section>

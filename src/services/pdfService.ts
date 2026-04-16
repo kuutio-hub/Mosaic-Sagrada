@@ -1,6 +1,23 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
+// Import dice images
+import dice1 from '../assets/png/1.png';
+import dice2 from '../assets/png/2.png';
+import dice3 from '../assets/png/3.png';
+import dice4 from '../assets/png/4.png';
+import dice5 from '../assets/png/5.png';
+import dice6 from '../assets/png/6.png';
+
+const diceImages: Record<string, string> = {
+  '1': dice1,
+  '2': dice2,
+  '3': dice3,
+  '4': dice4,
+  '5': dice5,
+  '6': dice6,
+};
+
 export async function generatePDF(
   queue: any[], 
   cornerRadius: number = 0,
@@ -100,7 +117,7 @@ function generateCardHTML(
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[cell.value] || ''}</svg>`;
             svgFallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
             // Try local first
-            valueImgSrc = `png/${cell.value}.png`;
+            valueImgSrc = diceImages[cell.value];
           }
 
           return `
