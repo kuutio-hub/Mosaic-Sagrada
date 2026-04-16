@@ -87,17 +87,18 @@ function generateCardHTML(
           let valueImgSrc = '';
           let svgFallback = '';
           if (hasValue) {
-            const dotColor = (cell.color === 'W' || cell.color === '.') ? '#333333' : '#ffffff';
-            const dotSize = 10;
+            const isWhite = (cell.color === 'W' || cell.color === '.');
+            const dotColor = isWhite ? '#111827' : '#ffffff';
+            const dotSize = 8;
             const dots: Record<string, string> = {
               '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-              '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-              '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-              '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-              '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-              '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
+              '2': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+              '3': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+              '4': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="70" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+              '5': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+              '6': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="70" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`
             };
-            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[cell.value] || ''}</svg>`;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="12" fill="none" />${dots[cell.value] || ''}</svg>`;
             svgFallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
             // Try local first
             valueImgSrc = `png/${cell.value}.png`;

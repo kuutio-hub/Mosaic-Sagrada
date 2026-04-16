@@ -55,18 +55,19 @@ interface QueueItem {
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
   if (value === '.' || value === 'X') return '';
   
-  const dotColor = (color === 'W' || color === '.') ? '#333333' : 'white';
-  const dotSize = 10;
+  const isWhite = (color === 'W' || color === '.');
+  const dotColor = isWhite ? '#111827' : 'white';
+  const dotSize = 8;
   const dots: Record<string, string> = {
     '1': `<circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" />`,
-    '2': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-    '3': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-    '4': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-    '5': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`,
-    '6': `<circle cx="33" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="33" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="33" cy="67" r="${dotSize}" fill="${dotColor}" /><circle cx="67" cy="67" r="${dotSize}" fill="${dotColor}" />`
+    '2': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+    '3': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+    '4': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="70" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+    '5': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="50" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="70" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`,
+    '6': `<circle cx="30" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="30" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="50" r="${dotSize}" fill="${dotColor}" /><circle cx="30" cy="70" r="${dotSize}" fill="${dotColor}" /><circle cx="70" cy="70" r="${dotSize}" fill="${dotColor}" />`
   };
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${dots[value] || ''}</svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="12" fill="none" />${dots[value] || ''}</svg>`;
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 };
 
@@ -1145,7 +1146,7 @@ const App: React.FC = () => {
 
                     <div className="pt-6 border-t border-zinc-800">
                       <p className="text-[10px] text-zinc-600 font-medium text-center italic">
-                        Sagrada Pattern Designer 0.1.4.1-beta
+                        Sagrada Pattern Designer 0.1.4.3-beta
                       </p>
                     </div>
                   </div>
@@ -1253,7 +1254,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>© 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: 0.1.4.1-beta</span>
+          <span>{t('version')}: 0.1.4.3-beta</span>
         </div>
       </footer>
 
