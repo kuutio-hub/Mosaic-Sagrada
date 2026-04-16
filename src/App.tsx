@@ -19,22 +19,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Import dice images
-import dice1 from './assets/png/1.png';
-import dice2 from './assets/png/2.png';
-import dice3 from './assets/png/3.png';
-import dice4 from './assets/png/4.png';
-import dice5 from './assets/png/5.png';
-import dice6 from './assets/png/6.png';
-
-const diceImages: Record<string, string> = {
-  '1': dice1,
-  '2': dice2,
-  '3': dice3,
-  '4': dice4,
-  '5': dice5,
-  '6': dice6,
-};
 import { 
   DEFAULT_FRONT, 
   DEFAULT_BACK, 
@@ -187,7 +171,7 @@ const Card: React.FC<{
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={diceImages[cell.value]}
+                    src={`png/${cell.value}.png`}
                     referrerPolicy="no-referrer"
                     className="value-image"
                     onError={(e) => {
@@ -703,7 +687,7 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={diceImages[val]} 
+                                        src={`png/${val}.png`} 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
@@ -1161,7 +1145,7 @@ const App: React.FC = () => {
 
                     <div className="pt-6 border-t border-zinc-800">
                       <p className="text-[10px] text-zinc-600 font-medium text-center italic">
-                        Sagrada Pattern Designer v1.4.0
+                        Sagrada Pattern Designer 0.1.4.1-beta
                       </p>
                     </div>
                   </div>
@@ -1269,7 +1253,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>© 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: v1.4.0</span>
+          <span>{t('version')}: 0.1.4.1-beta</span>
         </div>
       </footer>
 
