@@ -14,29 +14,37 @@
   }
 
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
+    @apply bg-[#050505] text-zinc-100 antialiased;
   }
 }
 
 @layer components {
-  .glass-panel {
-    @apply bg-zinc-900/50 backdrop-blur-md border border-zinc-800/50;
+  .premium-panel {
+    @apply bg-[#0a0a0a] border border-zinc-800/50 shadow-2xl;
   }
   
-  .btn-primary {
-    @apply bg-white text-black font-bold py-3 px-6 rounded-xl transition-all hover:bg-zinc-200 active:scale-95 shadow-lg shadow-white/5;
-  }
-  
-  .btn-secondary {
-    @apply bg-zinc-800 text-zinc-300 font-bold py-3 px-6 rounded-xl transition-all hover:bg-zinc-700 active:scale-95 border border-zinc-700;
+  .premium-button {
+    @apply flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
   }
 
-  .nav-item-active {
-    @apply bg-white text-black shadow-lg shadow-white/10;
+  .premium-button-primary {
+    @apply premium-button bg-white text-black hover:bg-zinc-200;
   }
 
-  .nav-item-inactive {
-    @apply text-zinc-500 hover:text-white hover:bg-zinc-800/50;
+  .premium-button-secondary {
+    @apply premium-button bg-zinc-900 text-zinc-300 border border-zinc-800 hover:bg-zinc-800 hover:text-white;
+  }
+
+  .premium-button-danger {
+    @apply premium-button bg-red-950/30 text-red-400 border border-red-900/50 hover:bg-red-900/50 hover:text-red-200;
+  }
+
+  .premium-button-ghost {
+    @apply premium-button bg-transparent text-zinc-500 hover:text-white hover:bg-white/5;
+  }
+
+  .tool-button {
+    @apply w-12 h-12 flex items-center justify-center rounded-xl transition-all active:scale-90 border-2;
   }
 }
 

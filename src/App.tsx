@@ -15,7 +15,8 @@ import {
   Check,
   Layout,
   ChevronDown,
-  BookOpen
+  BookOpen,
+  HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -233,6 +234,78 @@ const Card: React.FC<{
   );
 };
 
+const Wiki: React.FC<{ onClose: () => void, t: any }> = ({ onClose, t }) => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div 
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-8 border-b border-zinc-800 flex items-center justify-between">
+          <h2 className="text-2xl font-display text-white">{t('wikiTitle')}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
+            <CloseIcon size={24} className="text-zinc-500" />
+          </button>
+        </div>
+        <div className="p-8 overflow-y-auto max-h-[60vh] space-y-8">
+          <section className="space-y-3">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Layout size={20} className="text-zinc-400" />
+              {t('editorUsage')}
+            </h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">{t('editorUsageDesc')}</p>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Settings size={20} className="text-zinc-400" />
+              {t('generation')}
+            </h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">{t('generationDesc')}</p>
+          </section>
+          <section className="space-y-3">
+            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <Printer size={20} className="text-zinc-400" />
+              {t('printAndPdf')}
+            </h3>
+            <p className="text-zinc-400 text-sm leading-relaxed">{t('printAndPdfDesc')}</p>
+          </section>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="p-4 bg-zinc-950 rounded-2xl space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">{t('doubleSided')}</h4>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">{t('doubleSidedDesc')}</p>
+            </div>
+            <div className="p-4 bg-zinc-950 rounded-2xl space-y-2">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-zinc-500">{t('printerFriendly')}</h4>
+              <p className="text-[10px] text-zinc-600 leading-relaxed">{t('printerFriendlyDesc')}</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-8 bg-zinc-950/50 border-t border-zinc-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center">
+              <Info size={20} className="text-zinc-500" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-white">{t('info')}</p>
+              <p className="text-[10px] text-zinc-600">{t('infoDesc')}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="premium-button-primary px-8">OK</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const App: React.FC = () => {
   const [front, setFront] = useState<CardData>(JSON.parse(JSON.stringify(DEFAULT_FRONT)));
   const [back, setBack] = useState<CardData>(JSON.parse(JSON.stringify(DEFAULT_BACK)));
@@ -246,7 +319,7 @@ const App: React.FC = () => {
   const [customCards, setCustomCards] = useState<CardData[]>([]);
   const [libraryTab, setLibraryTab] = useState<'saved' | 'promos'>('saved');
   const [editingCustomCardIndex, setEditingCustomCardIndex] = useState<number | null>(null);
-  const [cornerRadius, setCornerRadius] = useState(0);
+  const [cornerRadius, setCornerRadius] = useState(1.5);
   const [previewScale, setPreviewScale] = useState(1);
   const [isColorsExpanded, setIsColorsExpanded] = useState(true);
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
@@ -310,6 +383,12 @@ const App: React.FC = () => {
     if (saved) {
       try { setCustomCards(JSON.parse(saved)); } catch (e) {}
     }
+
+    // Set favicon
+    const link = document.querySelector("link[rel~='icon']") as HTMLLinkElement || document.createElement('link');
+    link.rel = 'icon';
+    link.href = getValueSvgDataUrl('6', 'B');
+    document.getElementsByTagName('head')[0].appendChild(link);
   }, []);
 
   useEffect(() => { localStorage.setItem('sagrada_previewScale', previewScale.toString()); }, [previewScale]);
@@ -365,6 +444,7 @@ const App: React.FC = () => {
       code: promo.code
     });
     setEditingCustomCardIndex(null);
+    setActiveSide('front');
   };
 
   const saveCard = (overwrite = false) => {
@@ -388,6 +468,7 @@ const App: React.FC = () => {
     if (!card) return;
     setCurrentCard(JSON.parse(JSON.stringify(card)));
     setEditingCustomCardIndex(idx);
+    setActiveSide('front');
   };
 
   const deleteCustomCard = (idx: number) => {
@@ -494,15 +575,15 @@ const App: React.FC = () => {
     }
   };
 
-  const addToQueue = () => {
+  const addToQueue = (card?: CardData) => {
     const newItem: QueueItem = {
       id: generateId(),
-      front: isDoubleSided ? JSON.parse(JSON.stringify(front)) : JSON.parse(JSON.stringify(activeSide === 'front' ? front : back)),
+      front: JSON.parse(JSON.stringify(card || front)),
       back: isDoubleSided ? JSON.parse(JSON.stringify(back)) : null,
-      isDoubleSided
+      isDoubleSided: isDoubleSided
     };
     setQueue(prev => [...prev, newItem]);
-    setActivePanel('queue');
+    showNotification(t('addedToQueue'));
   };
 
   const handleExportPDF = async () => {
@@ -516,109 +597,120 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="bg-zinc-900/80 backdrop-blur-xl border-b border-zinc-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+      {/* Header */}
+      <header className="h-20 bg-zinc-950 border-b border-zinc-900 px-8 flex items-center justify-between shrink-0 z-50">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-white to-zinc-400 rounded-xl flex items-center justify-center text-black font-display text-2xl shadow-lg shadow-white/10">S</div>
-          <h1 className="font-display text-2xl hidden sm:block text-white tracking-tight">{t('title')}</h1>
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+            <Layers size={24} className="text-black" />
+          </div>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-display text-white tracking-tight">MOSAIC</h1>
+            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.3em] -mt-1">Sagrada Designer</span>
+          </div>
         </div>
-        <nav className="flex items-center gap-2">
-          {['editor', 'generator', 'saved'].map(panel => (
+
+        <nav className="flex items-center bg-zinc-900/50 p-1 rounded-2xl border border-zinc-800/50">
+          {[
+            { id: 'editor', icon: Layout, label: t('editor') },
+            { id: 'generator', icon: Settings, iconSize: 18, label: t('generator') },
+            { id: 'library', icon: BookOpen, label: t('library') },
+            { id: 'print', icon: Printer, label: t('print') },
+            { id: 'settings', icon: Settings, label: t('settings') }
+          ].map(item => (
             <button 
-              key={panel}
-              onClick={() => setActivePanel(panel)}
+              key={item.id}
+              onClick={() => setActivePanel(item.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-sm",
-                activePanel === panel ? "bg-white text-black shadow-lg shadow-white/10" : "text-zinc-500 hover:text-white hover:bg-zinc-800/50"
+                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
+                activePanel === item.id ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
               )}
             >
-              <span>{t(panel === 'saved' ? 'savedPatterns' : panel === 'generator' ? 'generation' : panel)}</span>
+              <item.icon size={item.iconSize || 16} />
+              <span>{item.label}</span>
+              {item.id === 'print' && queue.length > 0 && (
+                <span className="ml-1 w-4 h-4 bg-red-500 text-white text-[8px] rounded-full flex items-center justify-center animate-pulse">
+                  {queue.length}
+                </span>
+              )}
             </button>
           ))}
-          <div className="w-px h-6 bg-zinc-800 mx-2 hidden md:block" />
-          <button 
-            onClick={() => setActivePanel('queue')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-sm relative",
-              activePanel === 'queue' ? "bg-white text-black shadow-lg shadow-white/10" : "text-zinc-500 hover:text-white hover:bg-zinc-800/50"
-            )}
-          >
-            <Printer size={18} />
-            <span className="hidden md:inline">{t('print')}</span>
-            {queue.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-zinc-900 animate-in zoom-in">
-                {queue.length}
-              </span>
-            )}
-          </button>
-          <button 
-            onClick={() => setActivePanel('settings')}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl transition-all font-bold text-sm",
-              activePanel === 'settings' ? "bg-white text-black shadow-lg shadow-white/10" : "text-zinc-500 hover:text-white hover:bg-zinc-800/50"
-            )}
-          >
-            <Settings size={18} />
-            <span className="hidden md:inline">{t('settings')}</span>
-          </button>
-          <div className="flex items-center bg-zinc-900 rounded-xl p-1 ml-4 border border-zinc-800">
-            {(['hu', 'en', 'de'] as const).map(lang => (
-              <button 
-                key={lang}
-                onClick={() => setLanguage(lang)}
-                className={cn(
-                  "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
-                  language === lang ? "bg-zinc-800 text-white shadow-inner" : "text-zinc-600 hover:text-zinc-400"
-                )}
-              >
-                {lang}
-              </button>
-            ))}
-          </div>
         </nav>
-      </header>
 
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <button className="flex items-center gap-2 px-4 py-2 bg-zinc-900/50 border border-zinc-800 rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+              <span className="w-4 h-3 bg-zinc-800 rounded-sm overflow-hidden flex items-center justify-center text-[8px]">
+                {language.toUpperCase()}
+              </span>
+              <span>{language === 'hu' ? 'Magyar' : language === 'en' ? 'English' : 'Deutsch'}</span>
+              <ChevronDown size={12} />
+            </button>
+            <div className="absolute top-full right-0 mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              {(['hu', 'en', 'de'] as const).map(lang => (
+                <button 
+                  key={lang}
+                  onClick={() => setLanguage(lang)}
+                  className={cn(
+                    "w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors",
+                    language === lang ? "text-white" : "text-zinc-500"
+                  )}
+                >
+                  {lang === 'hu' ? 'Magyar' : lang === 'en' ? 'English' : 'Deutsch'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button 
+            onClick={() => setShowWiki(!showWiki)}
+            className={cn(
+              "w-10 h-10 flex items-center justify-center rounded-xl border transition-all",
+              showWiki ? "bg-white text-black border-white" : "bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:border-zinc-700"
+            )}
+          >
+            <HelpCircle size={18} />
+          </button>
+        </div>
+      </header>
       {/* Main Content */}
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden" onClick={() => setSelectedTool(null)}>
-        {/* Left Sidebar */}
-        <aside className="w-full md:w-80 bg-zinc-900/50 backdrop-blur-xl border-r border-zinc-800 flex flex-col overflow-y-auto shrink-0 z-40">
-          <AnimatePresence mode="wait">
-            {activePanel === 'editor' && (
-              <motion.div 
-                key="editor"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="p-6 space-y-8"
-              >
-                <section className="space-y-4">
+      <main className="flex-1 flex overflow-hidden" onClick={() => setSelectedTool(null)}>
+        {/* Left Sidebar: Contextual Tools */}
+        <AnimatePresence mode="wait">
+          <motion.aside 
+            key={activePanel}
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
+            className="w-80 bg-[#0a0a0a] border-r border-zinc-800/50 flex flex-col shrink-0 z-40"
+          >
+            <div className="p-6 space-y-8 overflow-y-auto h-full">
+              {activePanel === 'editor' && (
+                <section className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('palette')}</h2>
-                    {isDoubleSided && (
-                      <div className="flex bg-zinc-800 p-1 rounded-lg">
-                        {(['front', 'back'] as const).map(side => (
-                          <button 
-                            key={side}
-                            onClick={() => setActiveSide(side)}
-                            className={cn(
-                              "px-3 py-1 text-xs font-bold rounded-md transition-all",
-                              activeSide === side ? "bg-zinc-700 shadow-sm text-white" : "text-zinc-500"
-                            )}
-                          >
-                            {t(side)}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('palette')}</h2>
+                    <div className="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                      {(['front', 'back'] as const).map(side => (
+                        <button 
+                          key={side}
+                          onClick={() => setActiveSide(side)}
+                          className={cn(
+                            "px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all",
+                            activeSide === side ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500"
+                          )}
+                        >
+                          {t(side)}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="space-y-4">
                     {/* Colors */}
-                    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                    <div className="premium-panel rounded-2xl overflow-hidden">
                       <button 
                         onClick={() => setIsColorsExpanded(!isColorsExpanded)}
-                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
                       >
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{t('colors')}</span>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('colors')}</span>
                         <motion.div animate={{ rotate: isColorsExpanded ? 90 : 0 }}>
                           <ChevronRight size={14} className="text-zinc-600" />
                         </motion.div>
@@ -637,11 +729,10 @@ const App: React.FC = () => {
                                   key={color.id}
                                   onClick={(e) => { e.stopPropagation(); handlePickerSelect(color.id); }}
                                   className={cn(
-                                    "aspect-square rounded-md border-2 transition-all flex items-center justify-center",
-                                    selectedTool?.value === color.id ? "border-white scale-105 shadow-md" : "border-transparent hover:scale-105"
+                                    "aspect-square rounded-xl border-2 transition-all flex items-center justify-center",
+                                    selectedTool?.value === color.id ? "border-white scale-105 shadow-xl shadow-white/10" : "border-transparent hover:scale-105"
                                   )}
                                   style={{ backgroundColor: color.hex }}
-                                  title={color.label}
                                 />
                               ))}
                             </div>
@@ -651,12 +742,12 @@ const App: React.FC = () => {
                     </div>
 
                     {/* Values */}
-                    <div className="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+                    <div className="premium-panel rounded-2xl overflow-hidden">
                       <button 
                         onClick={() => setIsValuesExpanded(!isValuesExpanded)}
-                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
+                        className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
                       >
-                        <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{t('values')}</span>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{t('values')}</span>
                         <motion.div animate={{ rotate: isValuesExpanded ? 90 : 0 }}>
                           <ChevronRight size={14} className="text-zinc-600" />
                         </motion.div>
@@ -675,7 +766,7 @@ const App: React.FC = () => {
                                   <button 
                                     key="trash" 
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, '.'); }}
-                                    className="aspect-square rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all border-transparent hover:bg-zinc-700 hover:scale-105"
+                                    className="aspect-square rounded-xl border-2 bg-zinc-900 flex items-center justify-center transition-all border-transparent hover:bg-zinc-800 hover:scale-105"
                                   >
                                     <Trash2 size={16} className="text-red-500" />
                                   </button>
@@ -686,8 +777,8 @@ const App: React.FC = () => {
                                     key={val}
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, val); }}
                                     className={cn(
-                                      "aspect-square rounded-md border-2 bg-zinc-800 flex items-center justify-center transition-all overflow-hidden",
-                                      selectedTool?.value === val ? "border-white bg-zinc-700 scale-105 shadow-md" : "border-transparent hover:bg-zinc-700 hover:scale-105"
+                                      "aspect-square rounded-xl border-2 bg-zinc-900 flex items-center justify-center transition-all overflow-hidden",
+                                      selectedTool?.value === val ? "border-white bg-zinc-800 scale-105 shadow-xl shadow-white/10" : "border-transparent hover:bg-zinc-800 hover:scale-105"
                                     )}
                                   >
                                     {val === 'X' ? (
@@ -717,558 +808,316 @@ const App: React.FC = () => {
                       </AnimatePresence>
                     </div>
                   </div>
-                </section>
 
-                <div className="pt-6 space-y-4 border-t border-zinc-800/50">
-                  <button 
-                    onClick={addToQueue}
-                    className="w-full flex items-center justify-center gap-3 bg-white text-black py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 active:scale-95"
-                  >
-                    <Plus size={20} />
-                    {t('addToQueue')}
-                  </button>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="pt-6 space-y-3 border-t border-zinc-800/50">
                     <button 
                       onClick={() => saveCard(editingCustomCardIndex !== null)}
-                      className={cn(
-                        "flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all active:scale-95",
-                        editingCustomCardIndex !== null ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-zinc-800 text-zinc-300 border border-zinc-700 hover:bg-zinc-700"
-                      )}
+                      className="w-full premium-button-secondary justify-center py-3 rounded-xl"
                     >
-                      <Download size={16} />
-                      {editingCustomCardIndex !== null ? t('cardUpdated') : t('savePattern')}
-                    </button>
-                    <button 
-                      onClick={() => setCurrentCard(prev => ({ ...prev, cells: createEmptyGrid() }))}
-                      className="flex items-center justify-center gap-2 bg-zinc-900 border border-zinc-800 text-zinc-500 py-3 rounded-xl text-xs font-bold hover:text-red-500 hover:border-red-500/30 transition-all active:scale-95"
-                    >
-                      <Trash2 size={16} />
-                      {t('clearQueue')}
+                      <Download size={18} />
+                      <span className="font-bold">{editingCustomCardIndex !== null ? t('cardUpdated') : t('savePattern')}</span>
                     </button>
                   </div>
-                </div>
-              </motion.div>
-            )}
+                </section>
+              )}
 
-            {activePanel === 'generator' && (
-              <motion.div 
-                key="generator"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="p-6 space-y-8"
-              >
-                <section className="space-y-6">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('generation')}</h2>
-                  
+              {activePanel === 'generator' && (
+                <section className="space-y-8">
+                  <div className="space-y-2">
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('generation')}</h2>
+                    <p className="text-zinc-500 text-[10px] leading-relaxed">{t('genDescription')}</p>
+                  </div>
+
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('colorCount')}</label>
-                        <span className="text-xs font-bold text-white">{genOptions.colorCount}</span>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{t('colorCount')}</label>
+                        <span className="text-[10px] font-bold text-white">{genOptions.colorCount}</span>
                       </div>
-                      <input 
-                        type="range" min="1" max="5" 
-                        value={genOptions.colorCount}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, colorCount: parseInt(e.target.value) }))}
-                        className="w-full accent-white"
-                      />
+                      <input type="range" min="1" max="5" value={genOptions.colorCount} onChange={(e) => setGenOptions(prev => ({ ...prev, colorCount: parseInt(e.target.value) }))} className="w-full accent-white" />
                     </div>
-
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('coloredCells')}</label>
-                        <span className="text-xs font-bold text-white">{genOptions.coloredCells}</span>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{t('coloredCells')}</label>
+                        <span className="text-[10px] font-bold text-white">{genOptions.coloredCells}</span>
                       </div>
-                      <input 
-                        type="range" min="0" max="20" 
-                        value={genOptions.coloredCells}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          setGenOptions(prev => ({ 
-                            ...prev, 
-                            coloredCells: val,
-                            valuedCells: Math.min(prev.valuedCells, 20 - val)
-                          }));
-                        }}
-                        className="w-full accent-white"
-                      />
+                      <input type="range" min="0" max="20" value={genOptions.coloredCells} onChange={(e) => setGenOptions(prev => ({ ...prev, coloredCells: parseInt(e.target.value), valuedCells: Math.min(prev.valuedCells, 20 - parseInt(e.target.value)) }))} className="w-full accent-white" />
                     </div>
-
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('valueCount')}</label>
-                        <span className="text-xs font-bold text-white">{genOptions.valueCount}</span>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{t('valueCount')}</label>
+                        <span className="text-[10px] font-bold text-white">{genOptions.valueCount}</span>
                       </div>
-                      <input 
-                        type="range" min="1" max="6" 
-                        value={genOptions.valueCount}
-                        onChange={(e) => setGenOptions(prev => ({ ...prev, valueCount: parseInt(e.target.value) }))}
-                        className="w-full accent-white"
-                      />
+                      <input type="range" min="1" max="6" value={genOptions.valueCount} onChange={(e) => setGenOptions(prev => ({ ...prev, valueCount: parseInt(e.target.value) }))} className="w-full accent-white" />
                     </div>
-
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('valuedCells')}</label>
-                        <span className="text-xs font-bold text-white">{genOptions.valuedCells}</span>
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">{t('valuedCells')}</label>
+                        <span className="text-[10px] font-bold text-white">{genOptions.valuedCells}</span>
                       </div>
-                      <input 
-                        type="range" min="0" max="20" 
-                        value={genOptions.valuedCells}
-                        onChange={(e) => {
-                          const val = parseInt(e.target.value);
-                          setGenOptions(prev => ({ 
-                            ...prev, 
-                            valuedCells: val,
-                            coloredCells: Math.min(prev.coloredCells, 20 - val)
-                          }));
-                        }}
-                        className="w-full accent-white"
-                      />
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            checked={genOptions.symmetric}
-                            onChange={(e) => setGenOptions(prev => ({ ...prev, symmetric: e.target.checked }))}
-                            className="sr-only"
-                          />
-                          <div className={cn("w-10 h-5 rounded-full transition-colors", genOptions.symmetric ? "bg-white" : "bg-zinc-800")} />
-                          <div className={cn("absolute top-1 left-1 w-3 h-3 rounded-full bg-black transition-transform", genOptions.symmetric && "translate-x-5")} />
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('symmetric')}</span>
-                      </label>
+                      <input type="range" min="0" max="20" value={genOptions.valuedCells} onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value), coloredCells: Math.min(prev.coloredCells, 20 - parseInt(e.target.value)) }))} className="w-full accent-white" />
                     </div>
                   </div>
 
                   <button 
                     onClick={() => {
-                      const generated = generateSagradaCard(genOptions);
-                      setCurrentCard(generated);
-                      setEditingCustomCardIndex(null);
-                      showNotification(t('cardGenerated'));
+                      const newCard = generateSagradaCard(genOptions);
+                      setCurrentCard(newCard);
+                      showNotification(t('genSuccess'));
                     }}
-                    className="w-full flex items-center justify-center gap-3 bg-white text-black py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-all shadow-xl shadow-white/5 active:scale-95"
+                    className="w-full premium-button-primary justify-center py-4 rounded-2xl shadow-xl shadow-white/5"
                   >
                     <Layout size={20} />
-                    {t('generate')}
+                    <span className="font-bold">{t('startGeneration')}</span>
                   </button>
                 </section>
-              </motion.div>
-            )}
+              )}
 
-            {activePanel === 'saved' && (
-              <motion.div 
-                key="saved"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex-1 flex flex-col min-h-0"
-              >
-                <div className="p-6 border-b border-zinc-800 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('savedPatterns')}</h2>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                        title={t('import')}
-                      >
-                        <Upload size={18} />
-                      </button>
-                      <button 
-                        onClick={() => handleExport(customCards, 'sagrada_patterns')}
-                        className="p-2 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors"
-                        title={t('export')}
-                      >
-                        <Download size={18} />
-                      </button>
+              {activePanel === 'library' && (
+                <section className="space-y-6 flex flex-col h-full">
+                  <div className="space-y-4">
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('library')}</h2>
+                    <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+                      {(['saved', 'promos'] as const).map(tab => (
+                        <button 
+                          key={tab}
+                          onClick={() => setLibraryTab(tab)}
+                          className={cn(
+                            "flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all",
+                            libraryTab === tab ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500 hover:text-zinc-300"
+                          )}
+                        >
+                          {t(tab)}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  
-                  <div className="flex bg-zinc-900 p-1 rounded-xl border border-zinc-800">
-                    <button 
-                      onClick={() => setLibraryTab('saved')}
-                      className={cn(
-                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
-                        libraryTab === 'saved' ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
-                      )}
-                    >
-                      {t('myCards')}
-                    </button>
-                    <button 
-                      onClick={() => setLibraryTab('promos')}
-                      className={cn(
-                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
-                        libraryTab === 'promos' ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
-                      )}
-                    >
-                      {t('promos')}
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {libraryTab === 'saved' ? (
-                    customCards.length === 0 ? (
-                      <div className="text-center py-12 space-y-4">
-                        <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto text-zinc-700">
-                          <BookOpen size={32} />
+
+                  <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                    {libraryTab === 'saved' ? (
+                      customCards.length === 0 ? (
+                        <div className="py-12 text-center text-zinc-600 space-y-4">
+                          <BookOpen size={48} strokeWidth={1} className="mx-auto" />
+                          <p className="text-xs">{t('noSavedPatterns')}</p>
                         </div>
-                        <p className="text-xs text-zinc-600 font-medium">{t('noSavedPatterns')}</p>
-                      </div>
-                    ) : (
-                      customCards.map((card, idx) => (
-                        <div 
-                          key={idx}
-                          className={cn(
-                            "group p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between",
-                            editingCustomCardIndex === idx 
-                              ? "bg-white border-white shadow-xl shadow-white/10" 
-                              : "bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50"
-                          )}
-                          onClick={() => loadCustomCard(idx)}
-                        >
-                          <div className="flex items-center gap-3 min-width-0">
-                            <div className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs",
-                              editingCustomCardIndex === idx ? "bg-zinc-900 text-white" : "bg-zinc-800 text-zinc-400"
-                            )}>
-                              {card.difficulty}
-                            </div>
-                            <span className={cn(
-                              "text-xs font-bold truncate max-w-[120px]",
-                              editingCustomCardIndex === idx ? "text-black" : "text-white"
-                            )}>
-                              {card.title}
-                            </span>
-                          </div>
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
-                            className={cn(
-                              "p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all",
-                              editingCustomCardIndex === idx ? "hover:bg-zinc-100 text-zinc-400 hover:text-red-500" : "hover:bg-zinc-800 text-zinc-600 hover:text-red-500"
-                            )}
+                      ) : (
+                        customCards.map((card, idx) => (
+                          <div 
+                            key={idx} 
+                            onClick={() => loadCustomCard(idx)}
+                            className="premium-panel rounded-2xl p-3 space-y-3 group cursor-pointer hover:border-zinc-700 transition-all"
                           >
-                            <Trash2 size={16} />
-                          </button>
+                            <div className="aspect-[9/8] bg-zinc-900 rounded-xl overflow-hidden flex items-center justify-center border border-zinc-800">
+                              <Card data={card} activeCellIndex={null} scale={0.25} hideShadow />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-white font-bold text-xs truncate">{card.title}</h3>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
+                                className="w-6 h-6 flex items-center justify-center text-zinc-600 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )
+                    ) : (
+                      Object.keys(promos).map(name => (
+                        <div 
+                          key={name} 
+                          onClick={() => loadPromo(name)}
+                          className="premium-panel rounded-2xl p-3 space-y-3 group cursor-pointer hover:border-zinc-700 transition-all"
+                        >
+                          <div className="aspect-[9/8] bg-zinc-900 rounded-xl overflow-hidden flex items-center justify-center border border-zinc-800">
+                            <Card data={{ ...promos[name], cells: parsePattern(promos[name].pattern), title: name }} activeCellIndex={null} scale={0.25} hideShadow />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-white font-bold text-xs truncate">{name}</h3>
+                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">{promos[name].code}</p>
+                          </div>
                         </div>
                       ))
-                    )
-                  ) : (
-                    Object.keys(promos).map(name => (
-                      <div 
-                        key={name}
-                        className="group p-4 rounded-2xl border bg-zinc-900/50 border-zinc-800 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all cursor-pointer flex items-center justify-between"
-                        onClick={() => loadPromo(name)}
-                      >
-                        <div className="flex items-center gap-3 min-width-0">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs bg-zinc-800 text-zinc-400">
-                            {promos[name].difficulty}
-                          </div>
-                          <span className="text-xs font-bold truncate max-w-[160px] text-white">
-                            {name}
-                          </span>
-                        </div>
-                        <ChevronRight size={16} className="text-zinc-700 group-hover:text-zinc-400 transition-colors" />
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {activePanel === 'queue' && (
-              <motion.div 
-                key="queue"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="flex-1 flex flex-col min-h-0"
-              >
-                <div className="p-6 border-b border-zinc-800 flex items-center justify-between">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('printQueue')}</h2>
-                  <button 
-                    onClick={() => setQueue([])}
-                    className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest transition-colors"
-                  >
-                    {t('clearAll')}
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {queue.length === 0 ? (
-                    <div className="text-center py-12 space-y-4">
-                      <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto text-zinc-700">
-                        <Printer size={32} />
-                      </div>
-                      <p className="text-xs text-zinc-600 font-medium">{t('queueEmpty')}</p>
-                    </div>
-                  ) : (
-                    queue.map((item, idx) => (
-                      <div key={item.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden group">
-                        <div className="p-3 bg-zinc-800/50 flex items-center justify-between border-b border-zinc-800">
-                          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">#{idx + 1}</span>
-                          <button 
-                            onClick={() => setQueue(prev => prev.filter(q => q.id !== item.id))}
-                            className="text-zinc-600 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                        <div className="p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-white truncate max-w-[140px]">{item.front.title}</span>
-                            <span className="text-[10px] font-bold text-zinc-500">{item.isDoubleSided ? '2-SIDED' : '1-SIDED'}</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <div className="flex-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-white" style={{ width: `${(item.front.difficulty / 6) * 100}%` }} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="p-6 bg-zinc-900 border-t border-zinc-800 space-y-4">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-zinc-500 uppercase tracking-widest">{t('totalCards')}</span>
-                    <span className="text-white">{queue.length}</span>
+                    )}
                   </div>
-                  <button 
-                    onClick={handleExportPDF}
-                    disabled={queue.length === 0 || isGenerating}
-                    className={cn(
-                      "w-full flex items-center justify-center gap-3 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95",
-                      queue.length === 0 || isGenerating ? "bg-zinc-800 text-zinc-600 cursor-not-allowed" : "bg-white text-black hover:bg-zinc-200"
-                    )}
-                  >
-                    {isGenerating ? (
-                      <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Download size={20} />
-                    )}
-                    {isGenerating ? t('generating') : t('downloadPDF')}
-                  </button>
-                </div>
-              </motion.div>
-            )}
+                </section>
+              )}
 
-            {activePanel === 'settings' && (
-              <motion.div 
-                key="settings"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="p-6 space-y-8"
-              >
-                <section className="space-y-6">
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-zinc-500">{t('settings')}</h2>
-                  
+              {activePanel === 'print' && (
+                <section className="space-y-8 flex flex-col h-full">
                   <div className="space-y-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('previewScale')}</label>
-                        <span className="text-xs font-bold text-white">{Math.round(previewScale * 100)}%</span>
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('printOptions')}</h2>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('doubleSided')}</label>
+                        <button onClick={() => setIsDoubleSided(!isDoubleSided)} className={cn("w-12 h-6 rounded-full transition-all relative", isDoubleSided ? "bg-white" : "bg-zinc-800")}>
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", isDoubleSided ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        </button>
                       </div>
-                      <input 
-                        type="range" min="0.5" max="1.5" step="0.1"
-                        value={previewScale}
-                        onChange={(e) => setPreviewScale(parseFloat(e.target.value))}
-                        className="w-full accent-white"
-                      />
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('cornerRadius')}</label>
-                        <span className="text-xs font-bold text-white">{cornerRadius}mm</span>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('printerFriendly')}</label>
+                        <button onClick={() => setPrinterFriendly(!printerFriendly)} className={cn("w-12 h-6 rounded-full transition-all relative", printerFriendly ? "bg-white" : "bg-zinc-800")}>
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", printerFriendly ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        </button>
                       </div>
-                      <input 
-                        type="range" min="0" max="10" 
-                        value={cornerRadius}
-                        onChange={(e) => setCornerRadius(parseInt(e.target.value))}
-                        className="w-full accent-white"
-                      />
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('cropMarks')}</label>
+                        <button onClick={() => setShowCropMarks(!showCropMarks)} className={cn("w-12 h-6 rounded-full transition-all relative", showCropMarks ? "bg-white" : "bg-zinc-800")}>
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", showCropMarks ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        </button>
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-4 pt-4 border-t border-zinc-800">
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            checked={isDoubleSided}
-                            onChange={(e) => setIsDoubleSided(e.target.checked)}
-                            className="sr-only"
-                          />
-                          <div className={cn("w-10 h-5 rounded-full transition-colors", isDoubleSided ? "bg-white" : "bg-zinc-800")} />
-                          <div className={cn("absolute top-1 left-1 w-3 h-3 rounded-full bg-black transition-transform", isDoubleSided && "translate-x-5")} />
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('doubleSided')}</span>
-                      </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            checked={printerFriendly}
-                            onChange={(e) => setPrinterFriendly(e.target.checked)}
-                            className="sr-only"
-                          />
-                          <div className={cn("w-10 h-5 rounded-full transition-colors", printerFriendly ? "bg-white" : "bg-zinc-800")} />
-                          <div className={cn("absolute top-1 left-1 w-3 h-3 rounded-full bg-black transition-transform", printerFriendly && "translate-x-5")} />
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('printerFriendly')}</span>
-                      </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            checked={showCropMarks}
-                            onChange={(e) => setShowCropMarks(e.target.checked)}
-                            className="sr-only"
-                          />
-                          <div className={cn("w-10 h-5 rounded-full transition-colors", showCropMarks ? "bg-white" : "bg-zinc-800")} />
-                          <div className={cn("absolute top-1 left-1 w-3 h-3 rounded-full bg-black transition-transform", showCropMarks && "translate-x-5")} />
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('showCropMarks')}</span>
-                      </label>
-
-                      <label className="flex items-center gap-3 cursor-pointer group">
-                        <div className="relative">
-                          <input 
-                            type="checkbox" 
-                            checked={showBackground}
-                            onChange={(e) => setShowBackground(e.target.checked)}
-                            className="sr-only"
-                          />
-                          <div className={cn("w-10 h-5 rounded-full transition-colors", showBackground ? "bg-white" : "bg-zinc-800")} />
-                          <div className={cn("absolute top-1 left-1 w-3 h-3 rounded-full bg-black transition-transform", showBackground && "translate-x-5")} />
-                        </div>
-                        <span className="text-xs font-medium text-zinc-400 group-hover:text-white transition-colors">{t('showBackground')}</span>
-                      </label>
+                  <div className="flex-1 flex flex-col min-h-0 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('printQueue')}</h2>
+                      {queue.length > 0 && (
+                        <button onClick={() => setQueue([])} className="text-[8px] font-bold uppercase tracking-widest text-red-500 hover:text-red-400 transition-colors">
+                          {t('clearQueue')}
+                        </button>
+                      )}
                     </div>
+                    
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+                      {queue.length === 0 ? (
+                        <div className="py-12 text-center text-zinc-700 space-y-4">
+                          <Printer size={48} strokeWidth={1} className="mx-auto" />
+                          <p className="text-xs">{t('queueEmpty')}</p>
+                        </div>
+                      ) : (
+                        queue.map((item, idx) => (
+                          <div key={item.id} className="premium-panel rounded-xl p-3 flex items-center gap-3 group">
+                            <div className="w-12 h-10 bg-zinc-900 rounded-lg overflow-hidden flex items-center justify-center border border-zinc-800 shrink-0">
+                              <Card data={item.front} activeCellIndex={null} scale={0.15} hideShadow />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-white font-bold text-[10px] truncate">{item.front.title}</h3>
+                              <p className="text-zinc-600 text-[8px] uppercase tracking-widest font-bold">{item.isDoubleSided ? t('doubleSided') : t('singleSided')}</p>
+                            </div>
+                            <button 
+                              onClick={() => setQueue(prev => prev.filter((_, i) => i !== idx))}
+                              className="w-8 h-8 flex items-center justify-center text-zinc-700 hover:text-red-500 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
 
-                    <div className="pt-6 border-t border-zinc-800">
-                      <p className="text-[10px] text-zinc-600 font-medium text-center italic">
-                        Sagrada Pattern Designer 0.1.4.5-beta
-                      </p>
+                  <button 
+                    onClick={handleExportPDF} 
+                    disabled={queue.length === 0 || isGenerating}
+                    className="w-full premium-button-primary justify-center py-4 rounded-2xl shadow-xl shadow-white/5"
+                  >
+                    {isGenerating ? <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <Printer size={20} />}
+                    <span className="font-bold">{t('exportPDF')}</span>
+                  </button>
+                </section>
+              )}
+
+              {activePanel === 'settings' && (
+                <section className="space-y-8">
+                  <div className="space-y-6">
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('appearanceSettings')}</h2>
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <div className="flex justify-between">
+                          <label className="text-xs font-medium text-zinc-400">{t('cornerRadius')}</label>
+                          <span className="text-xs font-bold text-white">{cornerRadius}mm</span>
+                        </div>
+                        <input type="range" min="0" max="5" step="0.5" value={cornerRadius} onChange={(e) => setCornerRadius(parseFloat(e.target.value))} className="w-full accent-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-8 space-y-4 border-t border-zinc-800/50">
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('dataManagement')}</h2>
+                    <div className="space-y-3">
+                      <button onClick={() => fileInputRef.current?.click()} className="w-full premium-button-secondary justify-center py-3">
+                        <Upload size={18} />
+                        <span>{t('importCards')}</span>
+                      </button>
+                      <button onClick={() => handleExport(customCards, 'sagrada-patterns')} className="w-full premium-button-secondary justify-center py-3">
+                        <Download size={18} />
+                        <span>{t('exportOwn')}</span>
+                      </button>
                     </div>
                   </div>
                 </section>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </aside>
+              )}
+            </div>
+          </motion.aside>
+        </AnimatePresence>
 
-        {/* Preview Area */}
-        <section 
-          className="flex-1 bg-zinc-950 flex flex-col items-center justify-center p-8 relative overflow-hidden" 
-          onClick={() => { setActiveCell(null); setSelectedTool(null); }}
-          style={showBackground ? { 
-            background: 'radial-gradient(circle at center, #18181b 0%, #09090b 100%)',
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.03) 1px, transparent 0)', 
-            backgroundSize: '24px 24px' 
-          } : { background: '#000' }}
-        >
-          <div className="absolute top-6 right-6 flex items-center gap-3 z-10">
-            <div className="relative group">
-              <button className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all shadow-lg">
-                <Layers size={18} />
-              </button>
-              <div className="absolute top-full right-0 mt-2 w-64 bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all p-2 z-50">
-                <div className="max-h-96 overflow-y-auto">
-                  <div className="px-3 py-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-800 mb-1">{t('promos')}</div>
-                  {Object.keys(promos).map(name => (
-                    <button 
-                      key={name}
-                      onClick={() => loadPromo(name)}
-                      className="w-full text-left px-3 py-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-white rounded-lg transition-colors flex items-center justify-between"
-                    >
-                      <span>{name}</span>
-                      <ChevronRight size={12} className="text-zinc-700" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <button 
-              onClick={() => setShowWiki(!showWiki)}
-              className="w-10 h-10 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-800 hover:text-white transition-all shadow-lg"
+        {/* Center: Main View */}
+        <div className="flex-1 bg-[#050505] flex flex-col relative overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
+          
+          <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center gap-12"
             >
-              <BookOpen size={18} />
-            </button>
-          </div>
-          {isDoubleSided && (
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 flex items-center gap-4 z-10">
-              <button 
-                onClick={() => setActiveSide('front')} 
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                  activeSide === 'front' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500"
-                )}
-              >
-                {t('front')}
-              </button>
-              <button 
-                onClick={() => setActiveSide(activeSide === 'front' ? 'back' : 'front')}
-                className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform text-zinc-400"
-              >
-                <FlipHorizontal size={20} />
-              </button>
-              <button 
-                onClick={() => setActiveSide('back')} 
-                className={cn(
-                  "px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm",
-                  activeSide === 'back' ? "bg-white text-black scale-110" : "bg-zinc-800 text-zinc-500"
-                )}
-              >
-                {t('back')}
-              </button>
-            </div>
-          )}
-          <div className="preview-card-wrapper" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col items-center gap-8">
-              <div className="preview-card-container preview-glow" style={{ transform: `scale(${previewScale})` }}>
+              <div className="preview-card-container preview-glow">
                 <Card 
                   data={currentCard}
                   activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
                   onCellClick={(idx) => handleCellClick(activeSide, idx)}
                   onDifficultyChange={(diff) => setCurrentCard(prev => ({ ...prev, difficulty: diff }))}
                   onTitleChange={(title) => setCurrentCard(prev => ({ ...prev, title }))}
-                  cornerRadius={cornerRadius}
                   editable={true}
+                  cornerRadius={cornerRadius}
+                  printerFriendly={printerFriendly}
+                  showCropMarks={showCropMarks}
                 />
               </div>
-              
-              <motion.button 
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={addToQueue}
-                className="flex items-center gap-3 bg-white text-black px-8 py-4 rounded-2xl font-bold shadow-2xl shadow-white/10"
-              >
-                <Plus size={20} />
-                {t('addToQueue')}
-              </motion.button>
-            </div>
+
+              <div className="flex flex-col items-center gap-6">
+                <button 
+                  onClick={() => addToQueue()}
+                  className="premium-button-primary px-12 py-5 rounded-2xl text-xl shadow-2xl shadow-white/10 group"
+                >
+                  <Plus size={28} className="group-hover:rotate-90 transition-transform duration-500" />
+                  <span className="font-bold tracking-tight">{t('addToPrintList')}</span>
+                </button>
+                
+                <div className="flex items-center gap-8 text-zinc-600">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest">{t('front')}</span>
+                    <div className={cn("w-12 h-1 rounded-full transition-all", activeSide === 'front' ? "bg-white" : "bg-zinc-900")} />
+                  </div>
+                  {isDoubleSided && (
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest">{t('back')}</span>
+                      <div className={cn("w-12 h-1 rounded-full transition-all", activeSide === 'back' ? "bg-white" : "bg-zinc-900")} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
           </div>
-        </section>
+        </div>
       </main>
 
       {/* Footer */}
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>© 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
-        <div className="flex items-center gap-4">
-          <span>{t('version')}: 0.1.4.5-beta</span>
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+            <span>System Online</span>
+          </div>
+          <span>{t('version')}: 0.1.4.7-beta</span>
         </div>
       </footer>
+
+      <AnimatePresence>
+        {showWiki && <Wiki onClose={() => setShowWiki(false)} t={t} />}
+      </AnimatePresence>
 
       {/* Notification */}
       <AnimatePresence>
