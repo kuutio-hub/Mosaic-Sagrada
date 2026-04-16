@@ -101,7 +101,7 @@ function generateCardHTML(
             const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="80" rx="12" fill="none" />${dots[cell.value] || ''}</svg>`;
             svgFallback = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
             // Try local first
-            valueImgSrc = `png/${cell.value}.png?v=0.1.4.4`;
+            valueImgSrc = `png/${cell.value}.png?v=0.1.4.5`;
           }
 
           return `
@@ -113,7 +113,7 @@ function generateCardHTML(
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3;">
                   ${isX ? 
                     `<span style="font-family: 'Uncial Antiqua', serif; font-size: 32pt; color: ${printerFriendly ? '#9ca3af' : '#4b5563'}; opacity: 1; line-height: 1;">X</span>` : 
-                    `<img src="${valueImgSrc}" onerror="this.onerror=null; if(!this.src.includes('githubusercontent.com')){this.src='https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/public/png/${cell.value}.png';}else{this.src='${svgFallback}';}" style="width: 100%; height: 100%; object-fit: cover;" />`
+                    `<img src="${valueImgSrc}" onerror="this.onerror=null; if(this.src.includes('githubusercontent.com')){this.src='${svgFallback}';}else if(this.src.includes('/svg/')){this.src='https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/public/png/${cell.value}.png';}else{this.src='svg/${cell.value}.svg?v=0.1.4.5';}" style="width: 100%; height: 100%; object-fit: cover;" />`
                   }
                 </div>
               ` : ''}
