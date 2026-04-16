@@ -172,12 +172,16 @@ const Card: React.FC<{
                   <span className="x-mark">X</span>
                 ) : (
                   <img 
-                    src={`png/${cell.value}.png`}
+                    src={`png/${cell.value}.png?v=0.1.4.4`}
                     referrerPolicy="no-referrer"
                     className="value-image"
                     onError={(e) => {
                       const target = e.currentTarget as HTMLImageElement;
-                      target.src = getValueSvgDataUrl(cell.value, cell.color);
+                      if (target.src.includes('githubusercontent.com')) {
+                        target.src = getValueSvgDataUrl(cell.value, cell.color);
+                      } else {
+                        target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/public/png/${cell.value}.png`;
+                      }
                     }}
                     alt={cell.value}
                   />
@@ -688,11 +692,15 @@ const App: React.FC = () => {
                                       <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
-                                        src={`png/${val}.png`} 
+                                        src={`png/${val}.png?v=0.1.4.4`} 
                                         className="w-full h-full object-contain" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
-                                          target.src = getValueSvgDataUrl(val);
+                                          if (target.src.includes('githubusercontent.com')) {
+                                            target.src = getValueSvgDataUrl(val);
+                                          } else {
+                                            target.src = `https://raw.githubusercontent.com/kuutio-hub/Mosaic-Sagrada/main/public/png/${val}.png`;
+                                          }
                                         }} 
                                       />
                                     )}
@@ -1146,7 +1154,7 @@ const App: React.FC = () => {
 
                     <div className="pt-6 border-t border-zinc-800">
                       <p className="text-[10px] text-zinc-600 font-medium text-center italic">
-                        Sagrada Pattern Designer 0.1.4.3-beta
+                        Sagrada Pattern Designer 0.1.4.4-beta
                       </p>
                     </div>
                   </div>
@@ -1254,7 +1262,7 @@ const App: React.FC = () => {
       <footer className="bg-zinc-950 border-t border-zinc-900 px-6 py-4 flex items-center justify-between text-zinc-600 text-[10px] font-bold uppercase tracking-widest">
         <div>© 2026 Sagrada Pattern Designer. {t('allRightsReserved')}</div>
         <div className="flex items-center gap-4">
-          <span>{t('version')}: 0.1.4.3-beta</span>
+          <span>{t('version')}: 0.1.4.4-beta</span>
         </div>
       </footer>
 
