@@ -14,8 +14,32 @@
   }
 
   body {
-    @apply bg-[#050505] text-zinc-100 antialiased;
+    @apply bg-[#050505] text-zinc-100 antialiased overflow-hidden;
   }
+}
+
+/* Hide scrollbars but keep functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom minimal scrollbar for areas that really need it */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
 
 @layer components {
@@ -134,7 +158,7 @@
   display: grid;
   grid-template-columns: repeat(5, 15mm);
   grid-template-rows: repeat(4, 15mm);
-  gap: 2.5mm;
+  gap: var(--gap-size);
   padding: 2.5mm;
   width: 90mm;
   margin: 0 auto;
@@ -154,7 +178,7 @@
 
 .card-cell.has-color .color-overlay {
   position: absolute;
-  inset: 0;
+  inset: -0.1mm;
   opacity: 1;
   z-index: 2;
   pointer-events: none;
@@ -191,7 +215,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0 4mm;
+  padding: 0 4mm 0 2.5mm;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -214,8 +238,12 @@
   font-size: 10pt;
   text-transform: uppercase;
   white-space: nowrap;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100%;
   color: white;
+  width: 100%;
 }
 
 .card-code {
@@ -292,7 +320,7 @@
 
 .card-container.printer-friendly .card-footer {
   background: white !important;
-  border-top: none !important;
+  border-top: 0.3mm solid #d1d5db !important;
 }
 
 .card-container.printer-friendly .card-title,

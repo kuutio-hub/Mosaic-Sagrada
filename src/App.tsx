@@ -14,7 +14,9 @@ import {
   X as CloseIcon,
   Check,
   Layout,
+  Save,
   ChevronDown,
+  RotateCcw,
   BookOpen,
   HelpCircle
 } from 'lucide-react';
@@ -48,9 +50,7 @@ interface CardData {
 
 interface QueueItem {
   id: string;
-  front: CardData;
-  back: CardData | null;
-  isDoubleSided: boolean;
+  card: CardData;
 }
 
 const getValueSvgDataUrl = (value: string, color: string = 'W') => {
@@ -87,6 +87,7 @@ const Card: React.FC<{
   printerFriendly?: boolean;
   printerOpacity?: number;
   showCropMarks?: boolean;
+  showBlackFrame?: boolean;
 }> = ({ 
   data, 
   activeCellIndex, 
@@ -101,7 +102,8 @@ const Card: React.FC<{
   hideShadow = false,
   printerFriendly = false,
   printerOpacity = 1,
-  showCropMarks = false
+  showCropMarks = false,
+  showBlackFrame = false
 }) => {
   const titleRef = useRef<HTMLSpanElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -126,25 +128,29 @@ const Card: React.FC<{
   }, [data.title, data.titleSize, data.titleFont, data.code]);
 
   const isGenerated = data.isGenerated;
+  const contentOpacity = printerFriendly ? printerOpacity : 1;
 
   return (
     <div 
       id={id}
       className={cn(
-        "card-container", 
+        "card-container shrink-0", 
         !hideShadow && "shadow-2xl", 
         printerFriendly && "printer-friendly",
         showCropMarks && "crop-marks",
         className
       )}
       style={{ 
+        width: '90mm',
+        height: '80mm',
         transform: `scale(${scale})`,
         transformOrigin: 'center',
         borderRadius: showCropMarks ? '0' : `${cornerRadius}mm`,
-        opacity: printerFriendly ? printerOpacity : 1
+        opacity: printerFriendly ? printerOpacity : 1,
+        border: (showBlackFrame && !printerFriendly) ? '1mm solid black' : undefined
       }}
     >
-      <div className="card-grid">
+      <div className="card-grid" style={{ padding: '2.5mm', gap: '2.5mm' }}>
         {data.cells.map((cell, idx) => (
           <div 
             key={idx}
@@ -158,6 +164,9 @@ const Card: React.FC<{
               cell.value === 'X' && "val-x",
               activeCellIndex === idx && "ring-2 ring-white ring-offset-2 ring-offset-black z-10 scale-105"
             )}
+            style={{ 
+              border: printerFriendly ? '0.2mm solid #d1d5db' : undefined
+            }}
           >
             {cell.color !== '.' && cell.color !== 'W' && (
               <div 
@@ -165,10 +174,14 @@ const Card: React.FC<{
                   "color-overlay", 
                   `c-${cell.color.toLowerCase()}`
                 )} 
+                style={{ 
+                  inset: 0,
+                  opacity: contentOpacity
+                }} 
               />
             )}
             {cell.value !== '.' && (
-              <div className="value-container" key={`${cell.value}-${cell.color}`}>
+              <div className="value-container" key={`${cell.value}-${cell.color}`} style={{ opacity: contentOpacity }}>
                 {cell.value === 'X' ? (
                   <span className="x-mark">X</span>
                 ) : (
@@ -193,22 +206,31 @@ const Card: React.FC<{
             )}
           </div>
         ))}
+
+        {/* Printer Friendly Fade Overlay */}
+        {printerFriendly && printerOpacity > 0 && (
+          <div 
+            className="absolute inset-0 pointer-events-none bg-white transition-opacity duration-200" 
+            style={{ opacity: printerOpacity, zIndex: 10 }} 
+          />
+        )}
       </div>
 
-      <div className="card-footer" ref={containerRef}>
-        <div className="card-title-container">
+      <div className={cn("card-footer", printerFriendly && "bg-transparent")} ref={containerRef} style={{ padding: '0 4mm 0 2.5mm', height: '9.9mm', overflow: 'visible', display: 'flex', alignItems: 'center' }}>
+        <div className="card-title-container" style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'visible' }}>
           <input 
             className="card-title bg-transparent border-none outline-none flex-1 min-w-0 hover:bg-white/5 focus:bg-white/10 rounded px-1 -ml-1 transition-colors" 
             value={data.title}
             onChange={(e) => onTitleChange?.(e.target.value)}
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
-              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 10}pt`
+              fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 10}pt`,
+              lineHeight: 1
             }}
           />
-          {data.code && <span className="card-code ml-2 opacity-40 shrink-0">{data.code}</span>}
+          {data.code && <span className="card-code ml-2 opacity-40 shrink-0" style={{ fontSize: '7pt' }}>{data.code}</span>}
         </div>
-        <div className={cn("card-difficulty", editable && "editable")}>
+        <div className={cn("card-difficulty", editable && "editable")} style={{ height: '9.9mm', display: 'flex', alignItems: 'center' }}>
           {Array.from({ length: 6 }).map((_, i) => {
             const isActive = i >= (6 - data.difficulty);
             return (
@@ -234,7 +256,7 @@ const Card: React.FC<{
   );
 };
 
-const Wiki: React.FC<{ onClose: () => void, t: any }> = ({ onClose, t }) => {
+const Wiki: React.FC<{ onClose: () => void, t: any, language: string }> = ({ onClose, t, language }) => {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -299,7 +321,7 @@ const Wiki: React.FC<{ onClose: () => void, t: any }> = ({ onClose, t }) => {
               <p className="text-[10px] text-zinc-600">{t('infoDesc')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="premium-button-primary px-8">OK</button>
+          <button onClick={onClose} className="premium-button-primary px-8">{language === 'hu' ? 'RENDBEN' : 'OK'}</button>
         </div>
       </motion.div>
     </motion.div>
@@ -319,7 +341,7 @@ const App: React.FC = () => {
   const [customCards, setCustomCards] = useState<CardData[]>([]);
   const [libraryTab, setLibraryTab] = useState<'saved' | 'promos'>('saved');
   const [editingCustomCardIndex, setEditingCustomCardIndex] = useState<number | null>(null);
-  const [cornerRadius, setCornerRadius] = useState(1.5);
+  const [cornerRadius, setCornerRadius] = useState(0.5);
   const [previewScale, setPreviewScale] = useState(1);
   const [isColorsExpanded, setIsColorsExpanded] = useState(true);
   const [isValuesExpanded, setIsValuesExpanded] = useState(true);
@@ -327,9 +349,9 @@ const App: React.FC = () => {
   const [showWiki, setShowWiki] = useState(false);
   const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: string } | null>(null);
   const [printerFriendly, setPrinterFriendly] = useState(false);
-  const [showBackground, setShowBackground] = useState(true);
   const [printerOpacity, setPrinterOpacity] = useState(1);
   const [showCropMarks, setShowCropMarks] = useState(false);
+  const [showBlackFrame, setShowBlackFrame] = useState(false);
   const [genOptions, setGenOptions] = useState({
     colorCount: 5,
     coloredCells: 6,
@@ -366,11 +388,9 @@ const App: React.FC = () => {
     const savedScale = localStorage.getItem('sagrada_previewScale');
     if (savedScale) setPreviewScale(parseFloat(savedScale));
     const savedCorner = localStorage.getItem('sagrada_cornerRadius');
-    if (savedCorner) setCornerRadius(parseInt(savedCorner));
+    if (savedCorner) setCornerRadius(parseFloat(savedCorner));
     const savedPrinter = localStorage.getItem('sagrada_printerFriendly');
     if (savedPrinter) setPrinterFriendly(savedPrinter === 'true');
-    const savedBg = localStorage.getItem('sagrada_showBackground');
-    if (savedBg) setShowBackground(savedBg === 'true');
     const savedLang = localStorage.getItem('sagrada_language');
     if (savedLang) setLanguage(savedLang as any);
 
@@ -394,8 +414,8 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('sagrada_previewScale', previewScale.toString()); }, [previewScale]);
   useEffect(() => { localStorage.setItem('sagrada_cornerRadius', cornerRadius.toString()); }, [cornerRadius]);
   useEffect(() => { localStorage.setItem('sagrada_printerFriendly', printerFriendly.toString()); }, [printerFriendly]);
-  useEffect(() => { localStorage.setItem('sagrada_showBackground', showBackground.toString()); }, [showBackground]);
   useEffect(() => { localStorage.setItem('sagrada_language', language); }, [language]);
+  useEffect(() => { localStorage.setItem('sagrada_previewScale', previewScale.toString()); }, [previewScale]);
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => setNotification({ message, type });
 
@@ -578,27 +598,37 @@ const App: React.FC = () => {
   const addToQueue = (card?: CardData) => {
     const newItem: QueueItem = {
       id: generateId(),
-      front: JSON.parse(JSON.stringify(card || front)),
-      back: isDoubleSided ? JSON.parse(JSON.stringify(back)) : null,
-      isDoubleSided: isDoubleSided
+      card: JSON.parse(JSON.stringify(card || (activeSide === 'front' ? front : back)))
     };
     setQueue(prev => [...prev, newItem]);
     showNotification(t('addedToQueue'));
   };
 
+  const moveQueueItem = (index: number, direction: 'up' | 'down') => {
+    const newQueue = [...queue];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newQueue.length) return;
+    [newQueue[index], newQueue[targetIndex]] = [newQueue[targetIndex], newQueue[index]];
+    setQueue(newQueue);
+  };
+
   const handleExportPDF = async () => {
     if (queue.length === 0) { alert(t('queueEmptyAlert')); return; }
     setIsGenerating(true);
-    try { await generatePDF(queue, cornerRadius, printerFriendly, printerOpacity, showCropMarks); }
+    try { await generatePDF(queue, cornerRadius, printerFriendly, printerOpacity, showCropMarks, showBlackFrame, isDoubleSided); }
     catch (err) { console.error(err); alert(t('pdfError')); }
     finally { setIsGenerating(false); }
   };
 
+  const resetCurrentCard = () => {
+    setCurrentCard(activeSide === 'front' ? JSON.parse(JSON.stringify(DEFAULT_FRONT)) : JSON.parse(JSON.stringify(DEFAULT_BACK)));
+    showNotification(t('reset'));
+  };
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden bg-black">
       {/* Header */}
-      {/* Header */}
-      <header className="h-20 bg-zinc-950 border-b border-zinc-900 px-8 flex items-center justify-between shrink-0 z-50">
+      <header className="h-16 bg-zinc-950 border-b border-zinc-900 px-8 flex items-center justify-between shrink-0 z-50">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.1)]">
             <Layers size={24} className="text-black" />
@@ -677,32 +707,16 @@ const App: React.FC = () => {
         <AnimatePresence mode="wait">
           <motion.aside 
             key={activePanel}
-            initial={{ x: -300, opacity: 0 }}
+            initial={{ x: -400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -300, opacity: 0 }}
+            exit={{ x: -400, opacity: 0 }}
             className="w-80 bg-[#0a0a0a] border-r border-zinc-800/50 flex flex-col shrink-0 z-40"
           >
-            <div className="p-6 space-y-8 overflow-y-auto h-full">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
               {activePanel === 'editor' && (
                 <section className="space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('palette')}</h2>
-                    <div className="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-                      {(['front', 'back'] as const).map(side => (
-                        <button 
-                          key={side}
-                          onClick={() => setActiveSide(side)}
-                          className={cn(
-                            "px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all",
-                            activeSide === side ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500"
-                          )}
-                        >
-                          {t(side)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('palette')}</h2>
+                  
                   <div className="space-y-4">
                     {/* Colors */}
                     <div className="premium-panel rounded-2xl overflow-hidden">
@@ -729,7 +743,7 @@ const App: React.FC = () => {
                                   key={color.id}
                                   onClick={(e) => { e.stopPropagation(); handlePickerSelect(color.id); }}
                                   className={cn(
-                                    "aspect-square rounded-xl border-2 transition-all flex items-center justify-center",
+                                    "aspect-square rounded-xl transition-all flex items-center justify-center overflow-hidden border-2",
                                     selectedTool?.value === color.id ? "border-white scale-105 shadow-xl shadow-white/10" : "border-transparent hover:scale-105"
                                   )}
                                   style={{ backgroundColor: color.hex }}
@@ -760,33 +774,33 @@ const App: React.FC = () => {
                             exit={{ height: 0, opacity: 0 }}
                             className="px-4 pb-4"
                           >
-                            <div className="grid grid-cols-3 gap-2">
-                              {['1', '2', '3', '4', '5', '6', 'X', '.', '.'].map((val, idx) => {
-                                if (idx === 8) return (
+                          <div className="grid grid-cols-3 gap-2">
+                              {['1', '2', '3', '4', '5', '6', 'X', 'empty', '.'].map((val) => {
+                                if (val === '.') return (
                                   <button 
                                     key="trash" 
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, '.'); }}
-                                    className="aspect-square rounded-xl border-2 bg-zinc-900 flex items-center justify-center transition-all border-transparent hover:bg-zinc-800 hover:scale-105"
+                                    className="aspect-square rounded-xl bg-zinc-900 flex items-center justify-center transition-all hover:bg-zinc-800 hover:scale-105"
                                   >
-                                    <Trash2 size={16} className="text-red-500" />
+                                    <Trash2 size={24} className="text-red-500" />
                                   </button>
                                 );
-                                if (idx === 7) return <div key="empty" />;
+                                if (val === 'empty') return <div key="empty" />;
                                 return (
                                   <button 
                                     key={val}
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, val); }}
                                     className={cn(
-                                      "aspect-square rounded-xl border-2 bg-zinc-900 flex items-center justify-center transition-all overflow-hidden",
-                                      selectedTool?.value === val ? "border-white bg-zinc-800 scale-105 shadow-xl shadow-white/10" : "border-transparent hover:bg-zinc-800 hover:scale-105"
+                                      "aspect-square rounded-xl transition-all overflow-hidden bg-zinc-900 flex items-center justify-center",
+                                      selectedTool?.value === val ? "bg-zinc-700 scale-105" : "hover:bg-zinc-800 hover:scale-105"
                                     )}
                                   >
                                     {val === 'X' ? (
-                                      <span className="font-display text-xl text-zinc-500">X</span>
+                                      <span className="font-display text-2xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
                                         src={`png/${val}.png?v=0.1.4.5`} 
-                                        className="w-full h-full object-contain" 
+                                        className="w-full h-full object-cover" 
                                         onError={(e) => { 
                                           const target = e.currentTarget as HTMLImageElement;
                                           if (target.src.includes('githubusercontent.com')) {
@@ -820,7 +834,6 @@ const App: React.FC = () => {
                   </div>
                 </section>
               )}
-
               {activePanel === 'generator' && (
                 <section className="space-y-8">
                   <div className="space-y-2">
@@ -857,19 +870,50 @@ const App: React.FC = () => {
                       </div>
                       <input type="range" min="0" max="20" value={genOptions.valuedCells} onChange={(e) => setGenOptions(prev => ({ ...prev, valuedCells: parseInt(e.target.value), coloredCells: Math.min(prev.coloredCells, 20 - parseInt(e.target.value)) }))} className="w-full accent-white" />
                     </div>
+
+                    <div className="pt-4 space-y-4 border-t border-zinc-900/50">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('horizontalSymmetry')}</label>
+                        <button 
+                          onClick={() => setGenOptions(prev => ({ ...prev, horizontalSymmetry: !prev.horizontalSymmetry }))}
+                          className={cn("w-10 h-5 rounded-full transition-all relative", genOptions.horizontalSymmetry ? "bg-white" : "bg-zinc-800")}
+                        >
+                          <div className={cn("absolute top-0.5 w-4 h-4 rounded-full transition-all shadow-sm", genOptions.horizontalSymmetry ? "right-0.5 bg-black" : "left-0.5 bg-zinc-600")} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('verticalSymmetry')}</label>
+                        <button 
+                          onClick={() => setGenOptions(prev => ({ ...prev, verticalSymmetry: !prev.verticalSymmetry }))}
+                          className={cn("w-10 h-5 rounded-full transition-all relative", genOptions.verticalSymmetry ? "bg-white" : "bg-zinc-800")}
+                        >
+                          <div className={cn("absolute top-0.5 w-4 h-4 rounded-full transition-all shadow-sm", genOptions.verticalSymmetry ? "right-0.5 bg-black" : "left-0.5 bg-zinc-600")} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <button 
-                    onClick={() => {
-                      const newCard = generateSagradaCard(genOptions);
-                      setCurrentCard(newCard);
-                      showNotification(t('genSuccess'));
-                    }}
-                    className="w-full premium-button-primary justify-center py-4 rounded-2xl shadow-xl shadow-white/5"
-                  >
-                    <Layout size={20} />
-                    <span className="font-bold">{t('startGeneration')}</span>
-                  </button>
+
+                  <div className="flex flex-col gap-3">
+                    <button 
+                      onClick={() => {
+                        const newCard = generateSagradaCard(genOptions);
+                        setCurrentCard(newCard);
+                        showNotification(t('genSuccess'));
+                      }}
+                      className="w-full premium-button-primary justify-center py-4 rounded-xl shadow-xl shadow-white/5"
+                    >
+                      <Layout size={20} />
+                      <span className="font-bold">{t('startGeneration')}</span>
+                    </button>
+                    <button 
+                      onClick={() => saveCard(false)}
+                      className="w-full premium-button-secondary justify-center py-3 rounded-xl"
+                    >
+                      <Download size={18} />
+                      <span className="font-bold">{t('savePattern')}</span>
+                    </button>
+                  </div>
                 </section>
               )}
 
@@ -893,7 +937,7 @@ const App: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                     {libraryTab === 'saved' ? (
                       customCards.length === 0 ? (
                         <div className="py-12 text-center text-zinc-600 space-y-4">
@@ -905,20 +949,25 @@ const App: React.FC = () => {
                           <div 
                             key={idx} 
                             onClick={() => loadCustomCard(idx)}
-                            className="premium-panel rounded-2xl p-3 space-y-3 group cursor-pointer hover:border-zinc-700 transition-all"
+                            className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 group cursor-pointer transition-colors border border-transparent hover:border-zinc-800"
                           >
-                            <div className="aspect-[9/8] bg-zinc-900 rounded-xl overflow-hidden flex items-center justify-center border border-zinc-800">
-                              <Card data={card} activeCellIndex={null} scale={0.25} hideShadow />
+                            <div className="w-10 h-8 bg-zinc-950 rounded-md overflow-hidden flex items-center justify-center border border-zinc-900 shrink-0">
+                              <Card data={card} activeCellIndex={null} scale={0.12} hideShadow />
                             </div>
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-white font-bold text-xs truncate">{card.title}</h3>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
-                                className="w-6 h-6 flex items-center justify-center text-zinc-600 hover:text-red-500 transition-colors"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-zinc-100 font-bold text-[10px] truncate">{card.title}</h3>
+                              <div className="flex gap-0.5 mt-0.5">
+                                {Array.from({ length: 6 }).map((_, i) => (
+                                  <div key={i} className={cn("w-0.5 h-0.5 rounded-full", i < (6-card.difficulty) ? "bg-zinc-700" : "bg-zinc-300")} />
+                                ))}
+                              </div>
                             </div>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); deleteCustomCard(idx); }}
+                              className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 size={12} />
+                            </button>
                           </div>
                         ))
                       )
@@ -927,14 +976,19 @@ const App: React.FC = () => {
                         <div 
                           key={name} 
                           onClick={() => loadPromo(name)}
-                          className="premium-panel rounded-2xl p-3 space-y-3 group cursor-pointer hover:border-zinc-700 transition-all"
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 group cursor-pointer transition-colors border border-transparent hover:border-zinc-800"
                         >
-                          <div className="aspect-[9/8] bg-zinc-900 rounded-xl overflow-hidden flex items-center justify-center border border-zinc-800">
-                            <Card data={{ ...promos[name], cells: parsePattern(promos[name].pattern), title: name }} activeCellIndex={null} scale={0.25} hideShadow />
+                          <div className="w-10 h-8 bg-zinc-950 rounded-md overflow-hidden flex items-center justify-center border border-zinc-900 shrink-0">
+                            <Card data={{ ...promos[name], cells: parsePattern(promos[name].pattern), title: name }} activeCellIndex={null} scale={0.12} hideShadow />
                           </div>
-                          <div className="min-w-0">
-                            <h3 className="text-white font-bold text-xs truncate">{name}</h3>
-                            <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">{promos[name].code}</p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-zinc-100 font-bold text-[10px] truncate">{name}</h3>
+                            <p className="text-[7px] text-zinc-600 font-bold uppercase tracking-widest leading-none mt-1">{promos[name].code}</p>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <div key={i} className={cn("w-0.5 h-0.5 rounded-full", i < (6-promos[name].difficulty) ? "bg-zinc-700" : "bg-zinc-300")} />
+                            ))}
                           </div>
                         </div>
                       ))
@@ -946,7 +1000,25 @@ const App: React.FC = () => {
               {activePanel === 'print' && (
                 <section className="space-y-8 flex flex-col h-full">
                   <div className="space-y-6">
-                    <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('printOptions')}</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('printOptions')}</h2>
+                      {isDoubleSided && (
+                        <div className="flex bg-zinc-900 p-1 rounded-lg border border-zinc-800 shrink-0">
+                          {(['front', 'back'] as const).map(side => (
+                            <button 
+                              key={side}
+                              onClick={() => setActiveSide(side)}
+                              className={cn(
+                                "px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all",
+                                activeSide === side ? "bg-zinc-800 text-white shadow-sm" : "text-zinc-500"
+                              )}
+                            >
+                              {t(side)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-zinc-400">{t('doubleSided')}</label>
@@ -960,10 +1032,37 @@ const App: React.FC = () => {
                           <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", printerFriendly ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
                         </button>
                       </div>
+                      {printerFriendly && (
+                        <div className="space-y-3 px-2">
+                          <div className="flex justify-between">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{t('opacity')}</label>
+                            <span className="text-[10px] font-bold text-white">{Math.round(printerOpacity * 100)}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0.1" 
+                            max="1" 
+                            step="0.05" 
+                            value={printerOpacity} 
+                            onChange={(e) => setPrinterOpacity(parseFloat(e.target.value))} 
+                            className="w-full accent-white" 
+                          />
+                        </div>
+                      )}
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-medium text-zinc-400">{t('cropMarks')}</label>
-                        <button onClick={() => setShowCropMarks(!showCropMarks)} className={cn("w-12 h-6 rounded-full transition-all relative", showCropMarks ? "bg-white" : "bg-zinc-800")}>
-                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", showCropMarks ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        <label className="text-xs font-medium text-zinc-400">{t('blackFrame')}</label>
+                        <button onClick={() => setShowBlackFrame(!showBlackFrame)} className={cn("w-12 h-6 rounded-full transition-all relative", showBlackFrame ? "bg-white" : "bg-zinc-800")}>
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", showBlackFrame ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className={cn("text-xs font-medium transition-colors", showBlackFrame ? "text-zinc-600" : "text-zinc-400")}>{t('cropMarks')}</label>
+                        <button 
+                          disabled={showBlackFrame}
+                          onClick={() => setShowCropMarks(!showCropMarks)} 
+                          className={cn("w-12 h-6 rounded-full transition-all relative", (showCropMarks || showBlackFrame) ? "bg-white" : "bg-zinc-800", showBlackFrame && "opacity-50")}
+                        >
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", (showCropMarks || showBlackFrame) ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
                         </button>
                       </div>
                     </div>
@@ -989,18 +1088,38 @@ const App: React.FC = () => {
                         queue.map((item, idx) => (
                           <div key={item.id} className="premium-panel rounded-xl p-3 flex items-center gap-3 group">
                             <div className="w-12 h-10 bg-zinc-900 rounded-lg overflow-hidden flex items-center justify-center border border-zinc-800 shrink-0">
-                              <Card data={item.front} activeCellIndex={null} scale={0.15} hideShadow />
+                              <Card data={item.card} activeCellIndex={null} scale={0.15} hideShadow />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-white font-bold text-[10px] truncate">{item.front.title}</h3>
-                              <p className="text-zinc-600 text-[8px] uppercase tracking-widest font-bold">{item.isDoubleSided ? t('doubleSided') : t('singleSided')}</p>
+                              <h3 className="text-white font-bold text-[10px] truncate">{item.card.title}</h3>
+                              <p className="text-zinc-600 text-[8px] uppercase tracking-widest font-bold">
+                                {isDoubleSided 
+                                  ? `${Math.floor(idx / 2) + 1}. ${idx % 2 === 0 ? t('front') : t('back')}`
+                                  : `#${idx + 1}`}
+                              </p>
                             </div>
-                            <button 
-                              onClick={() => setQueue(prev => prev.filter((_, i) => i !== idx))}
-                              className="w-8 h-8 flex items-center justify-center text-zinc-700 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button 
+                                onClick={() => moveQueueItem(idx, 'up')}
+                                disabled={idx === 0}
+                                className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-white transition-colors disabled:opacity-0"
+                              >
+                                <ChevronRight size={14} className="-rotate-90" />
+                              </button>
+                              <button 
+                                onClick={() => moveQueueItem(idx, 'down')}
+                                disabled={idx === queue.length - 1}
+                                className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-white transition-colors disabled:opacity-0"
+                              >
+                                <ChevronRight size={14} className="rotate-90" />
+                              </button>
+                              <button 
+                                onClick={() => setQueue(prev => prev.filter((_, i) => i !== idx))}
+                                className="w-8 h-8 flex items-center justify-center text-zinc-700 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
                         ))
                       )}
@@ -1019,16 +1138,16 @@ const App: React.FC = () => {
               )}
 
               {activePanel === 'settings' && (
-                <section className="space-y-8">
+                <section className="space-y-8 h-full overflow-y-auto pr-2 custom-scrollbar">
                   <div className="space-y-6">
                     <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('appearanceSettings')}</h2>
                     <div className="space-y-6">
                       <div className="space-y-3">
                         <div className="flex justify-between">
-                          <label className="text-xs font-medium text-zinc-400">{t('cornerRadius')}</label>
-                          <span className="text-xs font-bold text-white">{cornerRadius}mm</span>
+                          <label className="text-xs font-medium text-zinc-400">{t('zoom')}</label>
+                          <span className="text-xs font-bold text-white">{Math.round(previewScale * 100)}%</span>
                         </div>
-                        <input type="range" min="0" max="5" step="0.5" value={cornerRadius} onChange={(e) => setCornerRadius(parseFloat(e.target.value))} className="w-full accent-white" />
+                        <input type="range" min="0.5" max="1.5" step="0.05" value={previewScale} onChange={(e) => setPreviewScale(parseFloat(e.target.value))} className="w-full accent-white" />
                       </div>
                     </div>
                   </div>
@@ -1053,16 +1172,16 @@ const App: React.FC = () => {
         </AnimatePresence>
 
         {/* Center: Main View */}
-        <div className="flex-1 bg-[#050505] flex flex-col relative overflow-hidden">
+        <div className="flex-1 bg-[#050505] flex flex-col relative overflow-hidden no-scrollbar">
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
           
-          <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 relative overflow-hidden no-scrollbar">
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center gap-12"
+              className="flex flex-col items-center justify-center gap-12 w-full h-full"
             >
-              <div className="preview-card-container preview-glow">
+              <div className="preview-card-container preview-glow shrink-0 z-10" style={{ transform: `scale(${previewScale})`, transition: 'transform 0.2s ease' }}>
                 <Card 
                   data={currentCard}
                   activeCellIndex={activeCell?.side === activeSide ? activeCell.index : null}
@@ -1072,31 +1191,34 @@ const App: React.FC = () => {
                   editable={true}
                   cornerRadius={cornerRadius}
                   printerFriendly={printerFriendly}
-                  showCropMarks={showCropMarks}
+                  printerOpacity={printerOpacity}
+                  showCropMarks={showBlackFrame ? true : showCropMarks}
+                  showBlackFrame={showBlackFrame}
                 />
               </div>
-
-              <div className="flex flex-col items-center gap-6">
+              
+              <div className="flex gap-4 items-center scale-110 z-20 bg-[#050505]/80 backdrop-blur-md p-4 rounded-2xl border border-zinc-800 shadow-2xl">
                 <button 
-                  onClick={() => addToQueue()}
-                  className="premium-button-primary px-12 py-5 rounded-2xl text-xl shadow-2xl shadow-white/10 group"
+                  onClick={() => addToQueue()} 
+                  className="premium-button-primary px-6 py-3 text-xs rounded-xl"
                 >
-                  <Plus size={28} className="group-hover:rotate-90 transition-transform duration-500" />
-                  <span className="font-bold tracking-tight">{t('addToPrintList')}</span>
+                  <Plus size={18} />
+                  <span>{t('addToPrintList')}</span>
                 </button>
-                
-                <div className="flex items-center gap-8 text-zinc-600">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest">{t('front')}</span>
-                    <div className={cn("w-12 h-1 rounded-full transition-all", activeSide === 'front' ? "bg-white" : "bg-zinc-900")} />
-                  </div>
-                  {isDoubleSided && (
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">{t('back')}</span>
-                      <div className={cn("w-12 h-1 rounded-full transition-all", activeSide === 'back' ? "bg-white" : "bg-zinc-900")} />
-                    </div>
-                  )}
-                </div>
+                <button 
+                  onClick={() => saveCard(editingCustomCardIndex !== null)}
+                  className="premium-button-secondary px-6 py-3 text-xs rounded-xl"
+                >
+                  <Save size={18} />
+                  <span>{editingCustomCardIndex !== null ? t('cardUpdated') : t('savePattern')}</span>
+                </button>
+                <button 
+                  onClick={resetCurrentCard}
+                  className="bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-white px-6 py-3 rounded-xl text-xs font-bold uppercase transition-all flex items-center gap-2"
+                >
+                  <RotateCcw size={18} />
+                  <span>{t('reset')}</span>
+                </button>
               </div>
             </motion.div>
           </div>
@@ -1109,14 +1231,14 @@ const App: React.FC = () => {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
-            <span>System Online</span>
+            <span>{t('systemOnline')}</span>
           </div>
-          <span>{t('version')}: 0.1.4.7-beta</span>
+          <span>{t('version')}: 0.1.5.0-beta</span>
         </div>
       </footer>
 
       <AnimatePresence>
-        {showWiki && <Wiki onClose={() => setShowWiki(false)} t={t} />}
+        {showWiki && <Wiki onClose={() => setShowWiki(false)} t={t} language={language} />}
       </AnimatePresence>
 
       {/* Notification */}

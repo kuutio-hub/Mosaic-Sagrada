@@ -68,10 +68,42 @@ export function generateSagradaCard(options: any) {
       const symIndices = getSymmetricIndices(idx);
       
       // Check if idx and all symIndices are valid
-      let allValid = isValid(idx, 'color', color);
+      const targetIndices = [idx, ...symIndices];
+      let allValid = true;
+      
+      // First check if all are currently empty
+      for (const t of targetIndices) {
+        if (cells[t].color !== '.' || cells[t].value !== '.') {
+          allValid = false;
+          break;
+        }
+      }
+      
       if (allValid) {
-        for (const symIdx of symIndices) {
-          if (cells[symIdx].color !== '.' || cells[symIdx].value !== '.' || !isValid(symIdx, 'color', color)) {
+        // Then check if any target index is adjacent to another target index (orthogonally)
+        for (let a = 0; a < targetIndices.length; a++) {
+          for (let b = a + 1; b < targetIndices.length; b++) {
+            const idxA = targetIndices[a];
+            const idxB = targetIndices[b];
+            const colA = idxA % 5;
+            const colB = idxB % 5;
+            const rowA = Math.floor(idxA / 5);
+            const rowB = Math.floor(idxB / 5);
+            
+            const isAdj = (Math.abs(rowA - rowB) === 1 && colA === colB) || (Math.abs(colA - colB) === 1 && rowA === rowB);
+            if (isAdj) {
+              allValid = false;
+              break;
+            }
+          }
+          if (!allValid) break;
+        }
+      }
+      
+      if (allValid) {
+        // Finally check if they are valid against existing cells
+        for (const t of targetIndices) {
+          if (!isValid(t, 'color', color)) {
             allValid = false;
             break;
           }
@@ -79,10 +111,8 @@ export function generateSagradaCard(options: any) {
       }
       
       if (allValid) {
-        cells[idx].color = color;
-        colorsPlaced++;
-        for (const symIdx of symIndices) {
-          cells[symIdx].color = color;
+        for (const t of targetIndices) {
+          cells[t].color = color;
           colorsPlaced++;
         }
       }
@@ -101,10 +131,42 @@ export function generateSagradaCard(options: any) {
       const symIndices = getSymmetricIndices(idx);
       
       // Check if idx and all symIndices are valid
-      let allValid = isValid(idx, 'value', val);
+      const targetIndices = [idx, ...symIndices];
+      let allValid = true;
+      
+      // First check if all are currently empty
+      for (const t of targetIndices) {
+        if (cells[t].value !== '.' || cells[t].color !== '.') {
+          allValid = false;
+          break;
+        }
+      }
+      
       if (allValid) {
-        for (const symIdx of symIndices) {
-          if (cells[symIdx].value !== '.' || cells[symIdx].color !== '.' || !isValid(symIdx, 'value', val)) {
+        // Then check if any target index is adjacent to another target index (orthogonally)
+        for (let a = 0; a < targetIndices.length; a++) {
+          for (let b = a + 1; b < targetIndices.length; b++) {
+            const idxA = targetIndices[a];
+            const idxB = targetIndices[b];
+            const colA = idxA % 5;
+            const colB = idxB % 5;
+            const rowA = Math.floor(idxA / 5);
+            const rowB = Math.floor(idxB / 5);
+            
+            const isAdj = (Math.abs(rowA - rowB) === 1 && colA === colB) || (Math.abs(colA - colB) === 1 && rowA === rowB);
+            if (isAdj) {
+              allValid = false;
+              break;
+            }
+          }
+          if (!allValid) break;
+        }
+      }
+      
+      if (allValid) {
+        // Finally check if they are valid against existing cells
+        for (const t of targetIndices) {
+          if (!isValid(t, 'value', val)) {
             allValid = false;
             break;
           }
@@ -112,10 +174,8 @@ export function generateSagradaCard(options: any) {
       }
       
       if (allValid) {
-        cells[idx].value = val;
-        valuesPlaced++;
-        for (const symIdx of symIndices) {
-          cells[symIdx].value = val;
+        for (const t of targetIndices) {
+          cells[t].value = val;
           valuesPlaced++;
         }
       }
