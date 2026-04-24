@@ -14,14 +14,14 @@ export const createEmptyGrid = () => Array(20).fill(null).map(() => ({ color: '.
 
 export const DEFAULT_FRONT = {
   title: "Új minta",
-  difficulty: 3,
+  difficulty: 1,
   cells: createEmptyGrid(),
   code: ""
 };
 
 export const DEFAULT_BACK = {
   title: "Új minta (Hátoldal)",
-  difficulty: 3,
+  difficulty: 1,
   cells: createEmptyGrid(),
   code: ""
 };

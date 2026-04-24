@@ -5,7 +5,6 @@ export async function generatePDF(
   queue: any[], 
   cornerRadius: number = 0,
   printerFriendly: boolean = false,
-  printerOpacity: number = 1,
   showCropMarks: boolean = false,
   showBlackFrame: boolean = false,
   isDoubleSided: boolean = false
@@ -48,14 +47,14 @@ export async function generatePDF(
     // Front page
     const frontBatch = isDoubleSided ? batch.filter((_, idx) => idx % 2 === 0) : batch;
     if (frontBatch.length > 0) {
-      await renderBatchPage(pdf, frontBatch, 'front', container, i > 0, cornerRadius, printerFriendly, printerOpacity, finalShowCropMarks, showBlackFrame);
+      await renderBatchPage(pdf, frontBatch, 'front', container, i > 0, cornerRadius, printerFriendly, finalShowCropMarks, showBlackFrame);
     }
     
     // Back page
     if (isDoubleSided) {
       const backBatch = batch.filter((_, idx) => idx % 2 === 1);
       if (backBatch.length > 0) {
-        await renderBatchPage(pdf, backBatch, 'back', container, true, cornerRadius, printerFriendly, printerOpacity, finalShowCropMarks, showBlackFrame);
+        await renderBatchPage(pdf, backBatch, 'back', container, true, cornerRadius, printerFriendly, finalShowCropMarks, showBlackFrame);
       }
     }
   }
@@ -74,7 +73,6 @@ export async function generatePDF(
 function generateCardHTML(
   cardData: any, 
   printerFriendly: boolean, 
-  printerOpacity: number,
   showCropMarks: boolean,
   showBlackFrame: boolean
 ) {
@@ -90,7 +88,7 @@ function generateCardHTML(
   const gridPadding = '2.5mm'; 
 
   // Apply opacity to colors/values if printer friendly
-  const contentOpacity = printerFriendly ? printerOpacity : 1;
+  const contentOpacity = printerFriendly ? 0.3 : 1;
 
   // Crude font size adjustment for PDF
   const titleLength = title.length + (cardData.code ? cardData.code.length + 1 : 0);
@@ -133,7 +131,7 @@ function generateCardHTML(
           return `
             <div class="card-cell" style="width: 15mm; height: 15mm; display: flex; align-items: center; justify-content: center; position: relative; box-sizing: border-box; background-color: ${isX ? (printerFriendly ? '#f9fafb' : '#1f2937') : '#ffffff'}; overflow: hidden; border: 0.2mm solid ${printerFriendly ? '#d1d5db' : '#374151'};">
               ${cell.color !== '.' && cell.color !== 'W' ? `
-                <div style="position: absolute; inset: 0; background-color: ${bgColor}; opacity: ${cell.color === 'W' ? 1 : contentOpacity}; z-index: 2;"></div>
+                <div style="position: absolute; inset: -0.1mm; background-color: ${bgColor}; opacity: ${cell.color === 'W' ? 1 : contentOpacity}; z-index: 2;"></div>
               ` : ''}
               ${cell.value !== '.' ? `
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 3; opacity: ${contentOpacity};">
@@ -146,11 +144,10 @@ function generateCardHTML(
             </div>
           `;
         }).join('')}
-        ${printerFriendly && printerOpacity > 0 ? `<div style="position: absolute; inset: 0; background: white; opacity: ${0.8 * printerOpacity}; z-index: 5; pointer-events: none;"></div>` : ''}
       </div>
-        <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 9.9mm; padding: 0 4mm 0 2.5mm; background: ${printerFriendly ? 'transparent' : footerBg}; box-sizing: border-box; z-index: 10; ${printerFriendly ? 'border-top: 0.3mm solid transparent;' : ''}; overflow: visible;">
-          <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: visible; height: 100%;">
-            <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: ${fontSize}pt; text-transform: uppercase; white-space: nowrap; overflow: visible; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: flex-start; height: 100%;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
+        <div class="card-footer" style="position: absolute; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center; height: 10mm; padding: 0 4mm 0 2.5mm; background: ${printerFriendly ? 'transparent' : footerBg}; box-sizing: border-box; z-index: 10; ${printerFriendly ? 'border-top: 0.3mm solid transparent;' : ''}; overflow: visible;">
+          <div class="card-title-container" style="display: flex; align-items: center; gap: 2mm; flex: 1; min-width: 0; overflow: visible; height: 100%; justify-content: center;">
+            <span class="card-title" style="font-family: ${cardData.titleFont || "'Uncial Antiqua', serif"}; font-size: ${fontSize}pt; text-transform: uppercase; white-space: nowrap; overflow: visible; color: ${textColor}; flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; height: 100%; margin-top: -0.5mm; text-align: center;">${title}${cardData.code ? ' ' + cardData.code : ''}</span>
           </div>
           <div class="card-difficulty" style="display: flex; gap: 1.5mm; margin-left: 2mm; flex-shrink: 0; align-items: center; justify-content: flex-end; height: 100%;">
           ${Array.from({ length: 6 }).map((_, i) => {
@@ -179,7 +176,6 @@ async function renderBatchPage(
   addNewPage: boolean,
   cornerRadius: number = 0,
   printerFriendly: boolean = false,
-  printerOpacity: number = 1,
   showCropMarks: boolean = false,
   showBlackFrame: boolean = false
 ) {
@@ -256,7 +252,7 @@ async function renderBatchPage(
       innerCardContainer.style.height = '80mm';
       innerCardContainer.style.overflow = 'hidden';
       innerCardContainer.style.borderRadius = showCropMarks ? '0' : `${cornerRadius}mm`;
-      innerCardContainer.innerHTML = generateCardHTML(cardData, printerFriendly, printerOpacity, showCropMarks, showBlackFrame);
+      innerCardContainer.innerHTML = generateCardHTML(cardData, printerFriendly, showCropMarks, showBlackFrame);
       
       cardDiv.appendChild(innerCardContainer);
       pageDiv.appendChild(cardDiv);

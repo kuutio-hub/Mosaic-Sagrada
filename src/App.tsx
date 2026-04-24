@@ -30,7 +30,7 @@ import {
 } from './constants';
 import { cn, generateId } from './lib/utils';
 import { generatePDF } from './services/pdfService';
-import { generateSagradaCard } from './services/cardGenerator';
+import { generateSagradaCard, calculateDifficulty } from './services/cardGenerator';
 import { translations } from './i18n';
 
 interface Cell {
@@ -85,7 +85,6 @@ const Card: React.FC<{
   editable?: boolean;
   hideShadow?: boolean;
   printerFriendly?: boolean;
-  printerOpacity?: number;
   showCropMarks?: boolean;
   showBlackFrame?: boolean;
 }> = ({ 
@@ -101,7 +100,6 @@ const Card: React.FC<{
   editable = false,
   hideShadow = false,
   printerFriendly = false,
-  printerOpacity = 1,
   showCropMarks = false,
   showBlackFrame = false
 }) => {
@@ -128,7 +126,7 @@ const Card: React.FC<{
   }, [data.title, data.titleSize, data.titleFont, data.code]);
 
   const isGenerated = data.isGenerated;
-  const contentOpacity = printerFriendly ? printerOpacity : 1;
+  const contentOpacity = printerFriendly ? 0.3 : 1;
 
   return (
     <div 
@@ -146,7 +144,6 @@ const Card: React.FC<{
         transform: `scale(${scale})`,
         transformOrigin: 'center',
         borderRadius: showCropMarks ? '0' : `${cornerRadius}mm`,
-        opacity: printerFriendly ? printerOpacity : 1,
         border: (showBlackFrame && !printerFriendly) ? '1mm solid black' : undefined
       }}
     >
@@ -208,16 +205,16 @@ const Card: React.FC<{
         ))}
 
         {/* Printer Friendly Fade Overlay */}
-        {printerFriendly && printerOpacity > 0 && (
+        {printerFriendly && (
           <div 
-            className="absolute inset-0 pointer-events-none bg-white transition-opacity duration-200" 
-            style={{ opacity: printerOpacity, zIndex: 10 }} 
+            className="absolute inset-0 pointer-events-none bg-white opacity-20 transition-opacity duration-200" 
+            style={{ zIndex: 10 }} 
           />
         )}
       </div>
 
-      <div className={cn("card-footer", printerFriendly && "bg-transparent")} ref={containerRef} style={{ padding: '0 4mm 0 2.5mm', height: '9.9mm', overflow: 'visible', display: 'flex', alignItems: 'center' }}>
-        <div className="card-title-container" style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'visible' }}>
+      <div className={cn("card-footer", printerFriendly && "bg-transparent")} ref={containerRef} style={{ padding: '0 4mm 0 2.5mm', height: '10mm', overflow: 'visible', display: 'flex', alignItems: 'center' }}>
+        <div className="card-title-container" style={{ display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, overflow: 'visible', justifyContent: 'center' }}>
           <input 
             className="card-title bg-transparent border-none outline-none flex-1 min-w-0 hover:bg-white/5 focus:bg-white/10 rounded px-1 -ml-1 transition-colors" 
             value={data.title}
@@ -225,12 +222,14 @@ const Card: React.FC<{
             style={{ 
               fontFamily: data.titleFont || '"Uncial Antiqua", serif',
               fontSize: adjustedFontSize ? `${adjustedFontSize}pt` : `${data.titleSize || 10}pt`,
-              lineHeight: 1
+              lineHeight: 1,
+              marginTop: '-0.3mm',
+              textAlign: 'center'
             }}
           />
           {data.code && <span className="card-code ml-2 opacity-40 shrink-0" style={{ fontSize: '7pt' }}>{data.code}</span>}
         </div>
-        <div className={cn("card-difficulty", editable && "editable")} style={{ height: '9.9mm', display: 'flex', alignItems: 'center' }}>
+        <div className={cn("card-difficulty", editable && "editable")} style={{ height: '10mm', display: 'flex', alignItems: 'center' }}>
           {Array.from({ length: 6 }).map((_, i) => {
             const isActive = i >= (6 - data.difficulty);
             return (
@@ -349,9 +348,9 @@ const App: React.FC = () => {
   const [showWiki, setShowWiki] = useState(false);
   const [selectedTool, setSelectedTool] = useState<{ type: 'color' | 'value', value: string } | null>(null);
   const [printerFriendly, setPrinterFriendly] = useState(false);
-  const [printerOpacity, setPrinterOpacity] = useState(1);
   const [showCropMarks, setShowCropMarks] = useState(false);
   const [showBlackFrame, setShowBlackFrame] = useState(false);
+  const [isValidatorEnabled, setIsValidatorEnabled] = useState(true);
   const [genOptions, setGenOptions] = useState({
     colorCount: 5,
     coloredCells: 6,
@@ -359,7 +358,8 @@ const App: React.FC = () => {
     valuedCells: 6,
     symmetric: false,
     horizontalSymmetry: false,
-    verticalSymmetry: false
+    verticalSymmetry: false,
+    strictRules: true
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [language, setLanguage] = useState<'hu' | 'en' | 'de'>('hu');
@@ -393,6 +393,10 @@ const App: React.FC = () => {
     if (savedPrinter) setPrinterFriendly(savedPrinter === 'true');
     const savedLang = localStorage.getItem('sagrada_language');
     if (savedLang) setLanguage(savedLang as any);
+    const savedValidator = localStorage.getItem('sagrada_validator');
+    if (savedValidator) setIsValidatorEnabled(savedValidator === 'true');
+    const savedStrict = localStorage.getItem('sagrada_strictRules');
+    if (savedStrict) setGenOptions(prev => ({ ...prev, strictRules: savedStrict === 'true' }));
 
     fetch('/promos.json')
       .then(res => res.json())
@@ -414,8 +418,9 @@ const App: React.FC = () => {
   useEffect(() => { localStorage.setItem('sagrada_previewScale', previewScale.toString()); }, [previewScale]);
   useEffect(() => { localStorage.setItem('sagrada_cornerRadius', cornerRadius.toString()); }, [cornerRadius]);
   useEffect(() => { localStorage.setItem('sagrada_printerFriendly', printerFriendly.toString()); }, [printerFriendly]);
-  useEffect(() => { localStorage.setItem('sagrada_language', language); }, [language]);
-  useEffect(() => { localStorage.setItem('sagrada_previewScale', previewScale.toString()); }, [previewScale]);
+    useEffect(() => { localStorage.setItem('sagrada_language', language); }, [language]);
+  useEffect(() => { localStorage.setItem('sagrada_validator', isValidatorEnabled.toString()); }, [isValidatorEnabled]);
+  useEffect(() => { localStorage.setItem('sagrada_strictRules', genOptions.strictRules.toString()); }, [genOptions.strictRules]);
 
   const showNotification = (message: string, type: 'success' | 'error' = 'success') => setNotification({ message, type });
 
@@ -553,21 +558,59 @@ const App: React.FC = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const validateCell = (cells: Cell[], index: number, type: 'color' | 'value', val: string) => {
+    if (!isValidatorEnabled) return true;
+    if (val === '.') return true;
+
+    const col = index % 5;
+    const neighbors = [
+      index - 5, index + 5,
+      col > 0 ? index - 1 : -1,
+      col < 4 ? index + 1 : -1
+    ];
+
+    for (const n of neighbors) {
+      if (n >= 0 && n < 20) {
+        if (type === 'color' && cells[n].color === val) return false;
+        if (type === 'value' && cells[n].value === val) return false;
+      }
+    }
+    return true;
+  };
+
   const handleCellClick = (side: 'front' | 'back', index: number) => {
     if (selectedTool) {
       const updateFn = side === 'front' ? setFront : setBack;
       updateFn(prev => {
         const newCells = [...prev.cells];
         const cell = { ...newCells[index] };
+        
         if (selectedTool.type === 'color') {
-          if (cell.color === selectedTool.value) cell.color = '.';
-          else { cell.color = selectedTool.value; cell.value = '.'; }
+          if (cell.color === selectedTool.value) {
+            cell.color = '.';
+          } else {
+            if (!validateCell(newCells, index, 'color', selectedTool.value)) {
+              showNotification(t('violationError'), 'error');
+              return prev;
+            }
+            cell.color = selectedTool.value;
+            cell.value = '.';
+          }
         } else {
-          if (cell.value === selectedTool.value) { cell.value = '.'; cell.color = '.'; }
-          else { cell.value = selectedTool.value; cell.color = '.'; }
+          if (cell.value === selectedTool.value) {
+            cell.value = '.';
+            cell.color = '.';
+          } else {
+            if (!validateCell(newCells, index, 'value', selectedTool.value)) {
+              showNotification(t('violationError'), 'error');
+              return prev;
+            }
+            cell.value = selectedTool.value;
+            cell.color = '.';
+          }
         }
         newCells[index] = cell;
-        return { ...prev, cells: newCells };
+        return { ...prev, cells: newCells, difficulty: calculateDifficulty(newCells) };
       });
     } else { setActiveCell({ side, index }); }
   };
@@ -582,15 +625,32 @@ const App: React.FC = () => {
         const newCells = [...prev.cells];
         const cell = { ...newCells[index] };
         if (color !== undefined) {
-          if (cell.color === color) cell.color = '.';
-          else { cell.color = color; cell.value = '.'; }
+          if (cell.color === color) {
+            cell.color = '.';
+          } else {
+            if (!validateCell(newCells, index, 'color', color)) {
+              showNotification(t('violationError'), 'error');
+              return prev;
+            }
+            cell.color = color;
+            cell.value = '.';
+          }
         }
         if (value !== undefined) {
-          if (cell.value === value) { cell.value = '.'; cell.color = '.'; }
-          else { cell.value = value; cell.color = '.'; }
+          if (cell.value === value) {
+            cell.value = '.';
+            cell.color = '.';
+          } else {
+            if (!validateCell(newCells, index, 'value', value)) {
+              showNotification(t('violationError'), 'error');
+              return prev;
+            }
+            cell.value = value;
+            cell.color = '.';
+          }
         }
         newCells[index] = cell;
-        return { ...prev, cells: newCells };
+        return { ...prev, cells: newCells, difficulty: calculateDifficulty(newCells) };
       });
     }
   };
@@ -615,7 +675,7 @@ const App: React.FC = () => {
   const handleExportPDF = async () => {
     if (queue.length === 0) { alert(t('queueEmptyAlert')); return; }
     setIsGenerating(true);
-    try { await generatePDF(queue, cornerRadius, printerFriendly, printerOpacity, showCropMarks, showBlackFrame, isDoubleSided); }
+    try { await generatePDF(queue, cornerRadius, printerFriendly, showCropMarks, showBlackFrame, isDoubleSided); }
     catch (err) { console.error(err); alert(t('pdfError')); }
     finally { setIsGenerating(false); }
   };
@@ -639,7 +699,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <nav className="flex items-center bg-zinc-900/50 p-1 rounded-2xl border border-zinc-800/50">
+        <nav className="flex items-center p-1 rounded-2xl border transition-all">
           {[
             { id: 'editor', icon: Layout, label: t('editor') },
             { id: 'generator', icon: Settings, iconSize: 18, label: t('generator') },
@@ -650,9 +710,12 @@ const App: React.FC = () => {
             <button 
               key={item.id}
               onClick={() => setActivePanel(item.id)}
+              data-active={activePanel === item.id}
               className={cn(
                 "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all",
-                activePanel === item.id ? "bg-white text-black shadow-lg" : "text-zinc-500 hover:text-zinc-300"
+                activePanel === item.id 
+                  ? "bg-white text-black shadow-lg" 
+                  : "text-zinc-500 hover:text-zinc-300"
               )}
             >
               <item.icon size={item.iconSize || 16} />
@@ -675,14 +738,16 @@ const App: React.FC = () => {
               <span>{language === 'hu' ? 'Magyar' : language === 'en' ? 'English' : 'Deutsch'}</span>
               <ChevronDown size={12} />
             </button>
-            <div className="absolute top-full right-0 mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <div className="absolute top-full right-0 mt-2 w-32 bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
               {(['hu', 'en', 'de'] as const).map(lang => (
                 <button 
                   key={lang}
                   onClick={() => setLanguage(lang)}
                   className={cn(
-                    "w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors",
-                    language === lang ? "text-white" : "text-zinc-500"
+                    "w-full px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest transition-colors",
+                    language === lang 
+                      ? "text-white bg-white/5" 
+                      : "text-zinc-500 hover:bg-white/5"
                   )}
                 >
                   {lang === 'hu' ? 'Magyar' : lang === 'en' ? 'English' : 'Deutsch'}
@@ -710,9 +775,9 @@ const App: React.FC = () => {
             initial={{ x: -400, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -400, opacity: 0 }}
-            className="w-80 bg-[#0a0a0a] border-r border-zinc-800/50 flex flex-col shrink-0 z-40"
+            className="w-72 bg-[#0a0a0a] border-r border-zinc-800/50 flex flex-col shrink-0 z-40 transition-all"
           >
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-5 space-y-6">
               {activePanel === 'editor' && (
                 <section className="space-y-6">
                   <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">{t('palette')}</h2>
@@ -737,13 +802,13 @@ const App: React.FC = () => {
                             exit={{ height: 0, opacity: 0 }}
                             className="px-4 pb-4"
                           >
-                            <div className="grid grid-cols-3 gap-2">
+                            <div className="grid grid-cols-3 gap-1.5">
                               {COLORS.filter(c => c.id !== '.').map(color => (
                                 <button 
                                   key={color.id}
                                   onClick={(e) => { e.stopPropagation(); handlePickerSelect(color.id); }}
                                   className={cn(
-                                    "aspect-square rounded-xl transition-all flex items-center justify-center overflow-hidden border-2",
+                                    "aspect-square max-w-[60px] mx-auto w-full rounded-lg transition-all flex items-center justify-center overflow-hidden border-2",
                                     selectedTool?.value === color.id ? "border-white scale-105 shadow-xl shadow-white/10" : "border-transparent hover:scale-105"
                                   )}
                                   style={{ backgroundColor: color.hex }}
@@ -774,15 +839,15 @@ const App: React.FC = () => {
                             exit={{ height: 0, opacity: 0 }}
                             className="px-4 pb-4"
                           >
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-3 gap-1.5">
                               {['1', '2', '3', '4', '5', '6', 'X', 'empty', '.'].map((val) => {
                                 if (val === '.') return (
                                   <button 
                                     key="trash" 
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, '.'); }}
-                                    className="aspect-square rounded-xl bg-zinc-900 flex items-center justify-center transition-all hover:bg-zinc-800 hover:scale-105"
+                                    className="aspect-square max-w-[60px] mx-auto w-full rounded-lg bg-zinc-900 flex items-center justify-center transition-all hover:bg-zinc-800 hover:scale-105"
                                   >
-                                    <Trash2 size={24} className="text-red-500" />
+                                    <Trash2 size={20} className="text-red-500" />
                                   </button>
                                 );
                                 if (val === 'empty') return <div key="empty" />;
@@ -791,12 +856,12 @@ const App: React.FC = () => {
                                     key={val}
                                     onClick={(e) => { e.stopPropagation(); handlePickerSelect(undefined, val); }}
                                     className={cn(
-                                      "aspect-square rounded-xl transition-all overflow-hidden bg-zinc-900 flex items-center justify-center",
+                                      "aspect-square max-w-[60px] mx-auto w-full rounded-lg transition-all overflow-hidden bg-zinc-900 flex items-center justify-center",
                                       selectedTool?.value === val ? "bg-zinc-700 scale-105" : "hover:bg-zinc-800 hover:scale-105"
                                     )}
                                   >
                                     {val === 'X' ? (
-                                      <span className="font-display text-2xl text-zinc-500">X</span>
+                                      <span className="font-display text-xl text-zinc-500">X</span>
                                     ) : (
                                       <img 
                                         src={`png/${val}.png?v=0.1.4.5`} 
@@ -888,6 +953,15 @@ const App: React.FC = () => {
                           className={cn("w-10 h-5 rounded-full transition-all relative", genOptions.verticalSymmetry ? "bg-white" : "bg-zinc-800")}
                         >
                           <div className={cn("absolute top-0.5 w-4 h-4 rounded-full transition-all shadow-sm", genOptions.verticalSymmetry ? "right-0.5 bg-black" : "left-0.5 bg-zinc-600")} />
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-medium text-zinc-400">{t('strictRules')}</label>
+                        <button 
+                          onClick={() => setGenOptions(prev => ({ ...prev, strictRules: !prev.strictRules }))}
+                          className={cn("w-10 h-5 rounded-full transition-all relative", genOptions.strictRules ? "bg-white" : "bg-zinc-800")}
+                        >
+                          <div className={cn("absolute top-0.5 w-4 h-4 rounded-full transition-all shadow-sm", genOptions.strictRules ? "right-0.5 bg-black" : "left-0.5 bg-zinc-600")} />
                         </button>
                       </div>
                     </div>
@@ -1032,23 +1106,6 @@ const App: React.FC = () => {
                           <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all", printerFriendly ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
                         </button>
                       </div>
-                      {printerFriendly && (
-                        <div className="space-y-3 px-2">
-                          <div className="flex justify-between">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{t('opacity')}</label>
-                            <span className="text-[10px] font-bold text-white">{Math.round(printerOpacity * 100)}%</span>
-                          </div>
-                          <input 
-                            type="range" 
-                            min="0.1" 
-                            max="1" 
-                            step="0.05" 
-                            value={printerOpacity} 
-                            onChange={(e) => setPrinterOpacity(parseFloat(e.target.value))} 
-                            className="w-full accent-white" 
-                          />
-                        </div>
-                      )}
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-medium text-zinc-400">{t('blackFrame')}</label>
                         <button onClick={() => setShowBlackFrame(!showBlackFrame)} className={cn("w-12 h-6 rounded-full transition-all relative", showBlackFrame ? "bg-white" : "bg-zinc-800")}>
@@ -1149,6 +1206,16 @@ const App: React.FC = () => {
                         </div>
                         <input type="range" min="0.5" max="1.5" step="0.05" value={previewScale} onChange={(e) => setPreviewScale(parseFloat(e.target.value))} className="w-full accent-white" />
                       </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-zinc-800/20">
+                        <label className="text-xs font-medium text-zinc-400">{t('liveValidator')}</label>
+                        <button 
+                          onClick={() => setIsValidatorEnabled(!isValidatorEnabled)}
+                          className={cn("w-12 h-6 rounded-full transition-all relative", isValidatorEnabled ? "bg-white" : "bg-zinc-800")}
+                        >
+                          <div className={cn("absolute top-1 w-4 h-4 rounded-full transition-all shadow-sm", isValidatorEnabled ? "right-1 bg-black" : "left-1 bg-zinc-600")} />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1191,7 +1258,6 @@ const App: React.FC = () => {
                   editable={true}
                   cornerRadius={cornerRadius}
                   printerFriendly={printerFriendly}
-                  printerOpacity={printerOpacity}
                   showCropMarks={showBlackFrame ? true : showCropMarks}
                   showBlackFrame={showBlackFrame}
                 />
@@ -1233,7 +1299,7 @@ const App: React.FC = () => {
             <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
             <span>{t('systemOnline')}</span>
           </div>
-          <span>{t('version')}: 0.1.5.0-beta</span>
+          <span>{t('version')}: 0.1.6.0-beta</span>
         </div>
       </footer>
 
